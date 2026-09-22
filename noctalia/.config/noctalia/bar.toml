@@ -1,0 +1,6 @@
+# Bar transparan. Gaya capsule (bentuk, ketebalan, padding) kamu atur lewat GUI Settings > Bar > Capsules;
+# nilai GUI disimpan di ~/.local/state/noctalia/settings.toml dan menang atas file ini.
+[bar.default]
+background_opacity = 0.0     # latar bar hilang, hanya kapsul widget yang terlihat
+shadow             = false   # bayangan bar ikut hilang
+border_width       = 0.0

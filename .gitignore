@@ -1,0 +1,11 @@
+# file hasil render Noctalia (dibuat ulang otomatis dari wallpaper)
+nvim/.config/nvim/lua/noctalia.lua
+alacritty/.config/alacritty/themes/
+# plugin manager
+tmux/.config/tmux/plugins/
+# backup
+*.bak
+*.bak.*
+
+# file render template Hyprland milik Noctalia (warna border dari tema)
+hypr/.config/hypr/noctalia.lua

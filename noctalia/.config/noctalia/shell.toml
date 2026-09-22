@@ -1,0 +1,5 @@
+# Sudut kotak untuk semua permukaan Noctalia: launcher, panel, control center, notifikasi, kapsul.
+# 0 = kotak, 1 = default, 2 = ekstra bulat. Di GUI: Settings > Appearance.
+[shell]
+corner_radius_scale = 0.0
+polkit_agent = true    # agen polkit bawaan: dialog password untuk pkexec (greeter sync, GParted, dll)

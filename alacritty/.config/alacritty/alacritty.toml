@@ -1,0 +1,25 @@
+[general]
+import = ["~/.config/alacritty/themes/noctalia.toml"]
+
+# ~/.config/alacritty/alacritty.toml
+
+# Nerd Font (paket: ttf-meslo-nerd) — dibutuhkan ikon Powerlevel10k & eza
+[font]
+normal = { family = "MesloLGS Nerd Font Mono", style = "Regular" }
+
+# Shift+Enter mengirim newline (multi-line input, mis. Claude Code)
+[[keyboard.bindings]]
+key = "Return"
+mods = "Shift"
+chars = "\u001B\r"
+
+# Paksa zsh. Sesi desktop yang login sebelum chsh masih membawa SHELL=bash,
+# dan alacritty memakai $SHELL kalau ini tidak diset.
+[terminal]
+shell = "/usr/bin/zsh"
+
+# Transparansi jendela (0.0 tembus penuh, 1.0 pekat). Hyprland memberi blur di belakangnya.
+[window]
+opacity = 0.8
+padding = { x = 12, y = 10 }   # jarak teks dari tepi jendela, dalam piksel
+dynamic_padding = true       # sisa ruang dibagi rata supaya teks tetap di tengah
