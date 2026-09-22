@@ -11,6 +11,7 @@ Config Arch + Hyprland (Lua) + Noctalia v5, dikelola dengan GNU Stow. Tiap folde
 | hypr | hyprland.lua + modul (gaya Omarchy, binding Noctalia) |
 | noctalia | bar.toml, shell.toml, nvim.toml (template) |
 | nvim | LazyVim + tema base16 dari Noctalia |
+| claude | skills & agents Claude Code (hyprland-config, noctalia-config, terminal-stack, dotfiles-stow) |
 
 ## Pasang di mesin baru
 
@@ -18,6 +19,7 @@ Config Arch + Hyprland (Lua) + Noctalia v5, dikelola dengan GNU Stow. Tiap folde
 git clone git@github.com:suryakencana007/dotconfigfiles.git ~/dotconfigfiles
 cd ~/dotconfigfiles
 stow -t ~ zsh git alacritty tmux hypr noctalia nvim
+stow --no-folding -t ~ claude
 ```
 
 Paket sistem yang dibutuhkan: zsh oh-my-zsh powerlevel10k ttf-meslo-nerd eza bat fd fzf zoxide git-delta
