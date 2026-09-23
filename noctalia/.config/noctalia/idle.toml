@@ -1,8 +1,20 @@
-# Idle: kunci layar otomatis setelah 10 menit tanpa aktivitas.
+# Idle: kunci layar otomatis setelah 10 menit tanpa aktivitas,
+# lalu matikan layar setelah 11 menit (hidup lagi otomatis saat ada aktivitas).
 # Docs: https://docs.noctalia.dev/noctalia/services/idle/
 # Kunci yang sama di ~/.local/state/noctalia/settings.toml (Settings > Idle) menang atas file ini.
+# Catatan: begitu satu behavior didefinisikan di sini, Noctalia tidak lagi menyeed
+# behavior bawaan (lock/screen-off/suspend), jadi semua yang diinginkan harus ditulis eksplisit.
+# Suspend sengaja tidak diaktifkan.
+
+[idle]
+behavior_order = ["lock", "screen-off"]
 
 [idle.behavior.lock]
 timeout = 600
 action = "lock"
+enabled = true
+
+[idle.behavior.screen-off]
+timeout = 660
+action = "screen_off"
 enabled = true
