@@ -12,8 +12,8 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 |---|---|---|
 | zsh | `.zshrc`, `.p10k.zsh` | file |
 | git | `.gitconfig` | file |
-| alacritty | `.config/alacritty/alacritty.toml` | folder (stow melipat `~/.config/alacritty` jadi symlink folder; `themes/` render Noctalia jadi ada DI DALAM folder repo, di-gitignore) |
-| tmux | `.config/tmux/tmux.conf` | folder (symlink folder; `plugins/` TPM ada di dalam folder repo, di-gitignore) |
+| alacritty | `.config/alacritty/alacritty.toml` | symlink per file: `~/.config/alacritty` folder nyata (sudah ada sebelum stow), `themes/` render Noctalia di home, di luar repo |
+| tmux | `.config/tmux/tmux.conf` | symlink per file: `~/.config/tmux` folder nyata, `plugins/` TPM di home, di luar repo |
 | nvim | seluruh `.config/nvim` | folder (symlink folder utuh) |
 | mpv | `.config/mpv/{mpv.conf,input.conf}` | folder |
 | hypr, noctalia | `.config/hypr/*`, `.config/noctalia/*` | `--no-folding` (folder nyata, supaya overlay host dan file render Noctalia bisa masuk tanpa ke repo) |

@@ -180,7 +180,7 @@ greeter() {
   # Auto-sync dinyalakan oleh noctalia/greeter.toml; sync pertama harus dipicu sekali kalau shell sedang jalan
   # (tanpa ini greeter tampil bawaan sampai tema berubah, karena /var/lib/noctalia-greeter/sync.toml belum ada).
   if have noctalia && noctalia msg status >/dev/null 2>&1; then
-    run noctalia msg greeter-sync >/dev/null 2>&1 && ok "greeter di-sync dengan tema saat ini" || warn "greeter-sync gagal; jalankan: noctalia msg greeter-sync"
+    if (( DRY )); then run noctalia msg greeter-sync; else noctalia msg greeter-sync >/dev/null 2>&1 && ok "greeter di-sync dengan tema saat ini"; fi || warn "greeter-sync gagal; jalankan: noctalia msg greeter-sync"
   else
     echo "  (Noctalia belum jalan: sync pertama otomatis saat wallpaper/tema pertama dipilih, atau: noctalia msg greeter-sync)"
   fi
