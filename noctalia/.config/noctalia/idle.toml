@@ -1,0 +1,8 @@
+# Idle: kunci layar otomatis setelah 10 menit tanpa aktivitas.
+# Docs: https://docs.noctalia.dev/noctalia/services/idle/
+# Kunci yang sama di ~/.local/state/noctalia/settings.toml (Settings > Idle) menang atas file ini.
+
+[idle.behavior.lock]
+timeout = 600
+action = "lock"
+enabled = true

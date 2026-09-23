@@ -15,6 +15,10 @@ Paket `noctalia` (repo extra), dijalankan dari `autostart.lua` Hyprland. Bukan Q
 - GUI/state: `~/.local/state/noctalia/settings.toml`. Ditulis Settings dan wizard. **Menang** atas file tulisan
   tangan untuk kunci yang sama. Kalau perubahan file "tidak berpengaruh", cek dulu file state ini.
 - Terapkan perubahan file: `noctalia msg config-reload` (biasanya auto-reload juga).
+- Sebelum reload: `noctalia config validate` (cek sintaks/kunci). Lihat hasil gabungan semua lapisan:
+  `noctalia config export` (yang diset) atau `noctalia config export full` (termasuk default).
+- Idle: mendefinisikan satu `[idle.behavior.<nama>]` sendiri mematikan seed bawaan (lock/screen-off/suspend);
+  behavior lain harus ditulis eksplisit. Yang ada: `idle.toml` = lock 600 detik.
 - Settings GUI: Super+Shift+, (koma) atau `noctalia msg settings-toggle`.
 
 ## IPC yang sering dipakai (`noctalia msg ...`)
