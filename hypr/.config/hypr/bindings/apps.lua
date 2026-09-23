@@ -7,6 +7,7 @@ o.bind("SUPER + SHIFT + ALT + B", "Browser (private)", "brave --incognito")
 o.bind("SUPER + SHIFT + F", "File manager", "thunar")
 o.bind("SUPER + SHIFT + N", "Editor (nvim)", "alacritty -e nvim")
 o.bind("SUPER + CTRL + T", "Activity (btop)", "alacritty --class TUI.float -e btop")
+o.bind("SUPER + SHIFT + M", "Music (Spotify)", "spotify")
 
 -- Web app (jendela tanpa tab) lewat Brave
 o.bind("SUPER + SHIFT + A", "ChatGPT", "brave --app=https://chatgpt.com")
