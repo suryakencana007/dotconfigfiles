@@ -10,7 +10,7 @@ The whole thing is a [GNU Stow](https://www.gnu.org/software/stow/) dotfiles rep
 installer, so a wiped machine is back to 100% with:
 
 ```sh
-git clone git@github.com:suryakencana007/dotconfigfiles.git ~/dotconfigfiles
+git clone https://github.com/suryakencana007/dotconfigfiles.git ~/dotconfigfiles
 ~/dotconfigfiles/install.sh
 ```
 
@@ -56,44 +56,82 @@ its Lua config) and built on [Noctalia](https://noctalia.dev).
 
 ## Installation
 
-### 1. Base system
+### Walkthrough for a fresh machine
 
-Install Arch Linux the way you like (`archinstall` is fine). You need a regular user with `sudo`, a working
-network connection and `git`. Nothing else: the installer brings in every other package.
-
-### 2. Run the installer
+Every step below is a command you can paste. Lines starting with `#` are comments.
 
 ```sh
-git clone git@github.com:suryakencana007/dotconfigfiles.git ~/dotconfigfiles
-~/dotconfigfiles/install.sh --dry-run   # optional: print the plan without changing anything
-~/dotconfigfiles/install.sh             # asks for sudo once, then runs unattended
+# 1. Base Arch is installed (archinstall is fine) and you are logged in as your user (in the wheel group).
+sudo pacman -Syu --needed git base-devel
+
+# 2. Clone over HTTPS first: no SSH key exists on a fresh machine yet.
+git clone https://github.com/suryakencana007/dotconfigfiles.git ~/dotconfigfiles
+cd ~/dotconfigfiles
+
+# 3. Optional: preview what the installer will do.
+./install.sh --dry-run
+
+# 4. Install everything. Asks for sudo once; ~10-20 minutes depending on network.
+./install.sh
+
+# 5. Reboot so the GPU driver, greetd and the login shell take effect.
+sudo reboot
 ```
+
+After the reboot, log in through the Noctalia greeter and finish the parts no script can do:
+
+```sh
+# 6. SSH key for GitHub, then switch the repo remote to SSH so push works.
+ssh-keygen -t ed25519 -C "$(cat /etc/hostname)"
+cat ~/.ssh/id_ed25519.pub        # paste at https://github.com/settings/keys
+cd ~/dotconfigfiles && git remote set-url origin git@github.com:suryakencana007/dotconfigfiles.git
+git config user.name "Your Name" && git config user.email "you@example.com"   # only if the installer did not ask
+
+# 7. Wallpapers: put images here, then pick one in Noctalia (Super+Ctrl+Space) or the carousel (Super+Shift+Ctrl+Space).
+mkdir -p ~/Pictures/Wallpapers && cp /path/to/*.jpg ~/Pictures/Wallpapers/
+
+# 8. Check the result any time.
+resi-shell doctor
+```
+
+In Noctalia Settings (`Super+Shift+,`): run the setup wizard if it opens, enable **Templates → GTK 3 and GTK 4**
+(Thunar and GTK apps follow the palette) and **Security → Auto-Sync Greeter** (login screen follows the theme).
+Sign in to Brave and Spotify. On a laptop with a discrete GPU, set the BIOS to hybrid graphics.
+
+### Machine-specific parts
+
+If this machine should carry its own overrides (centered lock screen login box, extra monitors), add a host
+overlay before or after the install, see [Several machines](#several-machines-hostshostname) below:
+
+```sh
+cd ~/dotconfigfiles
+cp -r hosts/legionarch "hosts/$(cat /etc/hostname)"
+hyprctl monitors -j | jq -r '.[].name'                        # e.g. eDP-1
+sed -i 's/eDP-2/eDP-1/g' "hosts/$(cat /etc/hostname)/.config/noctalia/lockscreen-widgets.toml"
+resi-shell install                                            # re-run: idempotent, only stows what is missing
+git add hosts && git commit -m "Add host overlay for $(cat /etc/hostname)" && git push
+```
+
+### What the installer does
 
 The installer is **idempotent**: running it again on a configured machine is safe and only fills in what is
 missing. It performs these steps in order:
 
 1. **Packages** from the official repos, listed in `resi/packages.pacman` (Hyprland, Noctalia, rofi, terminal
-   tools, fonts, audio, network, greetd, ...).
-2. **AUR**: installs `yay` if needed, then `resi/packages.aur` (Brave, Spotify, noctalia-greeter).
+   tools, fonts, audio, network, greetd, mpv, ...).
+2. **AUR**: installs `yay` if needed, then `resi/packages.aur` (Brave, Spotify, noctalia-greeter,
+   gpu-screen-recorder).
 3. **GPU drivers by detection**: NVIDIA (`nvidia-open-dkms` + `linux-headers` + early KMS in mkinitcpio),
    AMD (mesa, vulkan-radeon), Intel (mesa, vulkan-intel), plus CPU microcode.
 4. **Shell**: oh-my-zsh, Powerlevel10k, fzf-tab, links the distro's zsh plugins, `chsh` to zsh.
-5. **Stow**: links every package into `$HOME`. Existing plain files are moved aside as `*.pre-resi`.
+5. **Stow**: links every package into `$HOME`, plus the host overlay when `hosts/<hostname>` exists. Existing
+   plain files are moved aside as `*.pre-resi`.
 6. **tmux** plugins (TPM) and **Neovim** plugins (lazy.nvim, headless).
 7. **Folders** (`~/Pictures/Screenshots`, `~/Pictures/Wallpapers`) and your **git identity** (asked once,
    stored in the repo's local config, never committed).
 8. **Services**: NetworkManager, bluetooth, power-profiles-daemon, greetd with `resi/greetd-config.toml`.
-9. **Greeter**: installs `resi/greeter.toml` for noctalia-greeter and enables passwordless theme sync.
-
-### 3. After the first boot
-
-- **Reboot** so the GPU driver, greetd and the login shell take effect.
-- Log in. Noctalia's setup wizard opens: pick a wallpaper (put images in `~/Pictures/Wallpapers`) and a theme.
-  Every template (alacritty, rofi, Neovim, Hyprland borders) is rendered the first time a theme is chosen.
-- In Noctalia Settings (`Super+Shift+,`) enable **Security → Auto-Sync Greeter** and, under **Templates**, turn on
-  **GTK 3** and **GTK 4** so Thunar and other GTK apps pick up the palette.
-- Generate an SSH key and add it to GitHub so `git push` works; sign in to Brave and Spotify.
-- Laptops with a dGPU: set the BIOS to **hybrid** graphics so the iGPU drives the panel.
+9. **GTK**: dark mode, adw-gtk3 theme, Papirus icons; mpv as default video/audio player.
+10. **Greeter**: installs `resi/greeter.toml` for noctalia-greeter and enables passwordless theme sync.
 
 ### The `resi-shell` command
 
@@ -134,15 +172,33 @@ Files Noctalia renders from templates are listed in `.gitignore` and never commi
 
 ### Several machines: `hosts/<hostname>/`
 
-Everything generic lives in the packages above. Anything tied to one machine goes into `hosts/<hostname>/`,
-which the installer stows automatically when the folder name matches `/etc/hostname`. `legionarch` (a Lenovo
-Legion, Ryzen 4800H + GTX 1660 Ti in hybrid mode) carries:
+Everything generic lives in the packages above and adapts by itself: GPU drivers and driver environment are
+detected at install time, the monitor rule is a wildcard, the NVIDIA environment is only applied when NVIDIA
+is the sole GPU. Anything tied to one machine goes into `hosts/<hostname>/`, a Stow overlay that the installer
+applies **only** when the folder name matches `/etc/hostname`.
+
+On a machine without a matching folder nothing breaks: the installer prints a note that no overlay exists and
+continues with the generic config. What you lose is only what is machine-specific, for example the lock screen
+login box falls back to Noctalia's default placement (bottom) instead of the centered layout.
+
+`legionarch` (a Lenovo Legion, Ryzen 4800H + GTX 1660 Ti in hybrid mode) carries:
 
 - `.config/noctalia/lockscreen-widgets.toml` — login box layout for its `eDP-2` panel;
-- `.config/hypr/local.lua` — Hyprland overrides loaded last (monitors, per-machine rules).
+- `.config/hypr/local.lua` — Hyprland overrides loaded last (monitors, per-machine rules). Empty for now.
 
-For a new machine, copy `hosts/legionarch` to `hosts/<its-hostname>`, adjust, commit, then run the installer.
-GPU drivers are detected at install time and the NVIDIA environment is only applied when NVIDIA is the sole GPU.
+To add a machine:
+
+```sh
+cd ~/dotconfigfiles
+cp -r hosts/legionarch "hosts/$(cat /etc/hostname)"
+hyprctl monitors -j | jq -r '.[].name'                       # find the panel name, e.g. eDP-1
+sed -i 's/eDP-2/eDP-1/g' "hosts/$(cat /etc/hostname)/.config/noctalia/lockscreen-widgets.toml"
+git add hosts && git commit -m "Add host overlay for $(cat /etc/hostname)" && git push
+resi-shell install                                           # or: cd hosts && stow --no-folding -t ~ "$(cat /etc/hostname)"
+```
+
+Overlays never interfere with each other: each machine only stows the folder that carries its own hostname.
+Per-machine Hyprland tweaks (a second monitor, scale, a device-specific rule) go into that host's `local.lua`.
 
 ### Manual stow (without the installer)
 
