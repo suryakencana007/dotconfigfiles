@@ -76,7 +76,8 @@ Editor visual `noctalia msg lockscreen-widgets-edit` menulis ke state (menang at
 
 ## Theme switcher
 
-`hypr-theme` (paket bin, Super+Shift+Ctrl+Space via `rofi-toggle theme`): galeri wallpaper (thumbnail vipsthumbnail di
+`hypr-theme-carousel` (Python GTK4/libadwaita, Super+Shift+Ctrl+Space): carousel wallpaper geser ala omarchy-shell,
+kartu tengah = pilihan, Enter -> `wallpaper-set`. `hypr-theme` (rofi, menu Style): galeri wallpaper (thumbnail vipsthumbnail di
 `~/.cache/hypr-theme/thumbs`, `wallpaper-set`), daftar palet (`color-scheme-set`), toggle mode. Plugin Wallhaven: widget
 `wallhaven` di bar + `panel-toggle noctalia/wallhaven:browser` (Super+Ctrl+Alt+Space); API key hanya via GUI (state).
 

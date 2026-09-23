@@ -18,3 +18,6 @@ gtk/.config/gtk-3.0/gtk.css
 gtk/.config/gtk-3.0/noctalia.css
 gtk/.config/gtk-4.0/gtk.css
 gtk/.config/gtk-4.0/noctalia.css
+
+# bytecode python (mis. dari py_compile saat uji)
+__pycache__/

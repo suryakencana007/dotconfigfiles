@@ -7,7 +7,7 @@ o.bind("SUPER + ESCAPE", "Session menu (logout/reboot/shutdown)", ipc .. "panel-
 o.bind("XF86PowerOff", "Session menu", ipc .. "panel-toggle session", { locked = true })
 o.bind("SUPER + CTRL + V", "Clipboard history", ipc .. "panel-toggle clipboard")
 o.bind("SUPER + CTRL + SPACE", "Wallpaper picker", ipc .. "panel-toggle wallpaper")
-o.bind("SUPER + SHIFT + CTRL + SPACE", "Theme switcher", os.getenv("HOME") .. "/.local/bin/rofi-toggle theme")   -- ala Omarchy: wallpaper, palet, mode
+o.bind("SUPER + SHIFT + CTRL + SPACE", "Theme switcher", os.getenv("HOME") .. "/.local/bin/hypr-theme-carousel --toggle")   -- carousel ala omarchy-shell; palet/mode: hypr-theme (menu Style)
 o.bind("SUPER + CTRL + ALT + SPACE", "Wallhaven browser", ipc .. "panel-toggle noctalia/wallhaven:browser")
 o.bind("SUPER + SHIFT + SPACE", "Toggle bar", ipc .. "bar-toggle")
 o.bind("SUPER + SHIFT + comma", "Noctalia settings", ipc .. "settings-toggle")

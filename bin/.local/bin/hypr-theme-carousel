@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+"""Theme switcher ala omarchy-shell (theme-switcher.jpg): overlay satu layar penuh, latar = wallpaper tema yang
+sedang disorot (pratinjau langsung), kartu tengah besar, kartu samping lebih kecil & miring (coverflow) dan memudar,
+nama tema besar di bawah kartu. Kiri/Kanan, h/l, scroll, atau klik untuk geser; Enter/klik kartu tengah terapkan
+(noctalia msg wallpaper-set -> seluruh palet ikut); Esc tutup. --toggle: tutup kalau sudah terbuka.
+Super+Shift+Ctrl+Space."""
+import os, sys, json, subprocess, signal, math
+from pathlib import Path
+import gi
+gi.require_version("Gtk", "4.0"); gi.require_version("Adw", "1"); gi.require_version("Gsk", "4.0"); gi.require_version("Graphene", "1.0")
+from gi.repository import Gtk, Adw, Gdk, Gsk, Graphene, GLib, Gio
+
+APP_CLASS = "hypr-theme-carousel"
+WALL_DIR = Path(os.environ.get("HYPR_THEME_WALL_DIR", Path.home() / "Pictures/Wallpapers"))
+CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "hypr-theme/carousel"
+
+def noctalia(*args):
+    try:
+        return subprocess.run(["noctalia", "msg", *args], capture_output=True, text=True, timeout=5).stdout.strip()
+    except Exception:
+        return ""
+
+def monitor_size():
+    try:
+        m = json.loads(subprocess.check_output(["hyprctl", "monitors", "-j"], text=True))
+        m = next((x for x in m if x.get("focused")), m[0])
+        return int(m["width"] / m["scale"]), int(m["height"] / m["scale"])
+    except Exception:
+        return 1920, 1080
+
+def toggle_if_running():
+    try:
+        clients = json.loads(subprocess.check_output(["hyprctl", "clients", "-j"], text=True))
+    except Exception:
+        return False
+    for c in clients:
+        if c.get("class") == APP_CLASS and c.get("pid", 0) > 0:
+            os.kill(c["pid"], signal.SIGTERM); return True
+    return False
+
+def thumb(src: Path, w: int, h: int) -> Path:
+    CACHE.mkdir(parents=True, exist_ok=True)
+    out = CACHE / f"{src.stem}-{w}.jpg"
+    if not out.exists() or src.stat().st_mtime > out.stat().st_mtime:
+        r = subprocess.run(["vipsthumbnail", str(src), "--size", f"{w}x{h}", "--smartcrop", "attention", "-o", f"{out}[Q=90]"], capture_output=True)
+        if r.returncode != 0:
+            return src
+    return out
+
+CSS = b"""
+window.carousel { background-color: #000000; }
+.stage { background-color: rgba(0, 0, 0, 0.60); }   /* lapisan gelap di atas latar pratinjau */
+.card  { border: 2px solid rgba(255,255,255,0.10); box-shadow: 0 24px 60px rgba(0,0,0,0.55); }
+.card.selected { border-color: @accent_bg_color; }
+.name  { font-size: 34px; font-weight: 800; color: #ffffff; text-shadow: 0 2px 12px rgba(0,0,0,0.8); }
+.sub   { font-size: 13px; color: rgba(255,255,255,0.7); text-shadow: 0 1px 6px rgba(0,0,0,0.8); }
+"""
+
+class Carousel(Gtk.ApplicationWindow):
+    def __init__(self, app, files, current):
+        super().__init__(application=app, title="Theme")
+        self.files, self.current = files, current
+        self.sel = next((i for i, f in enumerate(files) if str(f) == current), 0)
+        self.pos = float(self.sel)                      # posisi animasi (indeks pecahan)
+        self.W, self.H = monitor_size()
+        self.set_default_size(self.W, self.H); self.set_decorated(False); self.set_resizable(False)
+        self.add_css_class("carousel")
+        # ukuran kartu: tengah ~52% lebar layar, rasio 16:9
+        self.cw = int(self.W * 0.52); self.ch = int(self.cw * 9 / 16)
+        self.spacing = int(self.cw * 0.60)             # jarak pusat antar kartu
+        self.cy = int(self.H * 0.46)                    # pusat vertikal kartu
+
+        # Semua gambar didekode SEKALI di sini. Latar memakai JPEG seukuran layar dari cache, bukan file asli
+        # (PNG 4K/5K belasan MB membuat tiap geser tersendat).
+        self.bg_tex = [Gdk.Texture.new_from_filename(str(thumb(f, self.W, self.H))) for f in files]
+        self.card_tex = [Gdk.Texture.new_from_filename(str(thumb(f, self.cw, self.ch))) for f in files]
+
+        overlay = Gtk.Overlay(); self.set_child(overlay)
+        self.bg = Gtk.Picture(content_fit=Gtk.ContentFit.COVER, hexpand=True, vexpand=True); overlay.set_child(self.bg)
+        self.bg.set_opacity(0.75)
+        self.fixed = Gtk.Fixed(css_classes=["stage"], hexpand=True, vexpand=True); overlay.add_overlay(self.fixed)
+        self.cards = []
+        for i, f in enumerate(files):
+            pic = Gtk.Picture.new_for_paintable(self.card_tex[i])
+            pic.set_size_request(self.cw, self.ch); pic.set_content_fit(Gtk.ContentFit.COVER); pic.set_can_shrink(False)
+            pic.add_css_class("card")
+            click = Gtk.GestureClick(); click.connect("released", self.on_card_click, i); pic.add_controller(click)
+            self.fixed.put(pic, 0, 0); self.cards.append(pic)
+        labels = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, halign=Gtk.Align.CENTER, valign=Gtk.Align.END,
+                         margin_bottom=int(self.H * 0.16))
+        self.name = Gtk.Label(css_classes=["name"]); self.sub = Gtk.Label(css_classes=["sub"])
+        labels.append(self.name); labels.append(self.sub); overlay.add_overlay(labels)
+
+        key = Gtk.EventControllerKey(); key.connect("key-pressed", self.on_key); self.add_controller(key)
+        scroll = Gtk.EventControllerScroll(flags=Gtk.EventControllerScrollFlags.BOTH_AXES); scroll.connect("scroll", self.on_scroll); self.add_controller(scroll)
+        self.anim = None
+        self.layout(); self.update_labels()
+
+    # ---- coverflow ----
+    def dist(self, i):   # jarak sirkular dari pusat (negatif = kiri)
+        n = len(self.files); d = (i - self.pos) % n
+        return d - n if d > n / 2 else d
+
+    def layout(self):
+        n = len(self.files)
+        order = sorted(range(n), key=lambda i: -abs(self.dist(i)))    # kartu terdekat pusat digambar terakhir (paling atas)
+        for i in order:
+            d = self.dist(i)
+            ad = min(abs(d), 3.0)
+            scale = 1.0 - 0.22 * min(ad, 1.0) - 0.06 * max(ad - 1.0, 0.0)
+            angle = -max(-1.0, min(1.0, d)) * 16.0                      # miring ke arah pusat, maks 16°
+            x = self.W / 2 + d * self.spacing
+            t = (Gsk.Transform().translate(Graphene.Point().init(x, self.cy)).perspective(1400)
+                 .rotate_3d(angle, Graphene.Vec3().init(0, 1, 0)).scale(scale, scale)
+                 .translate(Graphene.Point().init(-self.cw / 2, -self.ch / 2)))
+            card = self.cards[i]
+            self.fixed.set_child_transform(card, t)
+            card.set_opacity(0.0 if ad >= 2.0 and n <= 4 else 1.0 - 0.45 * min(ad, 1.0) - 0.15 * max(ad - 1.0, 0.0))
+            # bawa ke atas: Gtk.Fixed menggambar sesuai urutan anak
+        top = self.cards[round(self.pos) % n]
+        if self.fixed.get_last_child() is not top:
+            self.fixed.remove(top); self.fixed.put(top, 0, 0); self.layout_one(top)
+
+    def layout_one(self, card):
+        i = self.cards.index(card); d = self.dist(i)
+        t = (Gsk.Transform().translate(Graphene.Point().init(self.W / 2 + d * self.spacing, self.cy)).perspective(1400)
+             .rotate_3d(-max(-1.0, min(1.0, d)) * 16.0, Graphene.Vec3().init(0, 1, 0))
+             .scale(1.0 - 0.22 * min(abs(d), 1.0), 1.0 - 0.22 * min(abs(d), 1.0))
+             .translate(Graphene.Point().init(-self.cw / 2, -self.ch / 2)))
+        self.fixed.set_child_transform(card, t)
+
+    def update_labels(self):
+        f = self.files[self.sel]
+        for i, c in enumerate(self.cards):
+            c.remove_css_class("selected"); (c.add_css_class("selected") if i == self.sel else None)
+        self.name.set_text(f.stem.replace("-", " ").replace("_", " ").title())
+        self.sub.set_text("wallpaper aktif" if str(f) == self.current else "Enter: terapkan")
+        self.bg.set_paintable(self.bg_tex[self.sel])     # pratinjau: latar = wallpaper yang disorot (tekstur siap)
+
+    def go(self, sel):
+        n = len(self.files); self.sel = sel % n
+        start, target = self.pos, float(self.sel)
+        if abs(target - start) > n / 2:                  # putar lewat jalur terpendek saat wrap
+            target += n if target < start else -n
+        if self.anim: self.anim.pause()
+        self.anim = Adw.TimedAnimation.new(self, 0.0, 1.0, 280, Adw.CallbackAnimationTarget.new(
+            lambda v: (setattr(self, "pos", (start + (target - start) * v) % n if v < 1 else float(self.sel)), self.layout())))
+        self.anim.set_easing(Adw.Easing.EASE_OUT_CUBIC); self.anim.play()
+        self.update_labels()
+
+    def apply(self):
+        noctalia("wallpaper-set", str(self.files[self.sel])); self.close()
+
+    def on_card_click(self, g, n, x, y, i):
+        self.apply() if i == self.sel else self.go(i)
+
+    def on_key(self, ctrl, keyval, keycode, state):
+        k = Gdk.keyval_name(keyval) or ""
+        if k in ("Left", "h", "a"): self.go(self.sel - 1)
+        elif k in ("Right", "l", "d", "Tab"): self.go(self.sel + 1)
+        elif k in ("Return", "KP_Enter", "space"): self.apply()
+        elif k in ("Escape", "q"): self.close()
+        else: return False
+        return True
+
+    def on_scroll(self, ctrl, dx, dy):
+        d = dx if abs(dx) > abs(dy) else dy
+        if d > 0.2: self.go(self.sel + 1)
+        elif d < -0.2: self.go(self.sel - 1)
+        return True
+
+class App(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id=None, flags=Gio.ApplicationFlags.NON_UNIQUE)   # tanpa app-id: class = prgname
+    def do_activate(self):
+        Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.PREFER_DARK)
+        prov = Gtk.CssProvider(); prov.load_from_data(CSS)
+        Gtk.StyleContext.add_provider_for_display(Gdk.Display.get_default(), prov, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        files = sorted(p for p in WALL_DIR.iterdir() if p.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp")) if WALL_DIR.is_dir() else []
+        if not files:
+            noctalia("notification-show", "Theme", f"Folder {WALL_DIR} kosong"); self.quit(); return
+        Carousel(self, files, noctalia("wallpaper-get")).present()
+
+if __name__ == "__main__":
+    if "--toggle" in sys.argv and toggle_if_running():
+        sys.exit(0)
+    GLib.set_prgname(APP_CLASS)
+    App().run([])

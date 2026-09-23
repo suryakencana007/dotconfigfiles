@@ -32,6 +32,11 @@ lazygit
 jq
 fastfetch
 7zip
+# --- theme carousel (hypr-theme-carousel: GTK4 + libadwaita + thumbnail vips) ---
+python-gobject
+gtk4
+libadwaita
+libvips
 # --- font ---
 ttf-meslo-nerd
 ttf-dejavu

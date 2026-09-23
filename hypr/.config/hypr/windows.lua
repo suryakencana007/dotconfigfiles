@@ -28,6 +28,15 @@ o.window("^hypr-keybindings$", { center = true })
 o.window("^hypr-keybindings$", { size = { 900, 860 } })
 o.window("^hypr-keybindings$", { tag = "+terminal" })
 
+-- Theme carousel (Super+Shift+Ctrl+Space): overlay satu layar penuh, mengambang & disematkan di atas segalanya.
+o.window("^hypr-theme-carousel$", { float = true })
+o.window("^hypr-theme-carousel$", { move = "0 0" })
+o.window("^hypr-theme-carousel$", { pin = true })
+o.window("^hypr-theme-carousel$", { border_size = 0 })
+o.window("^hypr-theme-carousel$", { rounding = 0 })
+o.window("^hypr-theme-carousel$", { tag = "-default-opacity" })
+o.window("^hypr-theme-carousel$", { opacity = "1 1" })
+
 -- Jendela Settings Noctalia (dari docs Noctalia).
 o.window("dev.noctalia.Noctalia", { float = true })
 o.window("dev.noctalia.Noctalia", { size = { 1080, 920 } })
