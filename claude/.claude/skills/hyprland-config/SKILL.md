@@ -45,7 +45,11 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
    Alt+panah, Alt+angka, Ctrl+Alt+panah (tmux, tanpa prefix). Jangan bentrok.
 7. Baris `pcall(function() require("noctalia").apply_theme() end)` di akhir `hyprland.lua` harus tetap mengandung
    teks `require("noctalia")`, karena hook template Noctalia mencarinya.
-8. Perubahan `autostart.lua` hanya berlaku saat Hyprland start, bukan saat reload. Untuk menjalankan sekarang (mode Lua, bukan `dispatch exec`): `hyprctl dispatch 'hl.dsp.exec_cmd("<cmd>")'`.
+8. Dispatcher yang terbukti ada di 0.56: `hl.dsp.focus({ workspace = "N" | direction = "l" | monitor = "+1" })`,
+   `hl.dsp.window.move({ workspace = "N", follow = false })`, `hl.dsp.window.close()`, `hl.dsp.exec_cmd("cmd")`.
+   Tidak ada `hl.dsp.workspace.go`. Window rule ke workspace: `o.window("^Class$", { workspace = "5" })`,
+   tambah ` silent` untuk tanpa pindah fokus. Cek class jendela: `hyprctl clients -j`.
+9. Perubahan `autostart.lua` hanya berlaku saat Hyprland start, bukan saat reload. Untuk menjalankan sekarang (mode Lua, bukan `dispatch exec`): `hyprctl dispatch 'hl.dsp.exec_cmd("<cmd>")'`.
 
 ## Hal yang sengaja berbeda dari Omarchy
 

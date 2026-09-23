@@ -31,6 +31,9 @@ local media = "^(zoom|vlc|mpv|org.kde.kdenlive|com.obsproject.Studio|imv)$"
 o.window(media, { tag = "-default-opacity" })
 o.window(media, { opacity = "1 1" })
 
+-- Spotify selalu dibuka di workspace 5 (fokus ikut pindah; pakai "5 silent" kalau tidak mau pindah).
+o.window("^(Spotify|spotify)$", { workspace = "5" })
+
 -- Cegah idle/lock saat window bertag noidle terbuka.
 o.window({ tag = "noidle" }, { idle_inhibit = "always" })
 
