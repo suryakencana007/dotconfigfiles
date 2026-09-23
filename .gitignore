@@ -21,3 +21,6 @@ gtk/.config/gtk-4.0/noctalia.css
 
 # bytecode python (mis. dari py_compile saat uji)
 __pycache__/
+
+# lazy.nvim menulis ulang file ini di tiap mesin (versi plugin lokal); tidak dilacak supaya tidak bentrok antar mesin
+nvim/.config/nvim/lazy-lock.json

@@ -33,7 +33,7 @@ dengan warna dari `lua/noctalia.lua` (render Noctalia, jangan edit; template di 
 SIGUSR1 dari Noctalia memicu ganti warna live. `plugin/after/transparency.lua` menghapus bg.
 Semua tema lain ada di `lua/plugins/all-themes.lua` (lazy). Uji headless:
 `nvim --headless "+lua vim.schedule(function() print(vim.g.colors_name); vim.cmd('messages'); vim.cmd('qa!') end)"`.
-Plugin hilang: `nvim --headless "+Lazy! install" +qa` dengan `GIT_TERMINAL_PROMPT=0`.
+`lazy-lock.json` lokal per mesin (tidak di repo). Plugin hilang: `nvim --headless "+Lazy! install" +qa` dengan `GIT_TERMINAL_PROMPT=0`.
 
 ## mpv
 `~/.config/mpv/mpv.conf`: vo=gpu-next, `gpu-api=opengl` (EGL = GPU compositor/AMD; Vulkan hanya melihat NVIDIA tanpa

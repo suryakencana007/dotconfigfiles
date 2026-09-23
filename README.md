@@ -171,7 +171,9 @@ Each top-level folder is a Stow package mirroring `$HOME`:
 | `resi/` | installer data: package lists, greeter and greetd templates | not stowed |
 | `install.sh` | the installer | not stowed |
 
-Files Noctalia renders from templates are listed in `.gitignore` and never committed.
+Files Noctalia renders from templates are listed in `.gitignore` and never committed. So is Neovim's
+`lazy-lock.json`: lazy.nvim rewrites it on every machine, so each machine keeps its own plugin pins instead of
+fighting over one file in git.
 
 ### Several machines: `hosts/<hostname>/`
 

@@ -38,7 +38,9 @@ sistem baru = tambah barisnya di daftar itu. `resi-shell doctor` = audit cepat (
    mendeteksi ini sebagai konflik stow ("cannot stow ... over existing target").
 
 1. Edit config lewat path di home (symlink) atau langsung di repo; sama saja.
-2. File HASIL RENDER Noctalia: `nvim/.config/nvim/lua/noctalia.lua` dan `rofi/.config/rofi/noctalia.rasi` ada di dalam
+2. `nvim/.config/nvim/lazy-lock.json` TIDAK dilacak (gitignore): lazy.nvim menulis ulang per mesin, melacaknya membuat
+   konflik pull antar mesin (terjadi 2026-09-24). Jangan `git add -f` file itu.
+3. File HASIL RENDER Noctalia: `nvim/.config/nvim/lua/noctalia.lua` dan `rofi/.config/rofi/noctalia.rasi` ada di dalam
    folder yang di-symlink utuh dan di-gitignore (jangan dihapus/dipindah); `~/.config/hypr/noctalia.lua` berada di luar
    repo karena hypr di-stow `--no-folding`.
 3. Backup lama ada di `~/.config-backups/`, bukan di repo. Pola `*.bak` dan `*.bak.*` di-gitignore.
