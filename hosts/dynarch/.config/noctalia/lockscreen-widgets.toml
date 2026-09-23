@@ -1,0 +1,42 @@
+# Overlay host legionarch: layout widget lock screen untuk panel eDP-1 (1920x1080).
+# Kotak login di tengah, lebar 480, layout compact, tanpa teks petunjuk. Noctalia menormalkan ulang
+# koordinat ke state saat start; nilai di sini adalah sumbernya.
+# Blok [lockscreen_widgets] diterima `noctalia config validate`; editor visual `noctalia msg lockscreen-widgets-edit`
+# menulis nilai yang sama ke state ~/.local/state/noctalia/settings.toml, dan state menang kalau kuncinya sama.
+
+[lockscreen_widgets]
+enabled = true
+schema_version = 2
+widget_order = [ "lockscreen-login-box@eDP-1" ]
+
+    [lockscreen_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@eDP-1"]
+    box_height = 196.0
+    box_width = 480.0   # compact; semula 810
+    cx = 960.0               # tengah horizontal layar 1920x1080
+    cy = 540.0               # tengah vertikal (bawaan 898 = dekat bawah)
+    output = "eDP-1"
+    placement_height = 1080.0
+    placement_width = 1920.0
+    rotation = 0.0
+    type = "login_box"
+
+        [lockscreen_widgets.widget."lockscreen-login-box@eDP-1".settings]
+        background_color = "surface_variant"
+        background_opacity = 0.6   # bawaan 0.88; lebih tembus supaya blur terlihat
+        background_radius = 12.0
+        center_password_text = false
+        input_opacity = 1.0
+        input_radius = 6.0
+        layout = "compact"         # alternatif: "regular"
+        show_caps_lock = true
+        show_keyboard_layout = true
+        show_login_button = true
+        show_media = true
+        show_session_buttons = true
+        show_unlock_hint = false   # sembunyikan teks "Type your password and press Enter"
+        show_weather = true
