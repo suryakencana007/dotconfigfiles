@@ -181,6 +181,9 @@ doctor() {
     local extra=(); [[ " ${PKGS_NOFOLD[*]} " == *" $p "* ]] && extra=(--no-folding)
     if out=$(cd "$REPO" && stow -n -v "${extra[@]}" -t "$HOME" "$p" 2>&1 | grep -vE 'WARNING|simulation'); [ -z "$out" ]; then ok "stow $p"; else warn "stow $p: $out"; bad=1; fi
   done
+  if [ -d "$REPO/hosts/$HOST" ]; then
+    if out=$(cd "$REPO/hosts" && stow -n -v --no-folding -t "$HOME" "$HOST" 2>&1 | grep -vE 'WARNING|simulation'); [ -z "$out" ]; then ok "stow overlay host $HOST"; else warn "overlay host $HOST: $out"; bad=1; fi
+  fi
   local broken; broken=$(find "$HOME" -maxdepth 6 -xtype l -lname '*dotconfigfiles*' 2>/dev/null); [ -z "$broken" ] && ok "tidak ada symlink putus" || { warn "symlink putus: $broken"; bad=1; }
   have hyprctl && { e=$(hyprctl configerrors 2>/dev/null); [ -z "$e" ] && ok "hyprland configerrors kosong" || { warn "hyprland: $e"; bad=1; }; }
   have noctalia && { noctalia config validate >/dev/null 2>&1 && ok "noctalia config valid" || { warn "noctalia config tidak valid"; bad=1; }; }

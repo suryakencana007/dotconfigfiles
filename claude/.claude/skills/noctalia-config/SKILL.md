@@ -72,7 +72,7 @@ Editor visual `noctalia msg lockscreen-widgets-edit` menulis ke state (menang at
 ## Greeter
 
 `noctalia-greeter` (AUR) lewat greetd. Sync butuh polkit: agen Noctalia aktif (`polkit_agent = true`), dan rule
-tanpa password sudah dipasang (`sudo noctalia-greeter passwordless-sync enable surya-legion`). Auto-sync aktif
+tanpa password sudah dipasang (`sudo noctalia-greeter passwordless-sync enable $USER`). Auto-sync aktif
 di state. Manual: `noctalia msg greeter-sync`; hasil di log "synced shell appearance to greeter".
 
 ## Diagnosa
