@@ -16,6 +16,7 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 | tmux | `.config/tmux/tmux.conf` | file (folder `plugins/` TPM tetap di luar) |
 | hypr, noctalia, nvim | seluruh `.config/<nama>` | folder (symlink folder utuh) |
 | claude | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` (per file, karena `~/.claude` punya isi lain) |
+| bin | `.local/bin/*` skrip (hypr-keybindings) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
 
 ## Aturan
 

@@ -7,7 +7,7 @@ o.bind("ALT + PRINT", "Screenshot area ke clipboard saja", "hyprshot -m region -
 o.bind("SUPER + SHIFT + S", "Screenshot area + edit (satty)", "hyprshot -m region --raw | satty --filename - --output-filename " .. shots .. "/satty-$(date +%Y%m%d-%H%M%S).png")
 o.bind("SUPER + PRINT", "Color picker", "pkill hyprpicker || hyprpicker -a")
 
-o.bind("SUPER + K", "Daftar keybinding", "alacritty --class TUI.float -e sh -c 'hyprctl binds | less'")
+o.bind("SUPER + K", "Keybindings", "alacritty --class hypr-keybindings -o window.padding.x=0 -e " .. os.getenv("HOME") .. "/.local/bin/hypr-keybindings")   -- daftar ala Omarchy, cari dengan mengetik
 
 o.bind("SUPER + CTRL + Z", "Zoom in", function()
   local zoom = hl.get_config("cursor.zoom_factor") or 1

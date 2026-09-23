@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# Daftar keybinding Hyprland dengan format ala Omarchy (omarchy-menu-keybindings):
+#   SUPER + SHIFT + M                   → Music (Spotify)
+# Pakai:  hypr-keybindings          menu fzf (dipanggil Super+K di jendela mengambang)
+#         hypr-keybindings --print  cetak saja
+set -euo pipefail
+
+modmask_to_text() {
+  case "$1" in
+    0)  printf '' ;;      1)  printf 'SHIFT' ;;            4)  printf 'CTRL' ;;
+    5)  printf 'SHIFT CTRL' ;;  8)  printf 'ALT' ;;        9)  printf 'SHIFT ALT' ;;
+    12) printf 'CTRL ALT' ;;    13) printf 'SHIFT CTRL ALT' ;;
+    64) printf 'SUPER' ;;       65) printf 'SUPER SHIFT' ;; 68) printf 'SUPER CTRL' ;;
+    69) printf 'SUPER SHIFT CTRL' ;; 72) printf 'SUPER ALT' ;; 73) printf 'SUPER SHIFT ALT' ;;
+    76) printf 'SUPER CTRL ALT' ;;   77) printf 'SUPER SHIFT CTRL ALT' ;;
+    *)  printf '%s' "$1" ;;
+  esac
+}
+
+# Ubah code:N (keycode XKB) dan mouse:N jadi simbol tombol, memakai keymap aktif.
+parse_keycodes() {
+  awk '
+    BEGIN {
+      split("10=1 11=2 12=3 13=4 14=5 15=6 16=7 17=8 18=9 19=0 20=MINUS 21=EQUAL 59=COMMA 60=PERIOD 61=SLASH", fb, " ")
+      for (i in fb) { s = index(fb[i], "="); sym[substr(fb[i], 1, s - 1)] = substr(fb[i], s + 1) }
+      cmd = "xkbcli compile-keymap </dev/null 2>/dev/null"; section = ""
+      while ((cmd | getline line) > 0) {
+        if (line ~ /xkb_keycodes/) { section = "codes"; continue }
+        if (line ~ /xkb_symbols/)  { section = "syms";  continue }
+        if (section == "codes" && match(line, /<([A-Za-z0-9_]+)>[ \t]*=[ \t]*([0-9]+)[ \t]*;/, m)) code_by_name[m[1]] = m[2]
+        if (section == "syms"  && match(line, /key[ \t]*<([A-Za-z0-9_]+)>[ \t]*\{[ \t]*\[[ \t]*([^, \]]+)/, m)) sym_by_name[m[1]] = m[2]
+      }
+      close(cmd)
+      for (n in code_by_name) { c = code_by_name[n]; s = sym_by_name[n]
+        if (c != "" && s != "" && s != "NoSymbol") sym[c] = toupper(s) }
+      for (c in sym) if (sym[c] == "GRAVE") sym[c] = "~"
+      mouse["272"] = "LEFT MOUSE"; mouse["273"] = "RIGHT MOUSE"; mouse["274"] = "MIDDLE MOUSE"
+    }
+    {
+      if (match($0, /code:([0-9]+)/, m))       { s = sym[m[1]];   if (s == "") s = "code:" m[1];  sub("code:" m[1], s) }
+      else if (match($0, /mouse:([0-9]+)/, m)) { s = mouse[m[1]]; if (s == "") s = "mouse:" m[1]; sub("mouse:" m[1], s) }
+      print
+    }'
+}
+
+# Baca `hyprctl binds` (teks, karena JSON-nya menghilangkan key untuk code:) -> CSV mods,key,desc
+records() {
+  hyprctl binds | awk '
+    function emit() { if (!seen) return; seen = 0
+      printf "%s\x1f%s\x1f%s\x1f%s\n", f["modmask"], f["key"], f["description"], f["dispatcher"] }
+    /^bind/ { emit(); seen = 1; delete f; next }
+    seen && match($0, /^\t[a-z]+: /) { f[substr($0, 2, RLENGTH - 3)] = substr($0, RLENGTH + 1) }
+    END { emit() }' |
+  while IFS=$'\x1f' read -r modmask key description dispatcher; do
+    key="${key##* + }"                       # "SUPER + code:20" -> "code:20"
+    [[ -z $description ]] && continue        # hanya bind yang punya deskripsi
+    [[ $key == "code:201" ]] && continue
+    case "$key" in
+      comma) key="COMMA" ;; grave) key="~" ;; period) key="PERIOD" ;;
+      minus) key="MINUS" ;; equal) key="EQUAL" ;; slash) key="SLASH" ;;
+    esac
+    printf '%s,%s,%s\n' "$(modmask_to_text "$modmask")" "$key" "$description"
+  done | parse_keycodes
+}
+
+# Format ala Omarchy: chord dipadatkan ke kolom 35, chord alternatif untuk aksi yang sama digabung satu baris.
+format() {
+  awk -F, '
+    BEGIN { column = 35
+      shares["Close window"] = 1; shares["Toggle scratchpad"] = 1; shares["Move window to scratchpad"] = 1 }
+    {
+      chord = ($1 == "" ? $2 : $1 " + " $2); gsub(/[ \t]+/, " ", chord)
+      action = $3; for (i = 4; i <= NF; i++) action = action "," $i
+      if (action in shares && (action in lead)) {
+        together = chords[lead[action]] " / " chord
+        if (length(together) <= column) { chords[lead[action]] = together; next }
+      }
+      n++; chords[n] = chord; actions[n] = action; lead[action] = n
+    }
+    END { for (i = 1; i <= n; i++) printf "%-*s → %s\n", column, chords[i], actions[i] }'
+}
+
+if [[ ${1:-} == "--print" || ${1:-} == "-p" ]]; then
+  records | format
+else
+  # Tanpa border/garis/scrollbar, padding 1 atas-bawah. Tiap entri = 3 baris (kosong, teks, kosong) yang
+  # dipisah NUL, sehingga sorotan baris terpilih (--highlight-line) setinggi 3 baris dengan teks di tengah.
+  records | format | awk '{ printf "\n  %s\n\0", $0 }' | fzf --read0 --layout=reverse --no-sort --exact --info=hidden \
+    --border=none --no-separator --no-scrollbar --highlight-line --padding=1,0 \
+    --prompt='  Find Key Bindings : ' --header=' ' --pointer=' ' --color=16 --bind 'enter:abort' >/dev/null || true
+fi

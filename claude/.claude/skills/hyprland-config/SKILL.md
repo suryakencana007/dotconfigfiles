@@ -23,7 +23,7 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
 | `bindings/noctalia.lua` | semua yang lewat `noctalia msg ...` (launcher, control center, session, clipboard, lock, notifikasi, toggle) |
 | `bindings/media.lua` | tombol XF86 volume/brightness/media lewat `noctalia msg` |
 | `bindings/clipboard.lua` | Super+C/V/X/A universal (disalin dari Omarchy, butuh tag `terminal`) |
-| `bindings/utilities.lua` | screenshot hyprshot/satty, hyprpicker, zoom, daftar binding |
+| `bindings/utilities.lua` | screenshot hyprshot/satty, hyprpicker, zoom, Super+K = `hypr-keybindings` (skrip di paket bin, format ala Omarchy; `--print` untuk cek di terminal) |
 | `noctalia.lua` | **HASIL RENDER Noctalia** (warna border dari tema). Jangan diedit, jangan dipindah, sudah di-gitignore |
 
 ## Aturan kerja
@@ -49,6 +49,9 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
    `hl.dsp.window.move({ workspace = "N", follow = false })`, `hl.dsp.window.close()`, `hl.dsp.exec_cmd("cmd")`.
    Tidak ada `hl.dsp.workspace.go`. Window rule ke workspace: `o.window("^Class$", { workspace = "5" })`,
    tambah ` silent` untuk tanpa pindah fokus. Cek class jendela: `hyprctl clients -j`.
+   Rule `size`/`float`/`center` dievaluasi saat jendela pertama muncul: cocokkan lewat `class` (beri app
+   `--class` sendiri), bukan `title`, karena judul belum terbaca saat itu. Contoh: jendela Super+K
+   memakai class `hypr-keybindings` dengan rule sendiri agar tidak ditimpa ukuran tag `floating-window`.
 9. Perubahan `autostart.lua` hanya berlaku saat Hyprland start, bukan saat reload. Untuk menjalankan sekarang (mode Lua, bukan `dispatch exec`): `hyprctl dispatch 'hl.dsp.exec_cmd("<cmd>")'`.
 
 ## Hal yang sengaja berbeda dari Omarchy

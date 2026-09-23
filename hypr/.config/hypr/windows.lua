@@ -22,6 +22,12 @@ o.window("(TUI.float|imv|mpv|org.gnome.Evince|org.pulseaudio.pavucontrol|nm-conn
 o.window("xdg-desktop-portal-gtk", { tag = "+floating-window" })
 o.window({ class = "(thunar|Thunar|brave-browser)", title = "^(Open.*Files?|Open [F|f]older.*|Save.*Files?|Save.*As|Save|All Files|[C|c]hoose.*)" }, { tag = "+floating-window" })
 
+-- Jendela daftar keybinding (Super+K): class sendiri supaya ukurannya tidak ditimpa tag floating-window.
+o.window("^hypr-keybindings$", { float = true })
+o.window("^hypr-keybindings$", { center = true })
+o.window("^hypr-keybindings$", { size = { 900, 860 } })
+o.window("^hypr-keybindings$", { tag = "+terminal" })
+
 -- Jendela Settings Noctalia (dari docs Noctalia).
 o.window("dev.noctalia.Noctalia", { float = true })
 o.window("dev.noctalia.Noctalia", { size = { 1080, 920 } })

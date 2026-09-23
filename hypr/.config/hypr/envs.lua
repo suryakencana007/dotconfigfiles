@@ -19,3 +19,15 @@ hl.config({
   xwayland = { force_zero_scaling = true },
   ecosystem = { no_update_news = true },
 })
+
+-- ~/.local/bin ke PATH Hyprland, supaya skrip sendiri (mis. hypr-keybindings) bisa dipanggil dari binding.
+-- Sesi greetd tidak menjalankan .zshrc, jadi PATH Hyprland tidak memuatnya.
+do
+  local bin = os.getenv("HOME") .. "/.local/bin"
+  local kept = {}
+  for entry in (os.getenv("PATH") or "/usr/local/bin:/usr/bin"):gmatch("[^:]+") do
+    if entry ~= bin then table.insert(kept, entry) end
+  end
+  table.insert(kept, 1, bin)
+  hl.env("PATH", table.concat(kept, ":"))
+end
