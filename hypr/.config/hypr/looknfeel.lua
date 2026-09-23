@@ -88,3 +88,6 @@ hl.layer_rule({
   blur = true,
   blur_popups = true,
 })
+
+-- rofi 2.0 tampil sebagai layer-shell "rofi": beri blur seperti panel Noctalia.
+hl.layer_rule({ name = "rofi", match = { namespace = "^rofi$" }, blur = true, ignore_alpha = 0.5 })

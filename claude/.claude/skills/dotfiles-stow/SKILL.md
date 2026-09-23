@@ -16,13 +16,14 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 | tmux | `.config/tmux/tmux.conf` | file (folder `plugins/` TPM tetap di luar) |
 | hypr, noctalia, nvim | seluruh `.config/<nama>` | folder (symlink folder utuh) |
 | claude | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` (per file, karena `~/.claude` punya isi lain) |
-| bin | `.local/bin/*` skrip (hypr-keybindings) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
+| rofi | `.config/rofi/config.rasi`, `layout.rasi` (noctalia.rasi = render, ignored) | folder |
+| bin | `.local/bin/*` skrip (hypr-keybindings, hypr-menu) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
 
 ## Aturan
 
 1. Edit config lewat path di home (symlink) atau langsung di repo; sama saja.
 2. File HASIL RENDER berada di dalam folder yang di-symlink utuh dan sudah di-gitignore. Jangan dihapus,
-   jangan dipindah: `hypr/.config/hypr/noctalia.lua`, `nvim/.config/nvim/lua/noctalia.lua`.
+   jangan dipindah: `hypr/.config/hypr/noctalia.lua`, `nvim/.config/nvim/lua/noctalia.lua`, `rofi/.config/rofi/noctalia.rasi`.
 3. Backup lama ada di `~/.config-backups/`, bukan di repo. Pola `*.bak` dan `*.bak.*` di-gitignore.
 4. Menambah file ke paket yang sudah ada: taruh di repo, lalu `cd ~/dotconfigfiles && stow -t ~ <paket>`.
    Paket baru: buat `<paket>/<path seperti di home>`, pindahkan file asli ke sana (bukan copy), lalu stow.

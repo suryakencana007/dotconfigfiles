@@ -1,0 +1,4 @@
+# Template user: warna rofi ikut tema Noctalia. Dirender ke ~/.config/rofi/noctalia.rasi (di-gitignore).
+[theme.templates.user.rofi]
+input_path  = "~/.config/noctalia/templates/rofi.rasi"
+output_path = "~/.config/rofi/noctalia.rasi"

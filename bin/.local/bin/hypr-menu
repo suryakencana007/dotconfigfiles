@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# Menu bertingkat ala omarchy-menu, ditampilkan lewat rofi (dmenu). Super+Alt+Space.
+# Tiap entri: "glyph  Label". Esc menutup, "Back" kembali ke menu sebelumnya.
+# Uji tanpa GUI:  HYPR_MENU_TEST=1 hypr-menu   (memilih entri pertama tiap level dan mencetak aksinya)
+set -uo pipefail
+
+KEYBINDINGS="$HOME/.local/bin/hypr-keybindings"
+BACK="󰁍  Back"
+
+menu() { # $1 judul, stdin: baris "label\taksi". Mencetak aksi yang dipilih.
+  local title="$1" lines labels choice
+  lines=$(cat)
+  labels=$(printf '%s\n' "$lines" | cut -f1)
+  if [[ ${HYPR_MENU_TEST:-} == 1 ]]; then
+    choice=$(printf '%s\n' "$labels" | head -1); echo "[test] $title -> $choice" >&2
+  else
+    choice=$(printf '%s\n' "$labels" | rofi -dmenu -i -p "$title" -no-custom -theme-str 'configuration { show-icons: false; }') || return 1
+  fi
+  [[ -z $choice ]] && return 1
+  printf '%s\n' "$lines" | awk -F'\t' -v c="$choice" '$1 == c { print $2; exit }'
+}
+
+run_menu() { # $1 judul, $2 nama fungsi yang mencetak entri, $3 fungsi menu induk (opsional)
+  local title="$1" items="$2" parent="${3:-}" action
+  while true; do
+    # Grup harus selalu sukses: dengan pipefail, "[[ -n $parent ]] &&" yang gagal di menu utama
+    # akan membuat pipeline dianggap gagal dan menu langsung tertutup.
+    action=$( { $items; if [[ -n $parent ]]; then printf '%s\t%s\n' "$BACK" "back"; fi; true; } | menu "$title") || return 0
+    case "$action" in
+      back) [[ -n $parent ]] && $parent; return 0 ;;
+      menu:*) "${action#menu:}"; return 0 ;;
+      "") return 0 ;;
+      *) [[ ${HYPR_MENU_TEST:-} == 1 ]] && { echo "[test] exec: $action" >&2; return 0; }
+         setsid -f sh -c "$action" >/dev/null 2>&1; return 0 ;;
+    esac
+  done
+}
+
+root_items() { cat <<'ITEMS'
+󰀻  Apps	menu:apps
+󰧑  Learn	menu:learn
+󱓞  Trigger	menu:trigger
+󰔎  Toggle	menu:toggle
+  Style	menu:style
+  Setup	menu:setup
+  About	alacritty --class TUI.float -e sh -c 'fastfetch; read -n1'
+  System	menu:system
+ITEMS
+}
+learn_items() { cat <<ITEMS
+  Keybindings	$KEYBINDINGS --toggle
+  Tmux keybindings	alacritty --class TUI.float -e sh -c 'tmux list-keys -N | less -R'
+󰊤  Hyprland wiki	brave https://wiki.hypr.land/
+󰈙  Noctalia docs	brave https://docs.noctalia.dev/
+ITEMS
+}
+trigger_items() { cat <<'ITEMS'
+󰹑  Screenshot area	hyprshot -m region -o ~/Pictures/Screenshots
+󰖯  Screenshot window	hyprshot -m window -o ~/Pictures/Screenshots
+󰍹  Screenshot screen	hyprshot -m output -o ~/Pictures/Screenshots
+󰏘  Color picker	hyprpicker -a
+󰅍  Clipboard history	noctalia msg panel-toggle clipboard
+󰃭  Calendar	noctalia msg panel-toggle control-center calendar
+ITEMS
+}
+toggle_items() { cat <<'ITEMS'
+󱩌  Nightlight	noctalia msg nightlight-toggle
+󰅶  Caffeine (no idle lock)	noctalia msg caffeine-toggle
+󰂛  Do Not Disturb	noctalia msg notification-dnd-toggle
+󰍜  Bar	noctalia msg bar-toggle
+󰖩  Wi-Fi	noctalia msg wifi-toggle
+󰂯  Bluetooth	noctalia msg bluetooth-toggle
+ITEMS
+}
+style_items() { cat <<'ITEMS'
+󰸉  Wallpaper	noctalia msg panel-toggle wallpaper
+󰑓  Random wallpaper	noctalia msg wallpaper-random
+󰔎  Dark mode	noctalia msg theme-mode-set dark
+󰖨  Light mode	noctalia msg theme-mode-set light
+  Noctalia settings	noctalia msg settings-toggle
+ITEMS
+}
+setup_items() { cat <<'ITEMS'
+󰕾  Audio	noctalia msg panel-toggle control-center audio
+󰖩  Network	noctalia msg panel-toggle control-center network
+󰂯  Bluetooth	noctalia msg panel-toggle control-center bluetooth
+󰍹  Display	noctalia msg settings-open display
+󰌌  Hyprland config	alacritty -e nvim ~/.config/hypr/hyprland.lua
+  Noctalia config	alacritty -e nvim ~/.config/noctalia/
+  Dotfiles	alacritty -e sh -c 'cd ~/dotconfigfiles && exec lazygit'
+ITEMS
+}
+system_items() { cat <<'ITEMS'
+  Lock	noctalia msg session lock
+󰒲  Suspend	noctalia msg session suspend
+󰍃  Logout	noctalia msg session logout
+󰜉  Reboot	noctalia msg session reboot
+󰐥  Shutdown	noctalia msg session shutdown
+ITEMS
+}
+
+apps()    { [[ ${HYPR_MENU_TEST:-} == 1 ]] && { echo "[test] exec: rofi -show drun" >&2; return; }; setsid -f rofi -show drun >/dev/null 2>&1; }
+learn()   { run_menu "Learn"   learn_items   root; }
+trigger() { run_menu "Trigger" trigger_items root; }
+toggle()  { run_menu "Toggle"  toggle_items  root; }
+style()   { run_menu "Style"   style_items   root; }
+setup()   { run_menu "Setup"   setup_items   root; }
+system()  { run_menu "System"  system_items  root; }
+root()    { run_menu "Menu"    root_items; }
+
+root

@@ -1,0 +1,64 @@
+/* Tata letak minimalis ala menu Omarchy: satu kolom, glyph di depan label, highlight satu baris, tanpa sudut bulat. */
+* {
+  background-color: transparent;
+  text-color:       @fg;
+  spacing:          0;
+}
+window {
+  location:         center;
+  anchor:           center;
+  width:            560px;
+  background-color: @bg;
+  border:           1px;
+  border-color:     @border;
+  border-radius:    0px;
+  padding:          14px;
+}
+mainbox {
+  background-color: transparent;
+  spacing:  10px;
+  children: [ inputbar, listview ];
+}
+inputbar {
+  children:         [ prompt, entry ];
+  background-color: @bg-alt;
+  padding:          9px 12px;
+  spacing:          10px;
+}
+prompt {
+  text-color:  @accent;
+  font:        "MesloLGS Nerd Font Bold 11";
+}
+entry {
+  text-color:        @fg;
+  placeholder:       "Search";
+  placeholder-color: @fg-dim;
+  cursor:            text;
+}
+listview {
+  border:       0;              /* hilangkan garis putus-putus bawaan di bawah kotak pencarian */
+  background-color: transparent;
+  columns:      1;
+  lines:        10;
+  fixed-height: false;
+  scrollbar:    false;
+  dynamic:      true;
+  spacing:      2px;
+}
+element {
+  padding: 9px 12px;
+  spacing: 12px;
+  cursor:  pointer;
+}
+/* Latar baris biasa HARUS eksplisit transparan: tema bawaan rofi memberi latar krem (lightbg) pada baris selang-seling. */
+element normal.normal, element alternate.normal { background-color: transparent; text-color: @fg; }
+element normal.urgent, element alternate.urgent { background-color: transparent; text-color: @urgent; }
+element normal.active, element alternate.active { background-color: transparent; text-color: @accent; }
+element selected.normal, element selected.active, element selected.urgent {
+  background-color: @selected-bg;
+  text-color:       @selected-fg;
+}
+element-icon { size: 20px; cursor: inherit; }
+element-text { vertical-align: 0.5; cursor: inherit; text-color: inherit; }
+message { padding: 8px 12px; background-color: @bg-alt; }
+textbox { text-color: @fg-dim; }

@@ -13,3 +13,6 @@ o.bind("SUPER + SHIFT + M", "Music (Spotify)", "spotify")
 o.bind("SUPER + SHIFT + A", "ChatGPT", "brave --app=https://chatgpt.com")
 o.bind("SUPER + SHIFT + Y", "YouTube", "brave --app=https://youtube.com/")
 o.bind("SUPER + SHIFT + ALT + G", "WhatsApp", "brave --app=https://web.whatsapp.com/")
+
+-- Launcher & menu lewat rofi (gaya Omarchy). Launcher Noctalia tetap bisa dibuka dari ikon di bar.
+o.bind("SUPER + ALT + SPACE", "Apps", os.getenv("HOME") .. "/.local/bin/rofi-toggle apps")

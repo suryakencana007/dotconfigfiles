@@ -9,3 +9,6 @@ tmux/.config/tmux/plugins/
 
 # file render template Hyprland milik Noctalia (warna border dari tema)
 hypr/.config/hypr/noctalia.lua
+
+# file render template rofi milik Noctalia
+rofi/.config/rofi/noctalia.rasi

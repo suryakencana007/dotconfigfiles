@@ -1,7 +1,7 @@
 -- Noctalia: pengganti omarchy-menu / omarchy-shell. Referensi: docs.noctalia.dev/noctalia/ipc/
 local ipc = "noctalia msg "
 
-o.bind("SUPER + SPACE", "Launcher", ipc .. "panel-toggle launcher")
+o.bind("SUPER + SPACE", "Menu", os.getenv("HOME") .. "/.local/bin/rofi-toggle menu")   -- menu ala Omarchy (rofi); launcher Noctalia: ikon di bar
 o.bind("SUPER + S", "Control center", ipc .. "panel-toggle control-center")
 o.bind("SUPER + ESCAPE", "Session menu (logout/reboot/shutdown)", ipc .. "panel-toggle session")
 o.bind("XF86PowerOff", "Session menu", ipc .. "panel-toggle session", { locked = true })

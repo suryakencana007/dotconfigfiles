@@ -1,0 +1,18 @@
+# Launcher (Super+Space, `noctalia msg panel-toggle launcher`) bergaya menu Omarchy:
+# satu kolom, kompak tanpa deskripsi, ikon di depan label, baris terpilih ditandai jelas.
+# Di GUI: Settings > Launcher (kunci [shell.launcher]) dan Settings > Panels (kunci [shell.panel]).
+# Catatan: kunci di ~/.local/state/noctalia/settings.toml (ditulis GUI) menang atas file ini.
+[shell.launcher]
+fetch_exchange_rates = false   # matikan kurs mata uang (/calc) supaya tidak ada request ke Coinbase
+categories = true                 # tombol filter kategori (Internet, Development, ...); Tab untuk toggle saat launcher terbuka
+compact = true                    # ikon lebih kecil, baris lebih rapat, subtitle/deskripsi app disembunyikan
+app_grid = false                  # tetap daftar satu kolom, bukan grid ikon
+show_icons = true                 # ikon di depan label
+show_app_origin_indicator = false # tanpa badge Flatpak/Snap/AppImage agar baris bersih
+show_app_actions = false          # aksi .desktop tidak ikut dicari (tetap ada via klik kanan)
+sort_by_usage = true              # app sering dipakai naik ke atas + filter "Recently Used"
+
+[shell.panel]
+launcher_placement = "floating"   # kartu melayang di tengah layar (default, ditulis eksplisit)
+launcher_position = "center"
+list_item_background = true       # latar isi di baris launcher/clipboard: baris terpilih terlihat jelas

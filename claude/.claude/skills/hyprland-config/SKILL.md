@@ -19,8 +19,8 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
 | `qconsole.lua` | scratchpad ala Quake console (disalin dari Omarchy), Super+` |
 | `autostart.lua` | import env ke systemd/dbus, `noctalia`, `udiskie` |
 | `bindings/tiling.lua` | fokus/swap/workspace/resize/group, semua `hl.dsp.*` |
-| `bindings/apps.lua` | alacritty, brave, thunar, nvim, btop, web app brave `--app=` |
-| `bindings/noctalia.lua` | semua yang lewat `noctalia msg ...` (launcher, control center, session, clipboard, lock, notifikasi, toggle) |
+| `bindings/apps.lua` | alacritty, brave, thunar, nvim, btop, web app brave `--app=`, Super+Alt+Space = `rofi -show drun` (Apps) |
+| `bindings/noctalia.lua` | semua yang lewat `noctalia msg ...` (control center, session, clipboard, lock, notifikasi, toggle). Super+Space = `hypr-menu` (menu ala Omarchy via rofi; launcher Noctalia tidak diikat tombol, ada di ikon bar) |
 | `bindings/media.lua` | tombol XF86 volume/brightness/media lewat `noctalia msg` |
 | `bindings/clipboard.lua` | Super+C/V/X/A universal (disalin dari Omarchy, butuh tag `terminal`) |
 | `bindings/utilities.lua` | screenshot hyprshot/satty, hyprpicker, zoom, Super+K = `hypr-keybindings` (skrip di paket bin, format ala Omarchy; `--print` untuk cek di terminal) |
@@ -41,7 +41,7 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
    hyprctl reload && hyprctl configerrors   # harus kosong
    ```
    Kalau configerrors berisi error, perbaiki sampai bersih. Hyprland juga auto-reload saat file disimpan.
-6. Tombol yang sudah dipakai Noctalia dan tmux: Super+Space, Super+S, Super+Esc, Alt+Tab (Noctalia); Alt+Enter,
+6. Tombol yang sudah dipakai rofi, Noctalia dan tmux: Super+Space, Super+Alt+Space (rofi), Super+S, Super+Esc, Alt+Tab (Noctalia); Alt+Enter,
    Alt+panah, Alt+angka, Ctrl+Alt+panah (tmux, tanpa prefix). Jangan bentrok.
 7. Baris `pcall(function() require("noctalia").apply_theme() end)` di akhir `hyprland.lua` harus tetap mengandung
    teks `require("noctalia")`, karena hook template Noctalia mencarinya.

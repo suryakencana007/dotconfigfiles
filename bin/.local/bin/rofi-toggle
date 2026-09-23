@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Buka/tutup rofi dengan satu tombol. Pakai:  rofi-toggle apps   (rofi -show drun)
+#                                            rofi-toggle menu   (hypr-menu)
+# Kalau rofi sedang tampil (dari mode apa pun), tombol yang sama menutupnya.
+set -uo pipefail
+if pgrep -x rofi >/dev/null; then
+  pkill -x rofi
+  exit 0
+fi
+case "${1:-apps}" in
+  apps) exec rofi -show drun ;;
+  menu) exec "$HOME/.local/bin/hypr-menu" ;;
+  *)    echo "pakai: rofi-toggle apps|menu" >&2; exit 2 ;;
+esac

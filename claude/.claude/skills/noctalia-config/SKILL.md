@@ -45,12 +45,19 @@ Noctalia merender template lalu menjalankan hook:
 | builtin hyprland | `~/.config/hypr/noctalia.lua` | warna border; `hyprland.lua` memanggil `require("noctalia").apply_theme()` |
 | builtin btop/starship/... | aktif via `[theme.templates] builtin_ids` di state | hook gagal kalau app tidak ada (peringatan saja) |
 | user `nvim_base16` | `~/.config/nvim/lua/noctalia.lua` dari `lua/noctalia-template.lua` | hook `pkill -SIGUSR1 nvim` |
+| user `rofi` | `~/.config/rofi/noctalia.rasi` dari `~/.config/noctalia/templates/rofi.rasi` | rofi membaca saat start, tanpa hook |
+
+Template hanya dirender ulang saat tema berubah, BUKAN saat config-reload atau wallpaper-set dengan gambar yang sama.
+Memaksa render setelah mengedit template: `noctalia msg theme-mode-set light` lalu `theme-mode-set dark` (semua
+template + greeter sync ikut jalan dua kali; tema berkedip sebentar).
 
 Template user baru: tambah `[theme.templates.user.<nama>]` dengan `input_path`, `output_path`, `post_hook`
 di file .toml mana pun di `~/.config/noctalia/`. Sintaks `{{colors.<token>.default.hex}}`; token Material 3
 (primary, secondary, tertiary, error, surface*, on_*, outline) plus `terminal_*`. Referensi:
 https://docs.noctalia.dev/noctalia/theming/templates/
 
+Launcher: Super+Space = `hypr-menu` (menu ala Omarchy via rofi), Super+Alt+Space = `rofi -show drun`; tema rofi di
+`~/.config/rofi/`. Launcher Noctalia tetap ada di ikon bar. Blur rofi lewat layer rule namespace `^rofi$` di looknfeel.lua.
 Supaya program CLI ikut tema: pakai warna ANSI 0-15, bukan indeks 256 (sudah diterapkan di p10k, bat `ansi`, fzf `--color=16`, tmux).
 
 ## Lock screen (Super+Ctrl+L)

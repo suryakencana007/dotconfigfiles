@@ -1,0 +1,23 @@
+/* ~/.config/rofi/config.rasi — rofi 2.0 (Wayland). Warna dari noctalia.rasi (dirender Noctalia, jangan edit).
+   Super+Space: rofi -show drun   |   Super+Alt+Space: hypr-menu (mode dmenu) */
+configuration {
+  modi: "drun,run";
+  show-icons: true;
+  icon-theme: "Adwaita";
+  display-drun: "";
+  display-run: "";
+  drun-display-format: "{name}";
+  drun-match-fields: "name,generic,exec,keywords";
+  font: "MesloLGS Nerd Font 11";
+  terminal: "alacritty";
+  matching: "fuzzy";
+  sort: true;
+  sorting-method: "fzf";
+  case-sensitive: false;
+  cycle: true;
+  hover-select: true;
+  me-select-entry: "";
+  me-accept-entry: "MousePrimary";
+}
+@import "noctalia.rasi"
+@import "layout.rasi"
