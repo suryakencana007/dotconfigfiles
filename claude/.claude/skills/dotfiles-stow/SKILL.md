@@ -20,7 +20,7 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 | claude | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` (per file, karena `~/.claude` punya isi lain) |
 | rofi | `.config/rofi/config.rasi`, `layout.rasi` (noctalia.rasi = render, ignored) | folder |
 | gtk | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (render noctalia.css/gtk.css tinggal di ~/.config, di luar repo) | `--no-folding` |
-| bin | `.local/bin/*` skrip (hypr-keybindings, hypr-menu, rofi-toggle, resi-shell) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
+| bin | `.local/bin/*` skrip (hypr-keybindings, hypr-menu, hypr-theme, rofi-toggle, resi-shell) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
 
 ## Installer: resi-shell
 
@@ -29,6 +29,12 @@ Daftar paket di `resi/packages.pacman` dan `resi/packages.aur`; greeter di `resi
 sistem baru = tambah barisnya di daftar itu. `resi-shell doctor` = audit cepat (stow, symlink, config, program).
 
 ## Aturan
+
+0. JANGAN `sed -i` langsung pada path di home yang berupa symlink per file (paket `--no-folding`: hypr, noctalia,
+   gtk, claude, bin): sed -i menulis file baru dan MENGGANTI symlink dengan file biasa, sehingga perubahan tidak
+   sampai ke repo (terjadi 2026-09-23 pada bindings/noctalia.lua). Pakai `sed -i --follow-symlinks`, edit path di
+   repo (`~/dotconfigfiles/...`), atau Python open/write (mengikuti symlink). Setelah mengedit, `resi-shell doctor`
+   mendeteksi ini sebagai konflik stow ("cannot stow ... over existing target").
 
 1. Edit config lewat path di home (symlink) atau langsung di repo; sama saja.
 2. File HASIL RENDER Noctalia: `nvim/.config/nvim/lua/noctalia.lua` dan `rofi/.config/rofi/noctalia.rasi` ada di dalam

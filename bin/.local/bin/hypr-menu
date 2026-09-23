@@ -73,7 +73,8 @@ toggle_items() { cat <<'ITEMS'
 ITEMS
 }
 style_items() { cat <<'ITEMS'
-󰸉  Wallpaper	noctalia msg panel-toggle wallpaper
+󰏘  Theme switcher	~/.local/bin/hypr-theme
+󰸉  Wallpaper (Noctalia)	noctalia msg panel-toggle wallpaper
 󰑓  Random wallpaper	noctalia msg wallpaper-random
 󰔎  Dark mode	noctalia msg theme-mode-set dark
 󰖨  Light mode	noctalia msg theme-mode-set light

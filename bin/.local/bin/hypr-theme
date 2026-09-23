@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Theme switcher ala Omarchy (Super+Shift+Ctrl+Space) lewat rofi:
+#   galeri wallpaper (grid thumbnail) -> noctalia msg wallpaper-set
+#   palet Noctalia (generator m3-*, komunitas, builtin) -> noctalia msg color-scheme-set
+#   mode gelap/terang -> noctalia msg theme-mode-toggle
+# Uji tanpa GUI: HYPR_THEME_TEST=1 hypr-theme [gallery|palette]
+set -uo pipefail
+WALL_DIR="${HYPR_THEME_WALL_DIR:-$HOME/Pictures/Wallpapers}"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/hypr-theme/thumbs"
+BACK="󰁍  Back"
+
+pick() { # $1 prompt, $2 theme-str tambahan; stdin: baris rofi (label[\0icon\x1fpath]); cetak label terpilih
+  if [[ ${HYPR_THEME_TEST:-} == 1 ]]; then sed -n '1{s/\x0.*//;p}'; return; fi   # baca semua input (tanpa head) agar tidak SIGPIPE di pipefail
+  rofi -dmenu -i -p "$1" -no-custom -theme-str "$2"
+}
+
+thumb() { # $1 gambar -> path thumbnail (dibuat kalau belum ada / gambar lebih baru)
+  local src="$1" name; name="$(basename "${src%.*}")"; local out="$CACHE/$name.jpg"
+  mkdir -p "$CACHE"
+  if [[ ! -f $out || $src -nt $out ]]; then
+    vipsthumbnail "$src" --size 400x250 --smartcrop attention -o "$out[Q=85]" 2>/dev/null || cp "$src" "$out"
+  fi
+  printf '%s' "$out"
+}
+
+gallery_rows() { # cetak baris rofi: label\0icon\x1fthumb (NUL tidak bisa disimpan di variabel bash, jadi dialirkan langsung)
+  local current f label; current="$(noctalia msg wallpaper-get 2>/dev/null || true)"
+  for f in "${FILES[@]}"; do
+    label="$(basename "${f%.*}")"; [[ $f == "$current" ]] && label="✓ $label"
+    printf '%s\0icon\x1f%s\n' "$label" "$(thumb "$f")"
+  done
+  printf '%s\n' "$BACK"
+}
+
+gallery() {
+  mapfile -t FILES < <(find "$WALL_DIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) | sort)
+  (( ${#FILES[@]} )) || { noctalia msg notification-show "Wallpaper" "Folder $WALL_DIR kosong" >/dev/null 2>&1; return; }
+  local choice f; choice="$(gallery_rows | pick "Wallpaper" \
+    'configuration { show-icons: true; } window { width: 1000px; } listview { columns: 3; lines: 2; spacing: 10px; } element { orientation: vertical; padding: 8px; spacing: 6px; } element-icon { size: 18em; } element-text { horizontal-align: 0.5; }')" || return
+  [[ -z $choice ]] && return
+  [[ $choice == "$BACK" ]] && { root; return; }
+  choice="${choice#✓ }"
+  for f in "${FILES[@]}"; do
+    if [[ "$(basename "${f%.*}")" == "$choice" ]]; then
+      [[ ${HYPR_THEME_TEST:-} == 1 ]] && { echo "[test] wallpaper-set $f" >&2; return; }
+      noctalia msg wallpaper-set "$f" >/dev/null; return
+    fi
+  done
+}
+
+palette() {
+  local cur; cur="$(noctalia msg color-scheme-get 2>/dev/null || true)"   # mis. "wallpaper m3-tonal-spot"
+  local rows="" kind name label
+  while read -r kind name; do
+    label="  $name  ($kind)"; [[ "$kind $name" == "$cur" ]] && label="✓ $name  ($kind)"
+    rows+="$label"$'\n'
+  done <<'LIST'
+wallpaper m3-tonal-spot
+wallpaper m3-content
+wallpaper m3-fruit-salad
+wallpaper m3-rainbow
+wallpaper m3-monochrome
+wallpaper vibrant
+wallpaper faithful
+wallpaper soft
+wallpaper muted
+community Catppuccin
+community Dracula
+community Gruvbox
+community Kanagawa
+community Nord
+community Oxocarbon
+community Tokyo-Night
+builtin Noctalia
+LIST
+  rows+="$BACK"$'\n'
+  local choice; choice="$(printf '%s' "$rows" | pick "Palette" 'configuration { show-icons: false; }')" || return
+  [[ -z $choice || $choice == "$BACK" ]] && { [[ $choice == "$BACK" ]] && root; return; }
+  choice="${choice#✓ }"; choice="${choice#  }"
+  name="${choice%%  (*}"; kind="${choice##*(}"; kind="${kind%)}"
+  [[ ${HYPR_THEME_TEST:-} == 1 ]] && { echo "[test] color-scheme-set $kind $name" >&2; return; }
+  noctalia msg color-scheme-set "$kind" "$name" >/dev/null
+}
+
+root() {
+  local mode; mode="$(noctalia msg theme-mode-get 2>/dev/null || echo '?')"
+  local cur; cur="$(noctalia msg color-scheme-get 2>/dev/null | awk '{print $2}')"
+  local choice; choice="$(printf '%s\n' "󰸉  Wallpaper gallery" "󰏘  Palette: $cur" "󰔎  Mode: $mode (toggle)" "󰑓  Random wallpaper" | pick "Theme" 'configuration { show-icons: false; }')" || return
+  case "$choice" in
+    *"Wallpaper gallery") gallery ;;
+    *"Palette:"*)         palette ;;
+    *"Mode:"*)            [[ ${HYPR_THEME_TEST:-} == 1 ]] && { echo "[test] theme-mode-toggle" >&2; return; }; noctalia msg theme-mode-toggle >/dev/null ;;
+    *"Random wallpaper")  [[ ${HYPR_THEME_TEST:-} == 1 ]] && { echo "[test] wallpaper-random" >&2; return; }; noctalia msg wallpaper-random >/dev/null ;;
+  esac
+}
+
+case "${1:-}" in
+  gallery) gallery ;;
+  palette) palette ;;
+  *)       root ;;
+esac

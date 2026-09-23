@@ -20,13 +20,16 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
 | `autostart.lua` | import env ke systemd/dbus, `noctalia`, `udiskie` |
 | `bindings/tiling.lua` | fokus/swap/workspace/resize/group, semua `hl.dsp.*` |
 | `bindings/apps.lua` | alacritty, brave, thunar, nvim, btop, web app brave `--app=`, Super+Alt+Space = `rofi -show drun` (Apps) |
-| `bindings/noctalia.lua` | semua yang lewat `noctalia msg ...` (control center, session, clipboard, lock, notifikasi, toggle). Super+Space = `hypr-menu` (menu ala Omarchy via rofi; launcher Noctalia tidak diikat tombol, ada di ikon bar) |
+| `bindings/noctalia.lua` | semua yang lewat `noctalia msg ...` (control center, session, clipboard, lock, notifikasi, toggle), Super+Shift+Ctrl+Space = `rofi-toggle theme` (hypr-theme: galeri wallpaper/palet/mode), Super+Ctrl+Alt+Space = panel Wallhaven. Super+Space = `hypr-menu` (menu ala Omarchy via rofi; launcher Noctalia tidak diikat tombol, ada di ikon bar) |
 | `bindings/media.lua` | tombol XF86 volume/brightness/media lewat `noctalia msg` |
 | `bindings/clipboard.lua` | Super+C/V/X/A universal (disalin dari Omarchy, butuh tag `terminal`) |
 | `bindings/utilities.lua` | screenshot hyprshot/satty, hyprpicker, zoom, Super+K = `hypr-keybindings` (skrip di paket bin, format ala Omarchy; `--print` untuk cek di terminal) |
 | `noctalia.lua` | **HASIL RENDER Noctalia** (warna border dari tema). Jangan diedit, jangan dipindah, sudah di-gitignore |
 
 ## Aturan kerja
+
+0. File di `~/.config/hypr/` adalah symlink per file ke `~/dotconfigfiles/hypr/...`: edit dengan
+   `sed -i --follow-symlinks`, Python, atau langsung path repo. `sed -i` biasa mengganti symlink dengan file biasa.
 
 1. Edit modul yang relevan, bukan `hyprland.lua`, kecuali menambah modul baru.
 2. Binding baru: `o.bind("SUPER + SHIFT + X", "Deskripsi", "perintah")`. Ganti binding yang ada: `o.rebind(...)`

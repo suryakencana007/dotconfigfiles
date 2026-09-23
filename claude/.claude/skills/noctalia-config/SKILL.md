@@ -9,6 +9,9 @@ Paket `noctalia` (repo extra), dijalankan dari `autostart.lua` Hyprland. Bukan Q
 
 ## Dua lapis config, yang GUI menang
 
+File di `~/.config/noctalia/*.toml` adalah symlink per file ke repo dotfiles: edit dengan `sed -i --follow-symlinks`,
+Python, atau path repo; `sed -i` biasa mengganti symlink dengan file biasa (perubahan tidak sampai ke repo).
+
 - Tulisan tangan: `~/.config/noctalia/*.toml` (semua file .toml di folder itu digabung; symlink ke repo dotfiles).
   Yang ada: `bar.toml` (bar transparan), `shell.toml` (`corner_radius_scale = 0`, `polkit_agent = true`),
   `nvim.toml` (template user untuk Neovim).
@@ -49,8 +52,9 @@ Noctalia merender template lalu menjalankan hook:
 | user `rofi` | `~/.config/rofi/noctalia.rasi` dari `~/.config/noctalia/templates/rofi.rasi` | rofi membaca saat start, tanpa hook |
 
 Template hanya dirender ulang saat tema berubah, BUKAN saat config-reload atau wallpaper-set dengan gambar yang sama.
-Memaksa render setelah mengedit template: `noctalia msg theme-mode-set light` lalu `theme-mode-set dark` (semua
-template + greeter sync ikut jalan dua kali; tema berkedip sebentar).
+Memaksa render setelah mengedit template: `noctalia msg templates-apply` (render ulang semua template aktif tanpa
+ganti mode dan tanpa hook shell). Palet: `color-scheme-get`, `color-scheme-set wallpaper m3-tonal-spot|m3-content|...`,
+`color-scheme-set community <Nama>`, `color-scheme-set builtin Noctalia`; mode: `theme-mode-set dark|light|auto`.
 
 Template user baru: tambah `[theme.templates.user.<nama>]` dengan `input_path`, `output_path`, `post_hook`
 di file .toml mana pun di `~/.config/noctalia/`. Sintaks `{{colors.<token>.default.hex}}`; token Material 3
@@ -69,6 +73,12 @@ Login box: `cx/cy` (pusat), `box_width`, `settings.layout = "regular" | "compact
 validator menolak), `background_opacity`, `show_unlock_hint`, `show_*`. Nilai enum yang tidak yakin:
 uji dengan `noctalia config validate`, yang menyebut "not one of the allowed values" tanpa mendaftar pilihannya.
 Editor visual `noctalia msg lockscreen-widgets-edit` menulis ke state (menang atas file).
+
+## Theme switcher
+
+`hypr-theme` (paket bin, Super+Shift+Ctrl+Space via `rofi-toggle theme`): galeri wallpaper (thumbnail vipsthumbnail di
+`~/.cache/hypr-theme/thumbs`, `wallpaper-set`), daftar palet (`color-scheme-set`), toggle mode. Plugin Wallhaven: widget
+`wallhaven` di bar + `panel-toggle noctalia/wallhaven:browser` (Super+Ctrl+Alt+Space); API key hanya via GUI (state).
 
 ## Greeter
 

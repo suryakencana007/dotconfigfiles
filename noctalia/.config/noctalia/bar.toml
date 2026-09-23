@@ -13,10 +13,10 @@ start  = [ "group:island_left" ]
 center = [ "clock" ]
 end    = [ "group:island_info", "group:island_system", "group:island_power" ]
 
-# Pulau kiri: launcher, wallpaper, workspaces dalam satu kapsul.
+# Pulau kiri: launcher, wallpaper, wallhaven, workspaces dalam satu kapsul.
 [[bar.default.capsule_group]]
 id      = "island_left"
-members = [ "launcher", "wallpaper", "workspaces" ]
+members = [ "launcher", "wallpaper", "wallhaven", "workspaces" ]
 
 # Pulau info: media, tray, notifikasi, clipboard.
 [[bar.default.capsule_group]]
@@ -32,3 +32,10 @@ members = [ "network", "bluetooth", "volume", "brightness", "battery" ]
 [[bar.default.capsule_group]]
 id      = "island_power"
 members = [ "control-center", "session" ]
+
+# Widget plugin Wallhaven (plugin "noctalia/wallhaven" diaktifkan lewat Settings > Plugins, state).
+# Klik = buka panel browser wallpaper (= `noctalia msg panel-toggle noctalia/wallhaven:browser`).
+# API key (opsional, untuk NSFW/rate limit) diisi di Settings > Plugins > Wallhaven, tersimpan di state, bukan di sini.
+[widget.wallhaven]
+type  = "noctalia/wallhaven:wallhaven"
+glyph = "photo"

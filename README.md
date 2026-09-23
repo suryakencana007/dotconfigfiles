@@ -31,7 +31,7 @@ its Lua config) and built on [Noctalia](https://noctalia.dev).
 | **Terminal** | alacritty (MesloLGS Nerd Font, opacity, Noctalia colors), zsh + oh-my-zsh + Powerlevel10k (lean, one line, ANSI colors so it follows the theme), fzf/fzf-tab, zoxide, eza, bat, fd, ripgrep, delta, dust, duf, btop, tldr, lazygit. |
 | **tmux** | Omarchy's config: `Ctrl+Space` prefix, `Alt+Enter` split, `Alt+1..9` windows, status bar on top, TPM with resurrect + continuum (sessions survive reboots). |
 | **Neovim** | LazyVim with a base16 colorscheme rendered by Noctalia (live reload on theme change), transparent background. |
-| **Helpers** | `hypr-keybindings` (`Super+K`, searchable list formatted like Omarchy's), `hypr-menu`, `rofi-toggle`, `resi-shell`. |
+| **Helpers** | `hypr-keybindings` (`Super+K`, searchable list formatted like Omarchy's), `hypr-menu`, `hypr-theme` (`Super+Shift+Ctrl+Space`: wallpaper gallery with thumbnails, Noctalia palettes, dark/light toggle), `rofi-toggle`, `resi-shell`. |
 | **Claude Code** | Skills and agents that know this setup (`hyprland-config`, `noctalia-config`, `terminal-stack`, `dotfiles-stow`; agents `hyprland-tweaker`, `noctalia-tweaker`, `dotfiles-keeper`). |
 
 ### Key bindings (the ones you will use every day)
@@ -45,6 +45,7 @@ its Lua config) and built on [Noctalia](https://noctalia.dev).
 | Focus / Swap / Workspace | `Super+arrows` / `Super+Shift+arrows` / `Super+1..0` |
 | Control center / Session menu / Lock | `Super+S` / `Super+Esc` / `Super+Ctrl+L` |
 | Clipboard history / Wallpaper | `Super+Ctrl+V` / `Super+Ctrl+Space` |
+| Theme switcher / Wallhaven browser | `Super+Shift+Ctrl+Space` / `Super+Ctrl+Alt+Space` |
 | Screenshot area / window / screen | `Print` / `Shift+Print` / `Ctrl+Print` |
 | All key bindings | `Super+K` |
 
@@ -119,7 +120,7 @@ Each top-level folder is a Stow package mirroring `$HOME`:
 | `hypr` | `.config/hypr/*.lua`, `bindings/*.lua` | `--no-folding` (real dir) |
 | `noctalia` | `.config/noctalia/*.toml`, `templates/` | `--no-folding` (real dir) |
 | `gtk` | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (dark mode; colors are rendered by Noctalia) | `--no-folding` |
-| `bin` | `.local/bin/{hypr-keybindings,hypr-menu,rofi-toggle,resi-shell}` | `--no-folding` |
+| `bin` | `.local/bin/{hypr-keybindings,hypr-menu,hypr-theme,rofi-toggle,resi-shell}` | `--no-folding` |
 | `claude` | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` |
 | `hosts/<hostname>` | machine-specific overlay, see below | `--no-folding`, from `hosts/` |
 | `resi/` | installer data: package lists, greeter and greetd templates | not stowed |
