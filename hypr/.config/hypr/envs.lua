@@ -41,5 +41,11 @@ do
     hl.env("NVD_BACKEND", "direct")
     hl.env("LIBVA_DRIVER_NAME", "nvidia")
     hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+  elseif exists("/sys/module/amdgpu/initstate") then
+    -- Mode hybrid: paksa Mesa/VA-API AMD. Ditulis eksplisit (bukan hanya dilewati) karena hl.env tidak pernah
+    -- menghapus variabel yang pernah diset sampai Hyprland restart; tanpa ini libva mencoba driver nvidia.
+    hl.env("LIBVA_DRIVER_NAME", "radeonsi")
+    hl.env("__GLX_VENDOR_LIBRARY_NAME", "mesa")
+    hl.env("NVD_BACKEND", "")
   end
 end

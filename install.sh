@@ -12,7 +12,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CMD="install"; DRY=0
 for a in "$@"; do case "$a" in install|update|doctor|packages) CMD="$a" ;; --dry-run|-n) DRY=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "argumen tidak dikenal: $a" >&2; exit 2 ;; esac; done
 
-PKGS_FOLD=(zsh git alacritty tmux nvim rofi)            # stow biasa (folder boleh dilipat)
+PKGS_FOLD=(zsh git alacritty tmux nvim rofi mpv)            # stow biasa (folder boleh dilipat)
 PKGS_NOFOLD=(hypr noctalia claude bin gtk)                 # --no-folding: folder tetap nyata (overlay host & file render bisa masuk)
 HOST="$(cat /etc/hostname 2>/dev/null || hostname)"
 
@@ -161,6 +161,10 @@ gtk_theme() {
   [ -d /usr/share/themes/adw-gtk3-dark ] && run gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
   [ -d /usr/share/icons/Papirus-Dark ] && run gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark'
   ok "GTK gelap + Papirus"
+  if have mpv; then
+    for m in video/mp4 video/x-matroska video/webm video/quicktime video/x-msvideo audio/mpeg audio/flac audio/ogg audio/x-wav audio/mp4; do run xdg-mime default mpv.desktop "$m"; done
+    ok "mpv jadi pemutar default video/audio"
+  fi
 }
 
 greeter() {

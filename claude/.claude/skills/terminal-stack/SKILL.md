@@ -35,6 +35,11 @@ Semua tema lain ada di `lua/plugins/all-themes.lua` (lazy). Uji headless:
 `nvim --headless "+lua vim.schedule(function() print(vim.g.colors_name); vim.cmd('messages'); vim.cmd('qa!') end)"`.
 Plugin hilang: `nvim --headless "+Lazy! install" +qa` dengan `GIT_TERMINAL_PROMPT=0`.
 
+## mpv
+`~/.config/mpv/mpv.conf`: vo=gpu-next, `gpu-api=opengl` (EGL = GPU compositor/AMD; Vulkan hanya melihat NVIDIA tanpa
+vulkan-radeon), `hwdec=vaapi` (auto-safe memilih vulkan-copy di NVIDIA). Default player via `xdg-mime default mpv.desktop`
+untuk video/* dan audio/*. Uji decode: `mpv --length=2 --really-quiet --msg-level=vd=v <file> 2>&1 | grep "hardware decoding"`.
+
 ## Sistem
 - sudo butuh password dan Claude Code tidak punya TTY: berikan perintah `sudo pacman -S ...` untuk dijalankan
   user di alacritty, lalu verifikasi dengan `pacman -Q`. AUR lewat `yay`/`paru`.

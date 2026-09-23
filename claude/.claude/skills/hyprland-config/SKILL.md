@@ -23,7 +23,7 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
 | `bindings/noctalia.lua` | semua yang lewat `noctalia msg ...` (control center, session, clipboard, lock, notifikasi, toggle), Super+Shift+Ctrl+Space = `hypr-theme-carousel --toggle` (carousel GTK4, class `hypr-theme-carousel` dengan rule float/center/pin/dim_around di windows.lua; palet/mode lewat `hypr-theme` di menu Style), Super+Ctrl+Alt+Space = panel Wallhaven. Super+Space = `hypr-menu` (menu ala Omarchy via rofi; launcher Noctalia tidak diikat tombol, ada di ikon bar) |
 | `bindings/media.lua` | tombol XF86 volume/brightness/media lewat `noctalia msg` |
 | `bindings/clipboard.lua` | Super+C/V/X/A universal (disalin dari Omarchy, butuh tag `terminal`) |
-| `bindings/utilities.lua` | screenshot hyprshot/satty, hyprpicker, zoom, Super+K = `hypr-keybindings` (skrip di paket bin, format ala Omarchy; `--print` untuk cek di terminal) |
+| `bindings/utilities.lua` | screenshot Noctalia (`noctalia msg screenshot-region|screenshot-fullscreen`; window via hyprshot), rekam `hypr-record` (Alt+Print toggle, Ctrl+Alt+Print layar), hyprpicker, zoom, Super+K = `hypr-keybindings` (skrip di paket bin, format ala Omarchy; `--print` untuk cek di terminal) |
 | `noctalia.lua` | **HASIL RENDER Noctalia** (warna border dari tema). Jangan diedit, jangan dipindah, sudah di-gitignore |
 
 ## Aturan kerja

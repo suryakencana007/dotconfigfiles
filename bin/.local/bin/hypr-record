@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Rekam layar, toggle: tekan sekali mulai, tekan lagi berhenti. Backend (urutan prioritas):
+#   gpu-screen-recorder (AUR; seperti Omarchy: -k auto -f 60 -fm cfr -fallback-cpu-encoding yes, audio desktop aac)
+#   wl-screenrec (AUR) atau wf-recorder (repo extra, VA-API) sebagai cadangan.
+#   hypr-record            area (pilih dengan slurp)      Alt+Print
+#   hypr-record screen     layar penuh (monitor aktif)    Ctrl+Alt+Print
+#   hypr-record status     cetak "recording" / "idle" (untuk widget/menu)
+set -uo pipefail
+OUT_DIR="${HYPR_RECORD_DIR:-$HOME/Videos}"
+PIDFILE="${XDG_RUNTIME_DIR:-/tmp}/hypr-record.pid"
+notify() { noctalia msg notification-show "$1" "${2:-}" >/dev/null 2>&1 || notify-send "$1" "${2:-}" 2>/dev/null || true; }
+
+running() { [[ -f $PIDFILE ]] && kill -0 "$(cut -d' ' -f1 "$PIDFILE")" 2>/dev/null; }
+stray()   { pgrep -f '^(gpu-screen-recorder|wl-screenrec|wf-recorder) ' >/dev/null; }
+
+# Indikator di bar Noctalia ala Omarchy: file config runtime menambah widget REC (klik = berhenti) ke lajur "end",
+# lalu dihapus lagi saat selesai. File ini di ~/.config/noctalia (di luar repo dotfiles).
+INDICATOR="${XDG_CONFIG_HOME:-$HOME/.config}/noctalia/zz-recording.toml"
+indicator_on() {
+  local lane; lane="$(noctalia config export 2>/dev/null | awk '/^\[bar\.default\]/{f=1} f && /^end = /{print; exit}')"
+  [[ -z $lane ]] && lane='end = []'
+  lane="${lane/end = [/end = [ \"rec\",}"
+  cat >"$INDICATOR" <<TOML
+# DIBUAT OTOMATIS oleh hypr-record saat merekam; dihapus saat berhenti.
+[bar.default]
+$lane
+
+[widget.rec]
+type    = "custom_button"
+glyph   = "player-record-filled"
+label   = "REC"
+tooltip = "Sedang merekam. Klik untuk berhenti."
+color   = "error"
+
+[widget.rec.actions]
+left = "exec $HOME/.local/bin/hypr-record"
+TOML
+  noctalia msg config-reload >/dev/null 2>&1 || true
+}
+indicator_off() { [[ -f $INDICATOR ]] && { rm -f "$INDICATOR"; noctalia msg config-reload >/dev/null 2>&1 || true; }; }
+
+if [[ ${1:-} == status ]]; then { running || stray; } && echo recording || echo idle; exit 0; fi
+if [[ ${1:-} == indicator ]]; then [[ ${2:-} == on ]] && indicator_on || indicator_off; exit 0; fi   # untuk uji tampilan
+
+if ! running && stray; then                      # perekam jalan tanpa pidfile: hentikan dengan SIGINT
+  pkill -INT -f '^(gpu-screen-recorder|wl-screenrec|wf-recorder) '; indicator_off; notify "Rekaman dihentikan"; exit 0
+fi
+
+if running; then
+  read -r pid file < "$PIDFILE"
+  kill -INT "$pid" 2>/dev/null; rm -f "$PIDFILE"                      # SIGINT: perekam menutup file dengan benar
+  for _ in $(seq 1 50); do kill -0 "$pid" 2>/dev/null || break; sleep 0.1; done
+  kill -0 "$pid" 2>/dev/null && kill -KILL "$pid" 2>/dev/null
+  indicator_off
+  notify "Rekaman selesai" "$(basename "$file")   ·   $OUT_DIR"
+  exit 0
+fi
+
+if command -v gpu-screen-recorder >/dev/null; then BACKEND=gpu-screen-recorder
+elif command -v wl-screenrec >/dev/null; then BACKEND=wl-screenrec
+elif command -v wf-recorder >/dev/null; then BACKEND=wf-recorder
+else notify "Perekam belum terpasang" "yay -S gpu-screen-recorder"; exit 1; fi
+mkdir -p "$OUT_DIR"
+file="$OUT_DIR/screenrecording-$(date +'%Y-%m-%d_%H-%M-%S').mp4"
+mon="$(hyprctl monitors -j | jq -r '.[] | select(.focused) | .name')"
+geom=""
+if [[ ${1:-} != screen ]]; then
+  geom="$(slurp -d 2>/dev/null)" || exit 0            # Esc saat memilih area = batal; format "X,Y WxH"
+  [[ -z $geom ]] && exit 0
+fi
+# render node GPU untuk VA-API (wf-recorder): pilih yang bukan NVIDIA (amdgpu/i915/xe)
+vaapi_dev=""
+for r in /dev/dri/renderD*; do d="$(basename "$(readlink -f "/sys/class/drm/$(basename "$r")/device/driver" 2>/dev/null)" 2>/dev/null)"; case "$d" in amdgpu|i915|xe) vaapi_dev="$r";; esac; done
+case "$BACKEND" in
+  gpu-screen-recorder)
+    # region gpu-screen-recorder: WxH+X+Y (dari slurp "X,Y WxH"); monitor: nama output
+    if [[ -n $geom && $geom =~ ^([0-9-]+),([0-9-]+)\ ([0-9]+)x([0-9]+)$ ]]; then
+      args=(-w "${BASH_REMATCH[3]}x${BASH_REMATCH[4]}+${BASH_REMATCH[1]}+${BASH_REMATCH[2]}")
+    else
+      args=(-w "$mon")
+    fi
+    setsid gpu-screen-recorder "${args[@]}" -k auto -f 60 -fm cfr -fallback-cpu-encoding yes \
+      -a default_output -ac aac -o "$file" >>"${XDG_CACHE_HOME:-$HOME/.cache}/hypr-record.log" 2>&1 </dev/null &
+    pid=$! ;;
+  wl-screenrec)
+    args=(); [[ -n $geom ]] && args+=(-g "$geom") || args+=(-o "$mon")
+    wl-screenrec --help 2>&1 | grep -q -- '--audio' && args+=(--audio)
+    setsid wl-screenrec "${args[@]}" -f "$file" >/dev/null 2>&1 </dev/null & pid=$! ;;
+  wf-recorder)
+    args=(-o "$mon" -a); [[ -n $geom ]] && args+=(-g "$geom"); [[ -n $vaapi_dev ]] && args+=(-c h264_vaapi -d "$vaapi_dev")
+    setsid wf-recorder "${args[@]}" -f "$file" >/dev/null 2>&1 </dev/null & pid=$! ;;
+esac
+sleep 0.6
+kill -0 "$pid" 2>/dev/null || { notify "Gagal mulai merekam" "$BACKEND ${args[*]}  (lihat ~/.cache/hypr-record.log)"; exit 1; }
+echo "$pid $file" > "$PIDFILE"
+indicator_on
+notify "Merekam…" "tekan tombol yang sama untuk berhenti"

@@ -1,0 +1,13 @@
+# Screenshot bawaan Noctalia (Print / Ctrl+Print lewat `noctalia msg screenshot-region|screenshot-fullscreen`).
+# Referensi kunci: https://docs.noctalia.dev/noctalia/configuration/shell/ bagian [shell.screenshot]
+[shell.screenshot]
+save_to_file         = true
+directory            = "~/Pictures/Screenshots"
+filename_pattern     = "screenshot_%Y%m%d_%H%M%S"
+copy_to_clipboard    = true
+freeze_screen        = true     # layar dibekukan saat memilih area
+confirm_region       = false
+remember_last_region = false
+show_cursor          = false
+annotate             = true     # buka anotator bawaan sebelum simpan/salin
+close_on_copy        = true

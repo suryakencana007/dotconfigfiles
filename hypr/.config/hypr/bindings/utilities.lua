@@ -1,11 +1,10 @@
--- Screenshot, color picker, zoom, daftar keybinding.
-local shots = "~/Pictures/Screenshots"
-o.bind("PRINT", "Screenshot area", "hyprshot -m region -o " .. shots)
-o.bind("SHIFT + PRINT", "Screenshot window", "hyprshot -m window -o " .. shots)
-o.bind("CTRL + PRINT", "Screenshot layar penuh", "hyprshot -m output -o " .. shots)
-o.bind("ALT + PRINT", "Screenshot area ke clipboard saja", "hyprshot -m region --clipboard-only")
-o.bind("SUPER + SHIFT + S", "Screenshot area + edit (satty)", "hyprshot -m region --raw | satty --filename - --output-filename " .. shots .. "/satty-$(date +%Y%m%d-%H%M%S).png")
-o.bind("SUPER + PRINT", "Color picker", "pkill hyprpicker || hyprpicker -a")
+-- Screenshot (Noctalia bawaan, dengan anotator), rekam layar (hypr-record: gpu-screen-recorder), color picker, zoom, daftar keybinding.
+o.bind("PRINT", "Screenshot area", "noctalia msg screenshot-region")
+o.bind("SHIFT + PRINT", "Screenshot window", "hyprshot -m window -o ~/Pictures/Screenshots")   -- Noctalia belum punya mode window
+o.bind("CTRL + PRINT", "Screenshot layar penuh", "noctalia msg screenshot-fullscreen")
+o.bind("ALT + PRINT", "Rekam layar: area (toggle)", os.getenv("HOME") .. "/.local/bin/hypr-record")
+o.bind("CTRL + ALT + PRINT", "Rekam layar: penuh (toggle)", os.getenv("HOME") .. "/.local/bin/hypr-record screen")
+o.bind("SUPER + PRINT", "Color picker", "pkill -x hyprpicker || hyprpicker -a")
 
 o.bind("SUPER + K", "Keybindings", os.getenv("HOME") .. "/.local/bin/hypr-keybindings --toggle")   -- daftar ala Omarchy; tekan lagi untuk menutup
 

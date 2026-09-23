@@ -15,12 +15,13 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 | alacritty | `.config/alacritty/alacritty.toml` | file (folder `themes/` render tetap di luar) |
 | tmux | `.config/tmux/tmux.conf` | file (folder `plugins/` TPM tetap di luar) |
 | nvim | seluruh `.config/nvim` | folder (symlink folder utuh) |
+| mpv | `.config/mpv/{mpv.conf,input.conf}` | folder |
 | hypr, noctalia | `.config/hypr/*`, `.config/noctalia/*` | `--no-folding` (folder nyata, supaya overlay host dan file render Noctalia bisa masuk tanpa ke repo) |
 | hosts/<hostname> | overlay khas mesin (lockscreen-widgets.toml, hypr/local.lua) | `--no-folding`, dari dir `hosts/`, otomatis oleh installer |
 | claude | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` (per file, karena `~/.claude` punya isi lain) |
 | rofi | `.config/rofi/config.rasi`, `layout.rasi` (noctalia.rasi = render, ignored) | folder |
 | gtk | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (render noctalia.css/gtk.css tinggal di ~/.config, di luar repo) | `--no-folding` |
-| bin | `.local/bin/*` skrip (hypr-keybindings, hypr-menu, hypr-theme, hypr-theme-carousel, rofi-toggle, resi-shell) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
+| bin | `.local/bin/*` skrip (hypr-keybindings, hypr-menu, hypr-theme, hypr-theme-carousel, hypr-record, rofi-toggle, resi-shell) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
 
 ## Installer: resi-shell
 

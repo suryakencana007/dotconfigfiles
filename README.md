@@ -24,14 +24,16 @@ its Lua config) and built on [Noctalia](https://noctalia.dev).
 | Area | Details |
 |---|---|
 | **Compositor** | Hyprland 0.56+ with the native Lua config, split into modules (`looknfeel`, `input`, `windows`, `bindings/*`). Omarchy defaults: gaps 5/10, `Super+W` close, `Super+arrows` focus, `Super+1..0` workspaces, groups, resize, universal `Super+C/V/X/A` clipboard, Quake-style scratchpad on ``Super+` ``. Blur, subtle window opacity, Noctalia-themed borders. |
+| **Capture** | Screenshots by Noctalia's native screencopy capture (frozen region select, annotator, clipboard + `~/Pictures/Screenshots`); screen recording by gpu-screen-recorder (KMS capture, GPU encoding, 60 fps, desktop audio), toggled from one key like Omarchy, with a red REC button in the bar while recording (click to stop). |
 | **Shell** | Noctalia v5: transparent bar with island-style capsule groups, control center, notifications, clipboard history, wallpaper picker, OSD, polkit agent, idle lock (10 min) and screen-off (11 min), blurred lock screen with a centered compact login box. |
 | **Launcher & menu** | rofi 2.0 (Wayland). `Super+Alt+Space` = app launcher, `Super+Space` = Omarchy-style hierarchical menu (Apps, Learn, Trigger, Toggle, Style, Setup, About, System). Both toggle: press again to close. |
 | **Login** | greetd + noctalia-greeter; wallpaper, palette, font and corner radius are synced from the desktop without a password prompt. |
 | **GTK apps** | Thunar and other GTK3/GTK4 apps use adw-gtk3 + Papirus icons in dark mode, colored by Noctalia's GTK templates. |
+| **Media** | mpv + yt-dlp as the default video/audio player, hardware decoding on the iGPU, floating window without transparency. |
 | **Terminal** | alacritty (MesloLGS Nerd Font, opacity, Noctalia colors), zsh + oh-my-zsh + Powerlevel10k (lean, one line, ANSI colors so it follows the theme), fzf/fzf-tab, zoxide, eza, bat, fd, ripgrep, delta, dust, duf, btop, tldr, lazygit. |
 | **tmux** | Omarchy's config: `Ctrl+Space` prefix, `Alt+Enter` split, `Alt+1..9` windows, status bar on top, TPM with resurrect + continuum (sessions survive reboots). |
 | **Neovim** | LazyVim with a base16 colorscheme rendered by Noctalia (live reload on theme change), transparent background. |
-| **Helpers** | `hypr-keybindings` (`Super+K`, searchable list formatted like Omarchy's), `hypr-menu`, `hypr-theme-carousel` (`Super+Shift+Ctrl+Space`: sliding wallpaper carousel like omarchy-shell's theme picker, the centered card is the selection), `hypr-theme` (rofi: palettes, dark/light, gallery), `rofi-toggle`, `resi-shell`. |
+| **Helpers** | `hypr-keybindings` (`Super+K`, searchable list formatted like Omarchy's), `hypr-menu`, `hypr-theme-carousel` (`Super+Shift+Ctrl+Space`: sliding wallpaper carousel like omarchy-shell's theme picker, the centered card is the selection), `hypr-theme` (rofi: palettes, dark/light, gallery), `hypr-record` (screen recording toggle), `rofi-toggle`, `resi-shell`. |
 | **Claude Code** | Skills and agents that know this setup (`hyprland-config`, `noctalia-config`, `terminal-stack`, `dotfiles-stow`; agents `hyprland-tweaker`, `noctalia-tweaker`, `dotfiles-keeper`). |
 
 ### Key bindings (the ones you will use every day)
@@ -46,7 +48,8 @@ its Lua config) and built on [Noctalia](https://noctalia.dev).
 | Control center / Session menu / Lock | `Super+S` / `Super+Esc` / `Super+Ctrl+L` |
 | Clipboard history / Wallpaper | `Super+Ctrl+V` / `Super+Ctrl+Space` |
 | Theme switcher / Wallhaven browser | `Super+Shift+Ctrl+Space` / `Super+Ctrl+Alt+Space` |
-| Screenshot area / window / screen | `Print` / `Shift+Print` / `Ctrl+Print` |
+| Screenshot area / window / screen | `Print` / `Shift+Print` / `Ctrl+Print` (Noctalia, with annotator) |
+| Record area / screen (toggle) | `Alt+Print` / `Ctrl+Alt+Print` (gpu-screen-recorder, like Omarchy) |
 | All key bindings | `Super+K` |
 
 ---
@@ -120,7 +123,8 @@ Each top-level folder is a Stow package mirroring `$HOME`:
 | `hypr` | `.config/hypr/*.lua`, `bindings/*.lua` | `--no-folding` (real dir) |
 | `noctalia` | `.config/noctalia/*.toml`, `templates/` | `--no-folding` (real dir) |
 | `gtk` | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (dark mode; colors are rendered by Noctalia) | `--no-folding` |
-| `bin` | `.local/bin/{hypr-keybindings,hypr-menu,hypr-theme,hypr-theme-carousel,rofi-toggle,resi-shell}` | `--no-folding` |
+| `mpv` | `.config/mpv/{mpv.conf,input.conf}` (gpu-next on the compositor GPU, VA-API decode, default player for video/audio) | folder link |
+| `bin` | `.local/bin/{hypr-keybindings,hypr-menu,hypr-theme,hypr-theme-carousel,hypr-record,rofi-toggle,resi-shell}` | `--no-folding` |
 | `claude` | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` |
 | `hosts/<hostname>` | machine-specific overlay, see below | `--no-folding`, from `hosts/` |
 | `resi/` | installer data: package lists, greeter and greetd templates | not stowed |
@@ -144,7 +148,7 @@ GPU drivers are detected at install time and the NVIDIA environment is only appl
 
 ```sh
 cd ~/dotconfigfiles
-stow -t ~ zsh git alacritty tmux nvim rofi
+stow -t ~ zsh git alacritty tmux nvim rofi mpv
 stow --no-folding -t ~ hypr noctalia claude bin gtk
 (cd hosts && stow --no-folding -t ~ "$(cat /etc/hostname)")
 ```

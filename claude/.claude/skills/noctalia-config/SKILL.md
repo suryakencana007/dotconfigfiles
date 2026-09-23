@@ -74,6 +74,17 @@ validator menolak), `background_opacity`, `show_unlock_hint`, `show_*`. Nilai en
 uji dengan `noctalia config validate`, yang menyebut "not one of the allowed values" tanpa mendaftar pilihannya.
 Editor visual `noctalia msg lockscreen-widgets-edit` menulis ke state (menang atas file).
 
+## Screenshot & rekam layar
+
+`screenshot.toml` = `[shell.screenshot]` (directory ~/Pictures/Screenshots, freeze_screen, annotate, copy_to_clipboard).
+IPC: `screenshot-region`, `screenshot-fullscreen [pick|<output>]`; belum ada mode window (hyprshot dipakai untuk itu).
+Rekam: skrip `hypr-record` (bin) = toggle gpu-screen-recorder (AUR, parameter ala Omarchy: -k auto -f 60 -fm cfr
+-fallback-cpu-encoding yes -a default_output -ac aac; region WxH+X+Y dari slurp), cadangan wl-screenrec/wf-recorder.
+Output ~/Videos/screenrecording-*.mp4, log ~/.cache/hypr-record.log, notifikasi `notification-show`; `hypr-record status`.
+Indikator bar: saat merekam skrip menulis `~/.config/noctalia/zz-recording.toml` (override lajur `end` + widget
+`rec` custom_button merah, klik = berhenti) lalu config-reload; dihapus saat selesai. `hypr-record indicator on|off`
+untuk uji tampilan. File runtime ini di luar repo. Catatan: pgrep -x gagal untuk nama proses >15 huruf.
+
 ## Theme switcher
 
 `hypr-theme-carousel` (Python GTK4/libadwaita, Super+Shift+Ctrl+Space): carousel wallpaper geser ala omarchy-shell,

@@ -31,6 +31,8 @@ tealdeer
 lazygit
 jq
 fastfetch
+mpv
+yt-dlp
 7zip
 # --- theme carousel (hypr-theme-carousel: GTK4 + libadwaita + thumbnail vips) ---
 python-gobject

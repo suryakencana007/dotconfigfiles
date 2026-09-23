@@ -55,9 +55,11 @@ learn_items() { cat <<ITEMS
 ITEMS
 }
 trigger_items() { cat <<'ITEMS'
-󰹑  Screenshot area	hyprshot -m region -o ~/Pictures/Screenshots
+󰹑  Screenshot area	noctalia msg screenshot-region
 󰖯  Screenshot window	hyprshot -m window -o ~/Pictures/Screenshots
-󰍹  Screenshot screen	hyprshot -m output -o ~/Pictures/Screenshots
+󰍹  Screenshot screen	noctalia msg screenshot-fullscreen
+󰑊  Record area (toggle)	~/.local/bin/hypr-record
+󰕧  Record screen (toggle)	~/.local/bin/hypr-record screen
 󰏘  Color picker	hyprpicker -a
 󰅍  Clipboard history	noctalia msg panel-toggle clipboard
 󰃭  Calendar	noctalia msg panel-toggle control-center calendar
