@@ -31,3 +31,15 @@ do
   table.insert(kept, 1, bin)
   hl.env("PATH", table.concat(kept, ":"))
 end
+
+-- NVIDIA (GTX 1660 Ti, driver nvidia-open). Hanya aktif kalau NVIDIA adalah satu-satunya GPU
+-- (BIOS mode diskrit). Di mode hybrid, GPU AMD (amdgpu) yang jadi utama untuk Hyprland, jadi variabel
+-- ini justru salah arah dan dilewati. Nilai sama seperti Omarchy nvidia.lua.
+do
+  local function exists(path) local f = io.open(path, "r"); if f then f:close(); return true end; return false end
+  if exists("/proc/driver/nvidia/version") and not exists("/sys/module/amdgpu/initstate") then
+    hl.env("NVD_BACKEND", "direct")
+    hl.env("LIBVA_DRIVER_NAME", "nvidia")
+    hl.env("__GLX_VENDOR_LIBRARY_NAME", "nvidia")
+  end
+end

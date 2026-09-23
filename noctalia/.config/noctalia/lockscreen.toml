@@ -12,25 +12,25 @@ tint_intensity = 0.3     # 0.0-1.0, default 0.3
 [lockscreen_widgets]
 enabled = true
 schema_version = 2
-widget_order = [ "lockscreen-login-box@Unknown-1" ]
+widget_order = [ "lockscreen-login-box@eDP-2" ]
 
     [lockscreen_widgets.grid]
     cell_size = 16
     major_interval = 4
     visible = true
 
-    [lockscreen_widgets.widget."lockscreen-login-box@Unknown-1"]
+    [lockscreen_widgets.widget."lockscreen-login-box@eDP-2"]
     box_height = 196.0
     box_width = 480.0   # compact; semula 810
     cx = 960.0               # tengah horizontal layar 1920x1080
     cy = 540.0               # tengah vertikal (bawaan 898 = dekat bawah)
-    output = "Unknown-1"
+    output = "eDP-2"
     placement_height = 1080.0
     placement_width = 1920.0
     rotation = 0.0
     type = "login_box"
 
-        [lockscreen_widgets.widget."lockscreen-login-box@Unknown-1".settings]
+        [lockscreen_widgets.widget."lockscreen-login-box@eDP-2".settings]
         background_color = "surface_variant"
         background_opacity = 0.6   # bawaan 0.88; lebih tembus supaya blur terlihat
         background_radius = 12.0

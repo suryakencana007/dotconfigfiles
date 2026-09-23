@@ -1,6 +1,34 @@
-# Bar transparan. Gaya capsule (bentuk, ketebalan, padding) kamu atur lewat GUI Settings > Bar > Capsules;
-# nilai GUI disimpan di ~/.local/state/noctalia/settings.toml dan menang atas file ini.
+# Bar gaya "island" (pulau): bar sendiri transparan dan melayang, yang terlihat hanya beberapa kapsul
+# terpisah. margin_edge (jarak dari tepi layar), ketebalan, padding, dan bentuk kapsul diatur lewat GUI
+# Settings > Bar; nilai GUI disimpan di ~/.local/state/noctalia/settings.toml dan MENANG atas file ini.
+# Toggle bar: Super+Shift+Space (= `noctalia msg bar-toggle`).
 [bar.default]
 background_opacity = 0.0     # latar bar hilang, hanya kapsul widget yang terlihat
 shadow             = false   # bayangan bar ikut hilang
 border_width       = 0.0
+margin_ends        = 12      # pulau kiri/kanan mendekat ke tepi layar (default 100)
+
+# Isi tiap lajur. Token "group:<id>" merujuk ke capsule_group di bawah.
+start  = [ "group:island_left" ]
+center = [ "clock" ]
+end    = [ "group:island_info", "group:island_system", "group:island_power" ]
+
+# Pulau kiri: launcher, wallpaper, workspaces dalam satu kapsul.
+[[bar.default.capsule_group]]
+id      = "island_left"
+members = [ "launcher", "wallpaper", "workspaces" ]
+
+# Pulau info: media, tray, notifikasi, clipboard.
+[[bar.default.capsule_group]]
+id      = "island_info"
+members = [ "media", "tray", "notifications", "clipboard" ]
+
+# Pulau sistem: jaringan, bluetooth, audio, kecerahan, baterai.
+[[bar.default.capsule_group]]
+id      = "island_system"
+members = [ "network", "bluetooth", "volume", "brightness", "battery" ]
+
+# Pulau power: control center dan sesi.
+[[bar.default.capsule_group]]
+id      = "island_power"
+members = [ "control-center", "session" ]
