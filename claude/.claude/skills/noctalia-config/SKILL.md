@@ -53,6 +53,15 @@ https://docs.noctalia.dev/noctalia/theming/templates/
 
 Supaya program CLI ikut tema: pakai warna ANSI 0-15, bukan indeks 256 (sudah diterapkan di p10k, bat `ansi`, fzf `--color=16`, tmux).
 
+## Lock screen (Super+Ctrl+L)
+
+`lockscreen.toml`: `[lockscreen]` blurred_desktop/blur_intensity/tint_intensity, dan `[lockscreen_widgets]`
+(tidak ada di docs tapi dikenal validator; ditulis di file setelah blok yang sama dihapus dari state).
+Login box: `cx/cy` (pusat), `box_width`, `settings.layout = "regular" | "compact"` (BUKAN "minimal",
+validator menolak), `background_opacity`, `show_unlock_hint`, `show_*`. Nilai enum yang tidak yakin:
+uji dengan `noctalia config validate`, yang menyebut "not one of the allowed values" tanpa mendaftar pilihannya.
+Editor visual `noctalia msg lockscreen-widgets-edit` menulis ke state (menang atas file).
+
 ## Greeter
 
 `noctalia-greeter` (AUR) lewat greetd. Sync butuh polkit: agen Noctalia aktif (`polkit_agent = true`), dan rule
