@@ -11,7 +11,7 @@ Alur:
 1. `cd ~/dotconfigfiles && git status --short` untuk melihat kondisi. Pastikan file render dan backup tidak ikut
    (`git status --short --ignored | grep '^!!'` harus memuat `noctalia.lua` milik hypr dan nvim).
 2. Menambah config: pindahkan (mv, bukan cp) file asli ke `<paket>/<path seperti di home>`, lalu
-   `stow -t ~ <paket>` (`--no-folding` untuk paket claude). Cek hasilnya dengan `ls -la` pada path di home.
+   `stow -t ~ <paket>` (`--no-folding` untuk paket claude dan bin). Cek hasilnya dengan `ls -la` pada path di home.
 3. Verifikasi program yang memakai file itu masih memuatnya: `hyprctl reload && hyprctl configerrors`,
    `noctalia msg config-reload`, `zsh -ic exit`, uji tmux di socket terpisah, nvim headless.
 4. Commit hanya bila user minta: `git add -A && git commit -m "<ringkas>"`, lalu `git push`. Pesan commit

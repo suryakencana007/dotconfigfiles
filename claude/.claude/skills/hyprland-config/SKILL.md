@@ -52,6 +52,9 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
    Rule `size`/`float`/`center` dievaluasi saat jendela pertama muncul: cocokkan lewat `class` (beri app
    `--class` sendiri), bukan `title`, karena judul belum terbaca saat itu. Contoh: jendela Super+K
    memakai class `hypr-keybindings` dengan rule sendiri agar tidak ditimpa ukuran tag `floating-window`.
+   Pola toggle panel (buka/tutup dengan satu tombol): skrip mencari jendela via
+   `hyprctl clients -j | jq '.[] | select(.class == "X") | .pid'` lalu `kill $pid`, kalau tidak ada baru launch.
+   JANGAN `pkill -f <teks>`: mencocokkan baris perintah proses apa pun, termasuk shell yang sedang menguji.
 9. Perubahan `autostart.lua` hanya berlaku saat Hyprland start, bukan saat reload. Untuk menjalankan sekarang (mode Lua, bukan `dispatch exec`): `hyprctl dispatch 'hl.dsp.exec_cmd("<cmd>")'`.
 
 ## Hal yang sengaja berbeda dari Omarchy

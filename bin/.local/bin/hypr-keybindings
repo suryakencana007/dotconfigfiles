@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Daftar keybinding Hyprland dengan format ala Omarchy (omarchy-menu-keybindings):
 #   SUPER + SHIFT + M                   → Music (Spotify)
-# Pakai:  hypr-keybindings          menu fzf (dipanggil Super+K di jendela mengambang)
-#         hypr-keybindings --print  cetak saja
+# Pakai:  hypr-keybindings           menu fzf (di dalam terminal)
+#         hypr-keybindings --toggle  buka jendela mengambang, atau tutup kalau sudah terbuka (Super+K)
+#         hypr-keybindings --print   cetak saja
 set -euo pipefail
 
 modmask_to_text() {
@@ -79,6 +80,18 @@ format() {
     }
     END { for (i = 1; i <= n; i++) printf "%-*s → %s\n", column, chords[i], actions[i] }'
 }
+
+WINDOW_CLASS="hypr-keybindings"
+
+if [[ ${1:-} == "--toggle" || ${1:-} == "-t" ]]; then
+  # Satu panel saja: kalau jendelanya sudah ada, tutup (kill PID jendela itu); kalau belum, buka.
+  pid=$(hyprctl clients -j | jq -r --arg c "$WINDOW_CLASS" '.[] | select(.class == $c) | .pid' | head -1)
+  if [[ -n $pid && $pid != "null" ]]; then
+    kill "$pid" 2>/dev/null || true
+    exit 0
+  fi
+  exec alacritty --class "$WINDOW_CLASS" -o window.padding.x=0 -e "$0"
+fi
 
 if [[ ${1:-} == "--print" || ${1:-} == "-p" ]]; then
   records | format
