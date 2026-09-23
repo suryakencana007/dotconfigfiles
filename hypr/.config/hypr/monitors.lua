@@ -1,5 +1,5 @@
 -- Monitor. Daftar: hyprctl monitors all
-hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })
+hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })   -- "auto" memilih 1.5 untuk panel 15.6" 1080p; 1 = ruang kerja penuh 1920x1080
 -- Contoh monitor eksternal:
 -- hl.monitor({ output = "HDMI-A-1", mode = "2560x1440@144", position = "auto-right", scale = 1 })
 
