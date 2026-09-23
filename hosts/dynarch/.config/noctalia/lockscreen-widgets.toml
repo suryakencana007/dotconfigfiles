@@ -1,4 +1,4 @@
-# Overlay host legionarch: layout widget lock screen untuk panel eDP-1 (1920x1080).
+# Overlay host dynarch: layout widget lock screen untuk panel eDP-1 (1920x1080).
 # Kotak login di tengah, lebar 480, layout compact, tanpa teks petunjuk. Noctalia menormalkan ulang
 # koordinat ke state saat start; nilai di sini adalah sumbernya.
 # Blok [lockscreen_widgets] diterima `noctalia config validate`; editor visual `noctalia msg lockscreen-widgets-edit`

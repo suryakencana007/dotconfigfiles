@@ -23,6 +23,7 @@ warn() { printf '%s  ! %s%s\n' "$c_warn" "$*" "$c_off"; }
 run()  { if (( DRY )); then printf '  [dry] %s\n' "$*"; else "$@"; fi; }
 have() { command -v "$1" >/dev/null 2>&1; }
 pkglist() { grep -vE '^\s*#|^\s*$' "$1"; }
+in_repo() { case "$(realpath -m "$1" 2>/dev/null)" in "$REPO"/*) return 0 ;; *) return 1 ;; esac; }   # path (setelah symlink) ada di dalam repo?
 
 require_arch() { have pacman || { echo "Bukan Arch Linux (pacman tidak ada)."; exit 1; }; }
 
@@ -90,16 +91,18 @@ shell_setup() {
   run ln -sfn /usr/share/zsh/plugins/zsh-autosuggestions "$omz/custom/plugins/zsh-autosuggestions"
   run ln -sfn /usr/share/zsh/plugins/zsh-syntax-highlighting "$omz/custom/plugins/zsh-syntax-highlighting"
   # .zshrc bawaan oh-my-zsh akan digantikan symlink stow; singkirkan kalau bukan symlink
-  [ -f "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ] && run mv "$HOME/.zshrc" "$HOME/.zshrc.pre-resi"
+  [ -f "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ] && ! in_repo "$HOME/.zshrc" && run mv "$HOME/.zshrc" "$HOME/.zshrc.pre-resi"
   if [ "$(getent passwd "$USER" | cut -d: -f7)" != "/usr/bin/zsh" ]; then run chsh -s /usr/bin/zsh; fi
   ok "shell siap"
 }
 
 stow_all() {
   step "Stow config ke \$HOME"
-  # file biasa yang akan bentrok dengan symlink -> disingkirkan ke *.pre-resi
+  # file biasa yang akan bentrok dengan symlink -> disingkirkan ke *.pre-resi.
+  # Lewati kalau path itu sudah berada di dalam repo (mis. ~/.config/tmux adalah symlink folder ke repo,
+  # sehingga tmux.conf terlihat sebagai file biasa): memindahkannya berarti menghapus file di repo.
   for f in .zshrc .p10k.zsh .gitconfig .config/alacritty/alacritty.toml .config/tmux/tmux.conf; do
-    [ -e "$HOME/$f" ] && [ ! -L "$HOME/$f" ] && run mv "$HOME/$f" "$HOME/$f.pre-resi"
+    [ -e "$HOME/$f" ] && [ ! -L "$HOME/$f" ] && ! in_repo "$HOME/$f" && run mv "$HOME/$f" "$HOME/$f.pre-resi"
   done
   # folder nyata hanya disingkirkan kalau BUKAN hasil stow (tidak berisi symlink ke repo ini)
   for d in hypr noctalia nvim rofi; do
@@ -202,11 +205,22 @@ doctor() {
     if out=$(cd "$REPO/hosts" && stow -n -v --no-folding -t "$HOME" "$HOST" 2>&1 | grep -vE 'WARNING|simulation'); [ -z "$out" ]; then ok "stow overlay host $HOST"; else warn "overlay host $HOST: $out"; bad=1; fi
   fi
   local broken; broken=$(find "$HOME" -maxdepth 6 -xtype l -lname '*dotconfigfiles*' 2>/dev/null); [ -z "$broken" ] && ok "tidak ada symlink putus" || { warn "symlink putus: $broken"; bad=1; }
+  # file kunci harus ada DAN berasal dari repo (stow -n diam saja kalau file sumbernya hilang dari repo)
+  for f in .zshrc .p10k.zsh .gitconfig .config/alacritty/alacritty.toml .config/tmux/tmux.conf .config/hypr/hyprland.lua \
+           .config/noctalia/shell.toml .config/nvim/init.lua .config/rofi/config.rasi .config/mpv/mpv.conf .local/bin/resi-shell; do
+    if [ ! -e "$HOME/$f" ]; then warn "hilang: ~/$f"; bad=1
+    elif ! in_repo "$HOME/$f"; then warn "bukan dari repo (file biasa/menimpa symlink): ~/$f"; bad=1; fi
+  done
+  ok "file kunci ada dan mengarah ke repo"
+  grep -qF 'require("noctalia")' "$HOME/.config/hypr/hyprland.lua" 2>/dev/null && ok "hyprland.lua memuat tema Noctalia" || { warn "hyprland.lua tanpa require(\"noctalia\"): border tidak ikut tema"; bad=1; }
+  for f in tmux/.config/tmux/tmux.conf alacritty/.config/alacritty/alacritty.toml; do
+    [ -e "$REPO/$f.pre-resi" ] && { warn "sisa $f.pre-resi di repo (bekas bug installer lama; bandingkan lalu hapus)"; bad=1; }
+  done
   have hyprctl && { e=$(hyprctl configerrors 2>/dev/null); [ -z "$e" ] && ok "hyprland configerrors kosong" || { warn "hyprland: $e"; bad=1; }; }
   have noctalia && { noctalia config validate >/dev/null 2>&1 && ok "noctalia config valid" || { warn "noctalia config tidak valid"; bad=1; }; }
   have rofi && { rofi -dump-theme >/dev/null 2>&1 && ok "tema rofi valid" || { warn "tema rofi rusak"; bad=1; }; }
   have zsh && { zsh -ic 'exit' >/dev/null 2>&1 && ok "zsh memuat config" || { warn "zsh error"; bad=1; }; }
-  have tmux && { tmux -L residoc -f "$HOME/.config/tmux/tmux.conf" new -d -s x 2>/dev/null && tmux -L residoc kill-server && ok "tmux config OK" || { warn "tmux config error"; bad=1; }; }
+  have tmux && { [ -f "$HOME/.config/tmux/tmux.conf" ] && tmux -L residoc -f "$HOME/.config/tmux/tmux.conf" new -d -s x 2>/dev/null && tmux -L residoc kill-server && ok "tmux config OK" || { warn "tmux config error/hilang"; bad=1; }; }
   [ "$(getent passwd "$USER" | cut -d: -f7)" = "/usr/bin/zsh" ] && ok "login shell zsh" || warn "login shell bukan zsh"
   (cd "$REPO" && git status --short | grep -q . && warn "repo punya perubahan belum di-commit" || ok "repo bersih")
   (( bad )) && { echo; echo "Ada masalah. Jalankan: resi-shell install"; return 1; } || echo "Semua sehat."

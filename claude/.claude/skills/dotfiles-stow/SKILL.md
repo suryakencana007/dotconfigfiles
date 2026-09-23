@@ -12,8 +12,8 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 |---|---|---|
 | zsh | `.zshrc`, `.p10k.zsh` | file |
 | git | `.gitconfig` | file |
-| alacritty | `.config/alacritty/alacritty.toml` | file (folder `themes/` render tetap di luar) |
-| tmux | `.config/tmux/tmux.conf` | file (folder `plugins/` TPM tetap di luar) |
+| alacritty | `.config/alacritty/alacritty.toml` | folder (stow melipat `~/.config/alacritty` jadi symlink folder; `themes/` render Noctalia jadi ada DI DALAM folder repo, di-gitignore) |
+| tmux | `.config/tmux/tmux.conf` | folder (symlink folder; `plugins/` TPM ada di dalam folder repo, di-gitignore) |
 | nvim | seluruh `.config/nvim` | folder (symlink folder utuh) |
 | mpv | `.config/mpv/{mpv.conf,input.conf}` | folder |
 | hypr, noctalia | `.config/hypr/*`, `.config/noctalia/*` | `--no-folding` (folder nyata, supaya overlay host dan file render Noctalia bisa masuk tanpa ke repo) |
@@ -50,3 +50,8 @@ sistem baru = tambah barisnya di daftar itu. `resi-shell doctor` = audit cepat (
    config-reload, uji zsh/tmux/nvim), baru `git add -A && git commit` dengan pesan singkat, lalu `git push`.
    Commit hanya kalau user minta atau sudah jadi alur yang disepakati.
 7. Jangan memasukkan rahasia: `.gitconfig` di repo sengaja tanpa identitas; identitas ada di config lokal repo.
+8. Paket yang terlipat (alacritty, tmux, nvim, rofi, mpv): file di dalamnya terlihat sebagai FILE BIASA lewat symlink
+   folder, padahal itu file repo. Jangan pernah `mv`/hapus "file biasa" di path home tanpa cek `realpath` dulu:
+   2026-09-24 installer lama memindahkan `tmux.conf` dan `alacritty.toml` ke `.pre-resi` di dalam repo saat dijalankan
+   ulang (tmux jalan tanpa config, alacritty ditulis ulang Noctalia). Installer sekarang punya guard `in_repo`, dan
+   `resi-shell doctor` memeriksa file kunci ada dan mengarah ke repo, serta baris `require("noctalia")` di hyprland.lua.

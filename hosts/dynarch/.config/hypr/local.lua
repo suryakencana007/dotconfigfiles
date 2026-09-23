@@ -1,3 +1,3 @@
--- Override Hyprland khusus host legionarch (dimuat paling akhir oleh hyprland.lua lewat pcall(require, "hypr.local")).
+-- Override Hyprland khusus host dynarch (dimuat paling akhir oleh hyprland.lua lewat pcall(require, "hypr.local")).
 -- Contoh: hl.monitor({ output = "eDP-2", mode = "1920x1080@144", position = "auto", scale = 1 })
 -- Saat ini tidak ada override: config generik sudah cukup untuk laptop ini.

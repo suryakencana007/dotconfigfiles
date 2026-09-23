@@ -127,7 +127,7 @@ missing. It performs these steps in order:
    AMD (mesa, vulkan-radeon), Intel (mesa, vulkan-intel), plus CPU microcode.
 4. **Shell**: oh-my-zsh, Powerlevel10k, fzf-tab, links the distro's zsh plugins, `chsh` to zsh.
 5. **Stow**: links every package into `$HOME`, plus the host overlay when `hosts/<hostname>` exists. Existing
-   plain files are moved aside as `*.pre-resi`.
+   plain files are moved aside as `*.pre-resi` (never a file that already resolves into the repo, so re-runs are safe).
 6. **tmux** plugins (TPM) and **Neovim** plugins (lazy.nvim, headless).
 7. **Folders** (`~/Pictures/Screenshots`, `~/Pictures/Wallpapers`) and your **git identity** (asked once,
    stored in the repo's local config, never committed).
@@ -143,7 +143,7 @@ Once installed, the same script is available as `resi-shell`:
 |---|---|
 | `resi-shell install [--dry-run]` | full setup, safe to repeat |
 | `resi-shell update` | `git pull`, new packages, restow, plugin updates, reload Hyprland and Noctalia |
-| `resi-shell doctor` | health check: stow packages, broken links, Hyprland/Noctalia/rofi/tmux/zsh configs, repo state |
+| `resi-shell doctor` | health check: stow packages, broken links, key files present and pointing into the repo, Noctalia include in `hyprland.lua`, Hyprland/Noctalia/rofi/tmux/zsh configs, repo state |
 | `resi-shell packages` | print the package lists |
 
 ---
@@ -156,8 +156,8 @@ Each top-level folder is a Stow package mirroring `$HOME`:
 |---|---|---|
 | `zsh` | `.zshrc`, `.p10k.zsh` | file links |
 | `git` | `.gitconfig` (delta pager only, no identity) | file links |
-| `alacritty` | `.config/alacritty/alacritty.toml` | file links (`themes/` is rendered, outside the repo) |
-| `tmux` | `.config/tmux/tmux.conf` | file links (`plugins/` is TPM's, outside the repo) |
+| `alacritty` | `.config/alacritty/alacritty.toml` | folder link (`themes/` is rendered by Noctalia into the repo folder, gitignored) |
+| `tmux` | `.config/tmux/tmux.conf` | folder link (`plugins/` is TPM's, lives in the repo folder, gitignored) |
 | `nvim` | `.config/nvim` (LazyVim + Noctalia theme template) | folder link |
 | `rofi` | `.config/rofi/{config,layout}.rasi` | folder link (`noctalia.rasi` is rendered, ignored) |
 | `hypr` | `.config/hypr/*.lua`, `bindings/*.lua` | `--no-folding` (real dir) |
