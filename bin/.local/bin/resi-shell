@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# resi-shell: pembungkus installer dotfiles. Sama dengan ~/dotconfigfiles/install.sh.
+#   resi-shell install [--dry-run]   pasang & setel semuanya (idempotent, aman diulang)
+#   resi-shell update                git pull, stow ulang, paket baru, plugin
+#   resi-shell doctor                cek kondisi (stow, config, program)
+#   resi-shell packages              tampilkan daftar paket
+REPO="${RESI_REPO:-$HOME/dotconfigfiles}"
+[ -x "$REPO/install.sh" ] || { echo "repo tidak ditemukan di $REPO (set RESI_REPO)" >&2; exit 1; }
+exec "$REPO/install.sh" "$@"

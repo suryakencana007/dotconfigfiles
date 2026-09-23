@@ -1,0 +1,76 @@
+# Paket repo resmi Arch untuk resi-shell. Satu per baris, "#" komentar. Diinstal dengan pacman -S --needed.
+# --- dasar & alat ---
+base-devel
+git
+stow
+openssh
+sudo
+man-db
+man-pages
+zram-generator
+# --- shell & terminal ---
+zsh
+zsh-autosuggestions
+zsh-syntax-highlighting
+zsh-completions
+alacritty
+tmux
+neovim
+lua
+eza
+bat
+fd
+fzf
+ripgrep
+zoxide
+git-delta
+dust
+duf
+btop
+tealdeer
+lazygit
+jq
+fastfetch
+7zip
+# --- font ---
+ttf-meslo-nerd
+ttf-dejavu
+ttf-liberation
+noto-fonts
+noto-fonts-cjk
+noto-fonts-emoji
+# --- desktop: Hyprland + Noctalia + rofi ---
+hyprland
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+noctalia
+rofi
+hyprshot
+satty
+hyprpicker
+grim
+slurp
+wl-clipboard
+libxkbcommon
+polkit
+brightnessctl
+power-profiles-daemon
+upower
+greetd
+# --- file manager & mount ---
+thunar
+thunar-volman
+gvfs
+udiskie
+exfatprogs
+# --- audio & jaringan ---
+pipewire
+pipewire-alsa
+pipewire-pulse
+pipewire-jack
+wireplumber
+gst-plugin-pipewire
+networkmanager
+bluez
+bluez-utils
+sof-firmware

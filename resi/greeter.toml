@@ -1,0 +1,21 @@
+# Config noctalia-greeter (dipasang resi-shell ke /var/lib/noctalia-greeter/greeter.toml).
+# __USER__ diganti nama user saat install. Warna/wallpaper/font ikut Noctalia lewat Sync (sync.toml),
+# jadi [appearance.palette], theme_mode, font_family, corner_radius_scale sengaja TIDAK diisi di sini.
+[user]
+default = "__USER__"
+
+[session]
+default = "Hyprland"
+
+[appearance]
+scheme = "Synced"
+password_style = "default"
+hide_logo = true
+power_buttons_position = "bottom-right"
+scheme_selector_position = "hidden"
+
+[idle]
+timeout = 300
+
+[keyboard]
+numlock = true

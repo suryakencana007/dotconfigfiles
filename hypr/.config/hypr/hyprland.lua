@@ -31,6 +31,9 @@ require("hypr.bindings.utilities")
 
 require("hypr.autostart")
 
+-- Override khusus mesin ini (opsional): hosts/<hostname>/.config/hypr/local.lua di repo dotfiles.
+pcall(require, "hypr.local")
+
 -- Override pribadi tambahan bisa ditaruh di bawah sini.
 
 -- Warna border dari tema Noctalia (file noctalia.lua dirender Noctalia; hook-nya mencari
