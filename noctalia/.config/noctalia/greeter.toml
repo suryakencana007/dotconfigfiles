@@ -1,0 +1,6 @@
+# Sinkronisasi tampilan ke noctalia-greeter (layar login): wallpaper, palet warna, font, radius, layout monitor.
+# Butuh: polkit_agent = true (shell.toml) dan rule tanpa password (installer: `noctalia-greeter passwordless-sync enable $USER`).
+# Manual: `noctalia msg greeter-sync`; hasil di log ~/.cache/noctalia/noctalia.log ("[greeter-sync]").
+# Di GUI: Settings > Security > Auto-Sync Greeter (nilai GUI di state menang atas file ini).
+[shell.greeter_sync]
+auto_sync = true

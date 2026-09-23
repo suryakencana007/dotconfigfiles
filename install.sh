@@ -177,6 +177,13 @@ greeter() {
   run sudo install -o greeter -g greeter -m 644 "$tmp" /var/lib/noctalia-greeter/greeter.toml; rm -f "$tmp"
   run sudo noctalia-greeter passwordless-sync enable "$USER" || warn "passwordless-sync gagal (greeter < 1.5?)"
   ok "greeter.toml + sync tanpa password"
+  # Auto-sync dinyalakan oleh noctalia/greeter.toml; sync pertama harus dipicu sekali kalau shell sedang jalan
+  # (tanpa ini greeter tampil bawaan sampai tema berubah, karena /var/lib/noctalia-greeter/sync.toml belum ada).
+  if have noctalia && noctalia msg status >/dev/null 2>&1; then
+    run noctalia msg greeter-sync >/dev/null 2>&1 && ok "greeter di-sync dengan tema saat ini" || warn "greeter-sync gagal; jalankan: noctalia msg greeter-sync"
+  else
+    echo "  (Noctalia belum jalan: sync pertama otomatis saat wallpaper/tema pertama dipilih, atau: noctalia msg greeter-sync)"
+  fi
 }
 
 finish() {
@@ -184,8 +191,8 @@ finish() {
   cat <<MSG
   Langkah manual yang tidak bisa diotomatisasi:
    - Reboot (driver GPU, greetd, shell login).
-   - Login pertama: Noctalia setup wizard (wallpaper ke ~/Pictures/Wallpapers, tema), lalu
-     Settings > Security > Auto-Sync Greeter. Template warna (hyprland, alacritty, gtk3, gtk4, btop) diaktifkan
+   - Login pertama: Noctalia setup wizard (wallpaper ke ~/Pictures/Wallpapers, tema). Auto-sync greeter sudah aktif
+     lewat noctalia/greeter.toml; kalau layar login masih bawaan: noctalia msg greeter-sync. Template warna (hyprland, alacritty, gtk3, gtk4, btop) diaktifkan
      noctalia/templates.toml; kalau wizard menulis daftar sendiri, cek Settings > Templates supaya Hyprland,
      Alacritty, GTK 3, GTK 4 aktif (kalau tidak, border & aplikasi tidak ikut ganti warna).
    - Kunci SSH GitHub (ssh-keygen + tambahkan di GitHub) supaya git push jalan.
@@ -222,6 +229,10 @@ doctor() {
   have zsh && { zsh -ic 'exit' >/dev/null 2>&1 && ok "zsh memuat config" || { warn "zsh error"; bad=1; }; }
   have tmux && { [ -f "$HOME/.config/tmux/tmux.conf" ] && tmux -L residoc -f "$HOME/.config/tmux/tmux.conf" new -d -s x 2>/dev/null && tmux -L residoc kill-server && ok "tmux config OK" || { warn "tmux config error/hilang"; bad=1; }; }
   [ "$(getent passwd "$USER" | cut -d: -f7)" = "/usr/bin/zsh" ] && ok "login shell zsh" || warn "login shell bukan zsh"
+  if have noctalia-greeter; then
+    if [ -f "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/noctalia-greeter-sync/sync.toml" ]; then ok "greeter pernah di-sync sesi ini"
+    else warn "greeter belum di-sync sesi ini (layar login bisa masih bawaan): noctalia msg greeter-sync"; fi
+  fi
   (cd "$REPO" && git status --short | grep -q . && warn "repo punya perubahan belum di-commit" || ok "repo bersih")
   (( bad )) && { echo; echo "Ada masalah. Jalankan: resi-shell install"; return 1; } || echo "Semua sehat."
 }

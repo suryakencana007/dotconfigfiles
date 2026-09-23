@@ -14,7 +14,7 @@ Python, atau path repo; `sed -i` biasa mengganti symlink dengan file biasa (peru
 
 - Tulisan tangan: `~/.config/noctalia/*.toml` (semua file .toml di folder itu digabung; symlink ke repo dotfiles).
   Yang ada: `bar.toml` (bar transparan), `shell.toml` (`corner_radius_scale = 0`, `polkit_agent = true`),
-  `nvim.toml` (template user untuk Neovim).
+  `greeter.toml` (auto-sync greeter), `nvim.toml` (template user untuk Neovim).
 - GUI/state: `~/.local/state/noctalia/settings.toml`. Ditulis Settings dan wizard. **Menang** atas file tulisan
   tangan untuk kunci yang sama. Kalau perubahan file "tidak berpengaruh", cek dulu file state ini.
 - Terapkan perubahan file: `noctalia msg config-reload` (biasanya auto-reload juga).
@@ -100,8 +100,15 @@ kartu tengah = pilihan, Enter -> `wallpaper-set`. `hypr-theme` (rofi, menu Style
 ## Greeter
 
 `noctalia-greeter` (AUR) lewat greetd. Sync butuh polkit: agen Noctalia aktif (`polkit_agent = true`), dan rule
-tanpa password sudah dipasang (`sudo noctalia-greeter passwordless-sync enable $USER`). Auto-sync aktif
-di state. Manual: `noctalia msg greeter-sync`; hasil di log "synced shell appearance to greeter".
+tanpa password sudah dipasang (`sudo noctalia-greeter passwordless-sync enable $USER`, rule di
+`/etc/polkit-1/rules.d/49-noctalia-greeter-sync.rules`, folder itu root-only: cek status pakai sudo).
+Auto-sync: `[shell.greeter_sync] auto_sync = true` di `greeter.toml` (repo; sebelumnya hanya via GUI dan default false).
+Auto-sync hanya terpicu saat wallpaper/palet/mode/font berubah, jadi mesin baru tetap tampil bawaan sampai sync
+pertama: `noctalia msg greeter-sync` (installer melakukannya). Hasil di log "[greeter-sync] synced shell appearance
+to greeter" dan jurnal `pkexec ... noctalia-greeter-apply-appearance --sync /run/user/<uid>/noctalia-greeter-sync`
+(staging bisa dibaca user: sync.toml + wallpaper). Yang disinkron: wallpaper per output, palet, mode, font, radius,
+layout/scale monitor -> `/var/lib/noctalia-greeter/sync.toml` (root-only). `greeter.toml` (dari `resi/greeter.toml`,
+`scheme = "Synced"`) selalu menang atas sync.toml.
 
 ## Diagnosa
 

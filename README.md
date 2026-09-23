@@ -27,7 +27,7 @@ its Lua config) and built on [Noctalia](https://noctalia.dev).
 | **Capture** | Screenshots by Noctalia's native screencopy capture (frozen region select, annotator, clipboard + `~/Pictures/Screenshots`); screen recording by gpu-screen-recorder (KMS capture, GPU encoding, 60 fps, desktop audio), toggled from one key like Omarchy, with a red REC button in the bar while recording (click to stop). |
 | **Shell** | Noctalia v5: transparent bar with island-style capsule groups, control center, notifications, clipboard history, wallpaper picker, OSD, polkit agent, idle lock (10 min) and screen-off (11 min), blurred lock screen with a centered compact login box. |
 | **Launcher & menu** | rofi 2.0 (Wayland). `Super+Alt+Space` = app launcher, `Super+Space` = Omarchy-style hierarchical menu (Apps, Learn, Trigger, Toggle, Style, Setup, About, System). Both toggle: press again to close. |
-| **Login** | greetd + noctalia-greeter; wallpaper, palette, font and corner radius are synced from the desktop without a password prompt. |
+| **Login** | greetd + noctalia-greeter; wallpaper, palette, font, corner radius and monitor layout are auto-synced from the desktop (`noctalia/greeter.toml`) without a password prompt. |
 | **GTK apps** | Thunar and other GTK3/GTK4 apps use adw-gtk3 + Papirus icons in dark mode, colored by Noctalia's GTK templates. |
 | **Media** | mpv + yt-dlp as the default video/audio player, hardware decoding on the iGPU, floating window without transparency. |
 | **Terminal** | alacritty (MesloLGS Nerd Font, opacity, Noctalia colors), zsh + oh-my-zsh + Powerlevel10k (lean, one line, ANSI colors so it follows the theme), fzf/fzf-tab, zoxide, eza, bat, fd, ripgrep, delta, dust, duf, btop, tldr, lazygit. |
@@ -94,8 +94,9 @@ mkdir -p ~/Pictures/Wallpapers && cp /path/to/*.jpg ~/Pictures/Wallpapers/
 resi-shell doctor
 ```
 
-In Noctalia Settings (`Super+Shift+,`): run the setup wizard if it opens and enable **Security → Auto-Sync Greeter**
-(login screen follows the theme). The color templates (Hyprland borders, alacritty, GTK 3/4, btop) are enabled by
+In Noctalia Settings (`Super+Shift+,`): run the setup wizard if it opens. Greeter auto-sync is enabled by
+`noctalia/greeter.toml` and the installer triggers the first sync; if the login screen still shows the default look,
+run `noctalia msg greeter-sync` once (or Settings → Security → Sync Now). The color templates (Hyprland borders, alacritty, GTK 3/4, btop) are enabled by
 `noctalia/templates.toml`; if the wizard wrote its own list, check **Templates** and make sure Hyprland, Alacritty,
 GTK 3 and GTK 4 are on, otherwise borders and apps keep their static colors after a wallpaper change.
 Sign in to Brave and Spotify. On a laptop with a discrete GPU, set the BIOS to hybrid graphics.
