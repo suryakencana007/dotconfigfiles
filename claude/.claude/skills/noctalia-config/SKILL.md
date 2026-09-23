@@ -15,6 +15,10 @@ Paket `noctalia` (repo extra), dijalankan dari `autostart.lua` Hyprland. Bukan Q
 - GUI/state: `~/.local/state/noctalia/settings.toml`. Ditulis Settings dan wizard. **Menang** atas file tulisan
   tangan untuk kunci yang sama. Kalau perubahan file "tidak berpengaruh", cek dulu file state ini.
 - Terapkan perubahan file: `noctalia msg config-reload` (biasanya auto-reload juga).
+- Menghapus override state (satu-satunya cara selain GUI, tidak ada IPC settings-set): backup dulu,
+  `pkill -x noctalia`, hapus baris kunci itu di settings.toml, `setsid -f noctalia`, cek `noctalia config export`.
+  Kunci yang wizard tulis ke state: `[shell] font_family` (dihapus 2026-09-23 agar `shell.toml` berlaku),
+  `[bar.default]` capsule/padding/radius/thickness, `[theme]`, `[theme.templates] builtin_ids`.
 - Sebelum reload: `noctalia config validate` (cek sintaks/kunci). Lihat hasil gabungan semua lapisan:
   `noctalia config export` (yang diset) atau `noctalia config export full` (termasuk default).
 - Idle: mendefinisikan satu `[idle.behavior.<nama>]` sendiri mematikan seed bawaan (lock/screen-off/suspend);

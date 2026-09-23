@@ -3,3 +3,6 @@
 [shell]
 corner_radius_scale = 0.0
 polkit_agent = true    # agen polkit bawaan: dialog password untuk pkexec (greeter sync, GParted, dll)
+# Font UI global (bar, panel, launcher, notifikasi). Family Pango; fallback via Fontconfig.
+# Paket ttf-meslo-nerd (sistem-wide, jadi juga tersedia untuk greeter). Di GUI: Settings > Appearance > Font.
+font_family = "MesloLGS Nerd Font"
