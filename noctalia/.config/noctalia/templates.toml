@@ -1,0 +1,5 @@
+# Template bawaan Noctalia yang aktif (warna ikut wallpaper): border Hyprland, alacritty, GTK, btop.
+# Nilai yang sama di ~/.local/state/noctalia/settings.toml (ditulis wizard/GUI Settings > Templates) menang atas ini;
+# file ini memastikan mesin baru langsung benar walau wizard dilewati.
+[theme.templates]
+builtin_ids = ["hyprland", "alacritty", "gtk3", "gtk4", "btop"]

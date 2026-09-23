@@ -51,6 +51,9 @@ Noctalia merender template lalu menjalankan hook:
 | builtin `gtk3`, `gtk4` | `~/.config/gtk-{3,4}.0/noctalia.css` (+ `gtk.css` berisi @import) | hook `gtk/apply.sh`: gsettings color-scheme + gtk-theme adw-gtk3(-dark) bila terpasang. Aktif via GUI Settings > Templates (state `builtin_ids`). GTK3 butuh paket `adw-gtk-theme` agar warna masuk; mode gelap GTK3 butuh `gtk-application-prefer-dark-theme=1` di settings.ini (paket stow `gtk`). Ikon: `gsettings set org.gnome.desktop.interface icon-theme Papirus-Dark` |
 | user `rofi` | `~/.config/rofi/noctalia.rasi` dari `~/.config/noctalia/templates/rofi.rasi` | rofi membaca saat start, tanpa hook |
 
+`templates.toml` (repo) menyetel `[theme.templates] builtin_ids` untuk mesin baru; kalau state (wizard/GUI) punya
+kunci yang sama, state menang (list tidak digabung). Gejala template tidak aktif: border Hyprland/alacritty/GTK tidak
+ikut ganti warna saat wallpaper diganti -> cek Settings > Templates atau `noctalia config export | grep builtin_ids`.
 Template hanya dirender ulang saat tema berubah, BUKAN saat config-reload atau wallpaper-set dengan gambar yang sama.
 Memaksa render setelah mengedit template: `noctalia msg templates-apply` (render ulang semua template aktif tanpa
 ganti mode dan tanpa hook shell). Palet: `color-scheme-get`, `color-scheme-set wallpaper m3-tonal-spot|m3-content|...`,

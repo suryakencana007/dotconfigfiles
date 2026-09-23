@@ -94,8 +94,10 @@ mkdir -p ~/Pictures/Wallpapers && cp /path/to/*.jpg ~/Pictures/Wallpapers/
 resi-shell doctor
 ```
 
-In Noctalia Settings (`Super+Shift+,`): run the setup wizard if it opens, enable **Templates → GTK 3 and GTK 4**
-(Thunar and GTK apps follow the palette) and **Security → Auto-Sync Greeter** (login screen follows the theme).
+In Noctalia Settings (`Super+Shift+,`): run the setup wizard if it opens and enable **Security → Auto-Sync Greeter**
+(login screen follows the theme). The color templates (Hyprland borders, alacritty, GTK 3/4, btop) are enabled by
+`noctalia/templates.toml`; if the wizard wrote its own list, check **Templates** and make sure Hyprland, Alacritty,
+GTK 3 and GTK 4 are on, otherwise borders and apps keep their static colors after a wallpaper change.
 Sign in to Brave and Spotify. On a laptop with a discrete GPU, set the BIOS to hybrid graphics.
 
 ### Machine-specific parts

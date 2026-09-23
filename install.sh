@@ -182,8 +182,9 @@ finish() {
   Langkah manual yang tidak bisa diotomatisasi:
    - Reboot (driver GPU, greetd, shell login).
    - Login pertama: Noctalia setup wizard (wallpaper ke ~/Pictures/Wallpapers, tema), lalu
-     Settings > Security > Auto-Sync Greeter, dan Settings > Templates: nyalakan GTK 3 + GTK 4
-     (supaya Thunar/aplikasi GTK ikut warna). Template warna dirender saat tema pertama dipilih.
+     Settings > Security > Auto-Sync Greeter. Template warna (hyprland, alacritty, gtk3, gtk4, btop) diaktifkan
+     noctalia/templates.toml; kalau wizard menulis daftar sendiri, cek Settings > Templates supaya Hyprland,
+     Alacritty, GTK 3, GTK 4 aktif (kalau tidak, border & aplikasi tidak ikut ganti warna).
    - Kunci SSH GitHub (ssh-keygen + tambahkan di GitHub) supaya git push jalan.
    - Login Brave / Spotify. BIOS: mode GPU hybrid kalau laptop punya iGPU.
    - Mesin baru: buat hosts/$HOST/ untuk yang khas mesin ini (layout lock screen, monitor, dll).
