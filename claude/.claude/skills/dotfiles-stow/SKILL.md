@@ -19,7 +19,7 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 | hosts/<hostname> | overlay khas mesin (lockscreen-widgets.toml, hypr/local.lua) | `--no-folding`, dari dir `hosts/`, otomatis oleh installer |
 | claude | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` (per file, karena `~/.claude` punya isi lain) |
 | rofi | `.config/rofi/config.rasi`, `layout.rasi` (noctalia.rasi = render, ignored) | folder |
-| bin | `.local/bin/*` skrip (hypr-keybindings, hypr-menu) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
+| bin | `.local/bin/*` skrip (hypr-keybindings, hypr-menu, rofi-toggle, resi-shell) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
 
 ## Installer: resi-shell
 
@@ -30,9 +30,9 @@ sistem baru = tambah barisnya di daftar itu. `resi-shell doctor` = audit cepat (
 ## Aturan
 
 1. Edit config lewat path di home (symlink) atau langsung di repo; sama saja.
-2. File HASIL RENDER berada di dalam folder yang di-symlink utuh dan sudah di-gitignore. Jangan dihapus,
-   jangan dipindah: `hypr/.config/hypr/noctalia.lua`, `nvim/.config/nvim/lua/noctalia.lua`, `rofi/.config/rofi/noctalia.rasi`. File render hypr
-   (`~/.config/hypr/noctalia.lua`) kini di luar repo karena hypr di-stow `--no-folding`.
+2. File HASIL RENDER Noctalia: `nvim/.config/nvim/lua/noctalia.lua` dan `rofi/.config/rofi/noctalia.rasi` ada di dalam
+   folder yang di-symlink utuh dan di-gitignore (jangan dihapus/dipindah); `~/.config/hypr/noctalia.lua` berada di luar
+   repo karena hypr di-stow `--no-folding`.
 3. Backup lama ada di `~/.config-backups/`, bukan di repo. Pola `*.bak` dan `*.bak.*` di-gitignore.
 4. Menambah file ke paket yang sudah ada: taruh di repo, lalu `cd ~/dotconfigfiles && stow -t ~ <paket>`.
    Paket baru: buat `<paket>/<path seperti di home>`, pindahkan file asli ke sana (bukan copy), lalu stow.
