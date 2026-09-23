@@ -230,8 +230,10 @@ doctor() {
   have tmux && { [ -f "$HOME/.config/tmux/tmux.conf" ] && tmux -L residoc -f "$HOME/.config/tmux/tmux.conf" new -d -s x 2>/dev/null && tmux -L residoc kill-server && ok "tmux config OK" || { warn "tmux config error/hilang"; bad=1; }; }
   [ "$(getent passwd "$USER" | cut -d: -f7)" = "/usr/bin/zsh" ] && ok "login shell zsh" || warn "login shell bukan zsh"
   if have noctalia-greeter; then
-    if [ -f "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/noctalia-greeter-sync/sync.toml" ]; then ok "greeter pernah di-sync sesi ini"
-    else warn "greeter belum di-sync sesi ini (layar login bisa masih bawaan): noctalia msg greeter-sync"; fi
+    # /var/lib/noctalia-greeter root-only dan staging /run hilang tiap boot; log Noctalia permanen, pakai itu.
+    last=$(grep 'synced shell appearance to greeter' "$HOME/.cache/noctalia/noctalia.log" 2>/dev/null | tail -1 | cut -c1-19)
+    if [ -n "$last" ]; then ok "greeter terakhir di-sync $last"
+    else warn "greeter belum pernah di-sync (layar login masih bawaan): noctalia msg greeter-sync"; fi
   fi
   (cd "$REPO" && git status --short | grep -q . && warn "repo punya perubahan belum di-commit" || ok "repo bersih")
   (( bad )) && { echo; echo "Ada masalah. Jalankan: resi-shell install"; return 1; } || echo "Semua sehat."
