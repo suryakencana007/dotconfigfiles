@@ -45,6 +45,7 @@ Noctalia merender template lalu menjalankan hook:
 | builtin hyprland | `~/.config/hypr/noctalia.lua` | warna border; `hyprland.lua` memanggil `require("noctalia").apply_theme()` |
 | builtin btop/starship/... | aktif via `[theme.templates] builtin_ids` di state | hook gagal kalau app tidak ada (peringatan saja) |
 | user `nvim_base16` | `~/.config/nvim/lua/noctalia.lua` dari `lua/noctalia-template.lua` | hook `pkill -SIGUSR1 nvim` |
+| builtin `gtk3`, `gtk4` | `~/.config/gtk-{3,4}.0/noctalia.css` (+ `gtk.css` berisi @import) | hook `gtk/apply.sh`: gsettings color-scheme + gtk-theme adw-gtk3(-dark) bila terpasang. Aktif via GUI Settings > Templates (state `builtin_ids`). GTK3 butuh paket `adw-gtk-theme` agar warna masuk; mode gelap GTK3 butuh `gtk-application-prefer-dark-theme=1` di settings.ini (paket stow `gtk`). Ikon: `gsettings set org.gnome.desktop.interface icon-theme Papirus-Dark` |
 | user `rofi` | `~/.config/rofi/noctalia.rasi` dari `~/.config/noctalia/templates/rofi.rasi` | rofi membaca saat start, tanpa hook |
 
 Template hanya dirender ulang saat tema berubah, BUKAN saat config-reload atau wallpaper-set dengan gambar yang sama.

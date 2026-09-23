@@ -19,6 +19,7 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 | hosts/<hostname> | overlay khas mesin (lockscreen-widgets.toml, hypr/local.lua) | `--no-folding`, dari dir `hosts/`, otomatis oleh installer |
 | claude | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` (per file, karena `~/.claude` punya isi lain) |
 | rofi | `.config/rofi/config.rasi`, `layout.rasi` (noctalia.rasi = render, ignored) | folder |
+| gtk | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (render noctalia.css/gtk.css tinggal di ~/.config, di luar repo) | `--no-folding` |
 | bin | `.local/bin/*` skrip (hypr-keybindings, hypr-menu, rofi-toggle, resi-shell) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
 
 ## Installer: resi-shell

@@ -27,6 +27,7 @@ its Lua config) and built on [Noctalia](https://noctalia.dev).
 | **Shell** | Noctalia v5: transparent bar with island-style capsule groups, control center, notifications, clipboard history, wallpaper picker, OSD, polkit agent, idle lock (10 min) and screen-off (11 min), blurred lock screen with a centered compact login box. |
 | **Launcher & menu** | rofi 2.0 (Wayland). `Super+Alt+Space` = app launcher, `Super+Space` = Omarchy-style hierarchical menu (Apps, Learn, Trigger, Toggle, Style, Setup, About, System). Both toggle: press again to close. |
 | **Login** | greetd + noctalia-greeter; wallpaper, palette, font and corner radius are synced from the desktop without a password prompt. |
+| **GTK apps** | Thunar and other GTK3/GTK4 apps use adw-gtk3 + Papirus icons in dark mode, colored by Noctalia's GTK templates. |
 | **Terminal** | alacritty (MesloLGS Nerd Font, opacity, Noctalia colors), zsh + oh-my-zsh + Powerlevel10k (lean, one line, ANSI colors so it follows the theme), fzf/fzf-tab, zoxide, eza, bat, fd, ripgrep, delta, dust, duf, btop, tldr, lazygit. |
 | **tmux** | Omarchy's config: `Ctrl+Space` prefix, `Alt+Enter` split, `Alt+1..9` windows, status bar on top, TPM with resurrect + continuum (sessions survive reboots). |
 | **Neovim** | LazyVim with a base16 colorscheme rendered by Noctalia (live reload on theme change), transparent background. |
@@ -85,7 +86,8 @@ missing. It performs these steps in order:
 - **Reboot** so the GPU driver, greetd and the login shell take effect.
 - Log in. Noctalia's setup wizard opens: pick a wallpaper (put images in `~/Pictures/Wallpapers`) and a theme.
   Every template (alacritty, rofi, Neovim, Hyprland borders) is rendered the first time a theme is chosen.
-- In Noctalia Settings (`Super+Shift+,`) enable **Security → Auto-Sync Greeter**.
+- In Noctalia Settings (`Super+Shift+,`) enable **Security → Auto-Sync Greeter** and, under **Templates**, turn on
+  **GTK 3** and **GTK 4** so Thunar and other GTK apps pick up the palette.
 - Generate an SSH key and add it to GitHub so `git push` works; sign in to Brave and Spotify.
 - Laptops with a dGPU: set the BIOS to **hybrid** graphics so the iGPU drives the panel.
 
@@ -116,6 +118,7 @@ Each top-level folder is a Stow package mirroring `$HOME`:
 | `rofi` | `.config/rofi/{config,layout}.rasi` | folder link (`noctalia.rasi` is rendered, ignored) |
 | `hypr` | `.config/hypr/*.lua`, `bindings/*.lua` | `--no-folding` (real dir) |
 | `noctalia` | `.config/noctalia/*.toml`, `templates/` | `--no-folding` (real dir) |
+| `gtk` | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (dark mode; colors are rendered by Noctalia) | `--no-folding` |
 | `bin` | `.local/bin/{hypr-keybindings,hypr-menu,rofi-toggle,resi-shell}` | `--no-folding` |
 | `claude` | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` |
 | `hosts/<hostname>` | machine-specific overlay, see below | `--no-folding`, from `hosts/` |
@@ -141,7 +144,7 @@ GPU drivers are detected at install time and the NVIDIA environment is only appl
 ```sh
 cd ~/dotconfigfiles
 stow -t ~ zsh git alacritty tmux nvim rofi
-stow --no-folding -t ~ hypr noctalia claude bin
+stow --no-folding -t ~ hypr noctalia claude bin gtk
 (cd hosts && stow --no-folding -t ~ "$(cat /etc/hostname)")
 ```
 

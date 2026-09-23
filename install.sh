@@ -13,7 +13,7 @@ CMD="install"; DRY=0
 for a in "$@"; do case "$a" in install|update|doctor|packages) CMD="$a" ;; --dry-run|-n) DRY=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "argumen tidak dikenal: $a" >&2; exit 2 ;; esac; done
 
 PKGS_FOLD=(zsh git alacritty tmux nvim rofi)            # stow biasa (folder boleh dilipat)
-PKGS_NOFOLD=(hypr noctalia claude bin)                  # --no-folding: folder tetap nyata (overlay host & file render bisa masuk)
+PKGS_NOFOLD=(hypr noctalia claude bin gtk)                 # --no-folding: folder tetap nyata (overlay host & file render bisa masuk)
 HOST="$(cat /etc/hostname 2>/dev/null || hostname)"
 
 c_step=$'\e[1;34m'; c_ok=$'\e[1;32m'; c_warn=$'\e[1;33m'; c_off=$'\e[0m'
@@ -152,6 +152,17 @@ services() {
   ok "greetd + layanan aktif"
 }
 
+gtk_theme() {
+  step "Tema GTK (adw-gtk3 + Papirus, mode gelap)"
+  # Warna GTK dirender template builtin Noctalia gtk3/gtk4 (aktifkan di Settings > Templates; tersimpan di state).
+  # Hook Noctalia yang menyetel gtk-theme adw-gtk3-dark saat tema berganti; ikon dan mode gelap diset di sini.
+  have gsettings || { warn "gsettings tidak ada"; return; }
+  run gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  [ -d /usr/share/themes/adw-gtk3-dark ] && run gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+  [ -d /usr/share/icons/Papirus-Dark ] && run gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark'
+  ok "GTK gelap + Papirus"
+}
+
 greeter() {
   step "Noctalia Greeter"
   if ! have noctalia-greeter; then warn "noctalia-greeter belum terpasang (AUR)"; return; fi
@@ -167,7 +178,8 @@ finish() {
   Langkah manual yang tidak bisa diotomatisasi:
    - Reboot (driver GPU, greetd, shell login).
    - Login pertama: Noctalia setup wizard (wallpaper ke ~/Pictures/Wallpapers, tema), lalu
-     Settings > Security > Auto-Sync Greeter. Template warna dirender saat tema pertama dipilih.
+     Settings > Security > Auto-Sync Greeter, dan Settings > Templates: nyalakan GTK 3 + GTK 4
+     (supaya Thunar/aplikasi GTK ikut warna). Template warna dirender saat tema pertama dipilih.
    - Kunci SSH GitHub (ssh-keygen + tambahkan di GitHub) supaya git push jalan.
    - Login Brave / Spotify. BIOS: mode GPU hybrid kalau laptop punya iGPU.
    - Mesin baru: buat hosts/$HOST/ untuk yang khas mesin ini (layout lock screen, monitor, dll).
@@ -206,7 +218,7 @@ update() {
 install_all() {
   require_arch; sudo_keepalive
   pacman_packages; aur_helper; aur_packages; gpu_drivers
-  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; greeter; finish
+  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; gtk_theme; greeter; finish
 }
 
 case "$CMD" in
