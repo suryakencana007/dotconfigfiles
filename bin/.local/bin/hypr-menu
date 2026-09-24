@@ -122,6 +122,7 @@ setup_items() { cat <<'ITEMS'
 󰂯  Bluetooth	noctalia msg panel-toggle control-center bluetooth
 󰍹  Display	noctalia msg settings-open display
 󰍺  Monitors (nwg-displays)	~/.local/bin/hypr-monitors
+󰹺  Power profile	menu:power_profile
 󰈮  Hyprland config	alacritty -e nvim ~/.config/hypr/hyprland.lua
 󰈙  Noctalia config	alacritty -e nvim ~/.config/noctalia/
 󰊢  Dotfiles	alacritty -e sh -c 'cd ~/dotconfigfiles && exec lazygit'
@@ -194,6 +195,15 @@ ITEMS
 # Suspend/Hibernate hanya tampil bila logind bisa melakukannya (ala "when" di Omarchy: omarchy-hibernation-available).
 # Hibernate butuh swap non-zram sebesar image + hook resume + parameter resume= di kernel; lihat NOTES.md.
 can_power() { [[ $(busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager "Can$1" 2>/dev/null) == 's "yes"' ]]; }
+# Profil daya (power-profiles-daemon): ✓ pada yang aktif; pilihan diingat per sumber daya oleh hypr-power.
+power_profile_items() {
+  local active; active=$(powerprofilesctl get 2>/dev/null)
+  local p glyph; for p in performance balanced power-saver; do
+    powerprofilesctl list 2>/dev/null | grep -q "^\*\? *$p:" || continue
+    case $p in performance) glyph="󱨋" ;; balanced) glyph="󰾅" ;; power-saver) glyph="󰌪" ;; esac
+    printf '%s  %s%s\t%s\n' "$glyph" "$p" "$([[ $p == "$active" ]] && echo "  ✓")" "~/.local/bin/hypr-power profile $p"
+  done
+}
 system_items() {
   printf '%s\t%s\n' "󰌾  Lock" "noctalia msg session lock"
   can_power Suspend   && printf '%s\t%s\n' "󰒲  Suspend" "noctalia msg session suspend"
@@ -210,6 +220,7 @@ trigger() { run_menu "Trigger" trigger_items root; }
 toggle()  { run_menu "Toggle"  toggle_items  root; }
 style()   { run_menu "Style"   style_items   root; }
 setup()   { run_menu "Setup"   setup_items   root; }
+power_profile() { run_menu "Power profile ($(~/.local/bin/hypr-power status 2>/dev/null | sed -n 's/^source=\([a-z]*\).*/\1/p'))" power_profile_items setup; }
 install() { run_menu "Install" install_items root; }
 development()        { run_menu "Development" development_items install; }
 dev_javascript()     { run_menu "JavaScript"  install_js_items     development; }

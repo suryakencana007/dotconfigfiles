@@ -153,7 +153,10 @@ Hyprland's window borders, and the login screen.
   backlight; `nvidia_0` is a bogus device on hybrid laptops), refresh via a flag file loaded by
   `monitors.lua`. It is idempotent (last applied source in `~/.local/state/resi/power/applied`),
   single-instance (flock), and re-applies on every `upower --monitor` event. Panel eDP-2 on
-  legionarch only offers 144 Hz, so the refresh step is a no-op there.
+  legionarch only offers 144 Hz, so the refresh step is a no-op there. `hypr-power profile <p>`
+  (menu Setup > Power profile) follows omarchy-powerprofiles-set: the choice is stored per power
+  source (`profile-ac` / `profile-battery` in the state dir) and `apply` uses it, so a manual
+  override is not clobbered by the next plug/unplug; defaults are balanced / power-saver.
 - **Install > Development = Omarchy's dev-env installer on mise** (`bin/hypr-dev-env`, ported from
   `omarchy-install-dev-env` / `omarchy-remove-dev-env`). Same tool choices: mise for everything it
   can version (`mise use --global <tool>@latest`, PHP via the `static-php-builds` alias, uv after
