@@ -94,6 +94,12 @@ Hyprland's window borders, and the login screen.
   nothing local is wrong, retry later. The script says so and continues with old metadata if any. Omarchy also copies
   `fwupdx64.efi` into `/boot/EFI/arch`; we skip that because fwupd's uefi-capsule plugin places it on
   the ESP itself when a UEFI update is staged, and our ESP layout is not Omarchy's.
+- **Update > Process > Shell** (`bin/hypr-restart-shell`) is the Noctalia version of
+  `omarchy-restart-shell`: refuse while `noctalia msg status` reports `locked` (killing the lock
+  client strands the session in Hyprland's failsafe), kill the daemon, relaunch it through
+  `hyprctl dispatch 'hl.dsp.exec_cmd("noctalia")'` so it inherits the session environment rather
+  than the terminal's, then poll `noctalia msg status` until it answers. Omarchy's other Process
+  entry (Hyprsunset) has no equivalent here: night light is built into Noctalia.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one

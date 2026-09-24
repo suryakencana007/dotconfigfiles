@@ -120,6 +120,11 @@ ITEMS
 update_items() { cat <<'ITEMS'
 󰑓  Resi shell	~/.local/bin/hypr-tui ~/.local/bin/resi-shell update
   Firmware	~/.local/bin/hypr-tui ~/.local/bin/hypr-update-firmware
+  Process	menu:process
+ITEMS
+}
+process_items() { cat <<'ITEMS'
+󰍜  Shell (Noctalia)	~/.local/bin/hypr-tui ~/.local/bin/hypr-restart-shell
 ITEMS
 }
 remove_items() { cat <<'ITEMS'
@@ -143,6 +148,7 @@ style()   { run_menu "Style"   style_items   root; }
 setup()   { run_menu "Setup"   setup_items   root; }
 install() { run_menu "Install" install_items root; }
 update()  { run_menu "Update"  update_items  root; }
+process() { run_menu "Restart" process_items update; }
 remove()  { run_menu "Remove"  remove_items  root; }
 system()  { run_menu "System"  system_items  root; }
 root()    { run_menu "Menu"    root_items; }
