@@ -136,24 +136,32 @@ ITEMS
 # Lingkungan pengembangan (hypr-dev-env, berbasis mise seperti Omarchy). Daftar yang sama dipakai Install dan Remove;
 # "✓" = sudah terpasang (install idempotent; remove pada yang belum terpasang hanya memberi pesan).
 DEVENV="$HOME/.local/bin/hypr-dev-env"
-dev_item() { # $1 verb (install|remove), $2 glyph, $3 label, $4 env
-  local mark=""; "$DEVENV" installed "$4" 2>/dev/null && mark="  ✓"
+dev_item() { # $1 verb (install|remove), $2 glyph, $3 label, $4 env. remove: hanya yang terpasang (ala "when" Omarchy)
+  local mark=""
+  if "$DEVENV" installed "$4" 2>/dev/null; then [[ $1 == install ]] && mark="  ✓"; elif [[ $1 == remove ]]; then return 0; fi
   printf '%s  %s%s\t%s\n' "$2" "$3" "$mark" "~/.local/bin/hypr-tui $DEVENV $1 $4"
 }
+dev_group() { # $1 verb, $2 glyph, $3 label, $4 nama submenu, $5.. anggota. remove: hanya bila ada anggota terpasang
+  local e; if [[ $1 == remove ]]; then local any=0; for e in "${@:5}"; do "$DEVENV" installed "$e" 2>/dev/null && any=1; done; (( any )) || return 0; fi
+  printf '%s\t%s\n' "$2  $3" "menu:$4"
+}
 dev_items() { # $1 verb, $2 prefix nama submenu (dev_ | rmdev_)
-  dev_item "$1" "󰫏" "Ruby on Rails" ruby
-  printf '%s\t%s\n' "󰌞  JavaScript" "menu:${2}javascript"
-  dev_item "$1" "󰟣" "Go" go
-  printf '%s\t%s\n' "󰌟  PHP" "menu:${2}php"
-  dev_item "$1" "󰌠" "Python" python
-  printf '%s\t%s\n' "󰘧  Elixir" "menu:${2}elixir"
-  dev_item "$1" "󰅩" "Zig" zig
-  dev_item "$1" "󱘗" "Rust" rust
-  dev_item "$1" "󰬷" "Java" java
-  dev_item "$1" "󰪮" ".NET" dotnet
-  dev_item "$1" "󰅩" "OCaml" ocaml
-  dev_item "$1" "󰅩" "Clojure" clojure
-  dev_item "$1" "󰅩" "Scala" scala
+  local out; out=$(
+    dev_item "$1" "󰫏" "Ruby on Rails" ruby
+    dev_group "$1" "󰌞" "JavaScript" "${2}javascript" node bun deno
+    dev_item "$1" "󰟣" "Go" go
+    dev_group "$1" "󰌟" "PHP" "${2}php" php laravel symfony
+    dev_item "$1" "󰌠" "Python" python
+    dev_group "$1" "󰘧" "Elixir" "${2}elixir" elixir phoenix
+    dev_item "$1" "󰅩" "Zig" zig
+    dev_item "$1" "󱘗" "Rust" rust
+    dev_item "$1" "󰬷" "Java" java
+    dev_item "$1" "󰪮" ".NET" dotnet
+    dev_item "$1" "󰅩" "OCaml" ocaml
+    dev_item "$1" "󰅩" "Clojure" clojure
+    dev_item "$1" "󰅩" "Scala" scala
+  )
+  if [[ -n $out ]]; then printf '%s\n' "$out"; else printf '%s\t%s\n' "󰋽  Nothing installed yet" "back"; fi
 }
 dev_javascript_items() { dev_item "$1" "󰎙" "Node.js" node; dev_item "$1" "󰌞" "Bun" bun; dev_item "$1" "󰌞" "Deno" deno; }
 dev_php_items()        { dev_item "$1" "󰌟" "PHP" php; dev_item "$1" "󰌟" "Laravel" laravel; dev_item "$1" "󰌟" "Symfony" symfony; }

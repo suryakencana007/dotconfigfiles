@@ -162,7 +162,7 @@ Hyprland's window borders, and the login screen.
   when present (plus shims on PATH, like Omarchy's env-bootstrap). `omarchy-pkg-add` became
   `pacman -S --needed` / `yay` (symfony-cli is AUR). The menu marks installed environments with ✓
   (Omarchy greys them out) using the same detection paths (`~/.local/share/mise/installs/<tool>`,
-  `~/.rustup`, `~/.opam`, `~/.mix/archives/phx_new*`), and Remove > Development shows the same list (Omarchy hides uninstalled ones; here removing an uninstalled one just says so). Remove > AUR filters with `pacman -Qqm`.
+  `~/.rustup`, `~/.opam`, `~/.mix/archives/phx_new*`), and Remove > Development, like Omarchy, lists only installed ones (groups appear only when a member is installed; a "Nothing installed yet" placeholder goes back). Remove > AUR filters with `pacman -Qqm`.
   Not ported: Docker DB (needs docker, not installed here).
 - **`hypr-menu` self-check.** Commit b8b94b6 accidentally deleted `update_items`, `process_items`,
   `remove_items` and `can_power` while a block of functions was replaced by text offsets, so Update
