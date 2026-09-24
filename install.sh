@@ -337,6 +337,11 @@ update() {
   step "Upgrade AUR packages"; if run yay -Sua --noconfirm; then ok "AUR up to date"; else warn "AUR upgrade failed; continuing with the rest of the update"; fi
   stow_all; tmux_plugins; nvim_plugins
   have hyprctl && run hyprctl reload >/dev/null; have noctalia && run noctalia msg config-reload >/dev/null 2>&1 || true
+  # autostart.lua only runs at Hyprland start: (re)launch the battery watcher now. hypr-power is single-instance
+  # (flock), so this is a no-op when it is already running. Spawned through Hyprland like autostart does.
+  if have hyprctl && hyprctl version >/dev/null 2>&1 && [ -x "$HOME/.local/bin/hypr-power" ]; then
+    run hyprctl dispatch "hl.dsp.exec_cmd(\"$HOME/.local/bin/hypr-power watch\")" >/dev/null 2>&1 && ok "battery watcher (hypr-power) running" || warn "could not start hypr-power watch"
+  fi
   ok "update done"
   update_restart
 }
