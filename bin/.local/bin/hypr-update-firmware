@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Update firmware perangkat lewat fwupd (ala omarchy-update-firmware). Dipanggil dari hypr-menu > Update > Firmware
+# lewat hypr-tui. fwupd tidak dipasang default; ditawarkan saat pertama dipakai, seperti Omarchy (omarchy-pkg-add fwupd).
+# fwupd sendiri yang menyalin fwupdx64.efi ke ESP saat ada update UEFI, jadi tidak perlu install manual ke /boot.
+set -uo pipefail
+
+printf '\e[32mUpdate Firmware\e[0m\n\n'
+
+if ! command -v fwupdmgr >/dev/null; then
+  hypr-tui --box "fwupd is not installed." "" "It is needed to check and apply firmware updates (fwupdmgr)."; echo
+  hypr-tui --confirm "Install fwupd now?" || { echo "Cancelled."; exit 1; }
+  sudo pacman -S --needed --noconfirm fwupd || exit $?
+  echo
+fi
+
+echo "Refreshing firmware metadata (LVFS)..."
+if ! out=$(fwupdmgr refresh --force 2>&1); then
+  printf '%s\n' "$out" | grep -v '^Downloading' | tail -3
+  echo
+  if grep -q 'checksum expected' <<<"$out"; then
+    hypr-tui --box "LVFS metadata and its signature are out of sync on cdn.fwupd.org." "" \
+      "This is a server-side cache problem, nothing to fix on this machine." \
+      "Try again in an hour or so."
+  else
+    hypr-tui --box "Could not download the LVFS metadata (offline, or cdn.fwupd.org unreachable)."
+  fi
+  echo
+  if fwupdmgr get-remotes 2>/dev/null | grep -qE '^\s*Age:\s+[0-9]'; then    # metadata lama masih ada -> tetap lanjut
+    echo "Continuing with the previously downloaded metadata."
+  else
+    exit 1
+  fi
+fi
+echo
+sudo fwupdmgr update; code=$?
+# fwupdmgr keluar dengan 2 bila tidak ada yang perlu diperbarui.
+if (( code == 2 )); then echo "No firmware updates available."; exit 0; fi
+exit $code

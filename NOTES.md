@@ -86,6 +86,14 @@ Hyprland's window borders, and the login screen.
 - **Everything shown to the user is English** (installer output, doctor checks, TUI prompts, menu
   labels, README). Code comments in the scripts and the Claude skills stay Indonesian; that is the
   owner's working language. Keep new user-facing strings English.
+- **Update > Firmware** (`bin/hypr-update-firmware`) mirrors `omarchy-update-firmware`: fwupd is not
+  in the package list, the script offers to install it on first use, then `fwupdmgr refresh --force`
+  and `sudo fwupdmgr update` (exit 2 = nothing to update, reported as such). A refresh error
+  "metadata checksum expected X and got Y" is cdn.fwupd.org serving a newer `firmware.xml.zst`
+  with a stale cached `.jcat` signature (seen 2026-09-24: metadata 06:42 UTC, jcat 02:41 UTC);
+  nothing local is wrong, retry later. The script says so and continues with old metadata if any. Omarchy also copies
+  `fwupdx64.efi` into `/boot/EFI/arch`; we skip that because fwupd's uefi-capsule plugin places it on
+  the ESP itself when a UEFI update is staged, and our ESP layout is not Omarchy's.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one

@@ -119,6 +119,7 @@ ITEMS
 }
 update_items() { cat <<'ITEMS'
 󰑓  Resi shell	~/.local/bin/hypr-tui ~/.local/bin/resi-shell update
+  Firmware	~/.local/bin/hypr-tui ~/.local/bin/hypr-update-firmware
 ITEMS
 }
 remove_items() { cat <<'ITEMS'
