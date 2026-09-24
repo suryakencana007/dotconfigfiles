@@ -166,7 +166,12 @@ Hyprland's window borders, and the login screen.
   `pacman -S --needed` / `yay` (symfony-cli is AUR). The menu marks installed environments with ✓
   (Omarchy greys them out) using the same detection paths (`~/.local/share/mise/installs/<tool>`,
   `~/.rustup`, `~/.opam`, `~/.mix/archives/phx_new*`), and Remove > Development, like Omarchy, lists only installed ones (groups appear only when a member is installed; a "Nothing installed yet" placeholder goes back). Remove > AUR filters with `pacman -Qqm`.
-  Not ported: Docker DB (needs docker, not installed here).
+  Docker DB (`bin/hypr-docker-db`) ports omarchy-install-docker-dbs with the same `docker run`
+  lines (ports on 127.0.0.1, dev credentials, `--restart unless-stopped`), plus list/remove and
+  "already exists -> start it". Like Omarchy the user is NOT added to the docker group (that is
+  passwordless root); the CLI goes through sudo unless the socket is writable. Docker is offered
+  for install on first use and a minimal `/etc/docker/daemon.json` (log rotation only; Omarchy's
+  dns/bip lines belong to its ufw setup) is written if none exists.
 - **`hypr-menu` self-check.** Commit b8b94b6 accidentally deleted `update_items`, `process_items`,
   `remove_items` and `can_power` while a block of functions was replaced by text offsets, so Update
   and Remove opened as empty menus (only "Back") and System lost Suspend. `HYPR_MENU_CHECK=1

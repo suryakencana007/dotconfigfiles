@@ -21,7 +21,7 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 | claude | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` (per file, karena `~/.claude` punya isi lain) |
 | rofi | `.config/rofi/config.rasi`, `layout.rasi` (noctalia.rasi = render, ignored) | folder |
 | gtk | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (render noctalia.css/gtk.css tinggal di ~/.config, di luar repo) | `--no-folding` |
-| bin | `.local/share/applications/nwg-displays.desktop` (override entri launcher -> hypr-monitors) + `.local/bin/*` skrip (hypr-keybindings, hypr-menu, hypr-theme, hypr-theme-carousel, hypr-record, hypr-pkg-install, hypr-tui, hypr-update-firmware, hypr-restart-shell, hypr-monitors, hypr-clamshell, hypr-lid-close, hypr-power, hypr-dev-env, hypr-updates, hypr-webapp, rofi-toggle, resi-shell) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
+| bin | `.local/share/applications/nwg-displays.desktop` (override entri launcher -> hypr-monitors) + `.local/bin/*` skrip (hypr-keybindings, hypr-menu, hypr-theme, hypr-theme-carousel, hypr-record, hypr-pkg-install, hypr-tui, hypr-update-firmware, hypr-restart-shell, hypr-monitors, hypr-clamshell, hypr-lid-close, hypr-power, hypr-dev-env, hypr-updates, hypr-webapp, hypr-docker-db, rofi-toggle, resi-shell) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
 
 ## Installer: resi-shell
 

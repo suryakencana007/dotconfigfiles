@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Database pengembangan di container Docker, ala omarchy-install-docker-dbs: MySQL, PostgreSQL, Redis, MongoDB,
+# MariaDB, MSSQL dengan opsi pengembangan (port hanya di 127.0.0.1, password kosong/sederhana, restart otomatis).
+# Docker tidak dipasang default; ditawarkan saat pertama dipakai. CLI docker lewat sudo, seperti Omarchy: user
+# TIDAK dimasukkan ke grup docker (setara root tanpa password); bila socket sudah writable, sudo dilewati.
+#   hypr-docker-db install [DB...]   pilih lewat fzf bila tanpa argumen
+#   hypr-docker-db remove  [DB...]   hapus container (data ikut hilang)
+#   hypr-docker-db list              status container database
+#   hypr-docker-db installed         exit 0 bila ada container database kita (untuk menu Remove)
+set -uo pipefail
+
+DBS=(MySQL PostgreSQL Redis MongoDB MariaDB MSSQL)
+name_of() { case $1 in MySQL) echo mysql8 ;; PostgreSQL) echo postgres18 ;; Redis) echo redis ;; MongoDB) echo mongodb ;; MariaDB) echo mariadb11 ;; MSSQL) echo mssql ;; esac; }
+info_of() { case $1 in
+  MySQL)      echo "127.0.0.1:3306  user root, empty password" ;;
+  PostgreSQL) echo "127.0.0.1:5432  user postgres, no password (trust)" ;;
+  Redis)      echo "127.0.0.1:6379  no password" ;;
+  MongoDB)    echo "127.0.0.1:27017 user admin, password admin123" ;;
+  MariaDB)    echo "127.0.0.1:3306  user root, empty password (same port as MySQL: run one of them)" ;;
+  MSSQL)      echo "127.0.0.1:1433  user sa, password @dmin123" ;; esac; }
+
+dock() { if [[ -w /var/run/docker.sock ]]; then docker "$@"; else sudo docker "$@"; fi; }
+
+ensure_docker() {
+  if ! command -v docker >/dev/null; then
+    hypr-tui --box "Docker is not installed." "" "Needed to run development databases in containers (docker + docker-compose)."; echo
+    hypr-tui --confirm "Install Docker now?" || { echo "Cancelled."; return 1; }
+    sudo pacman -S --needed --noconfirm docker docker-compose || return 1
+  fi
+  if [[ ! -f /etc/docker/daemon.json ]]; then   # batasi log container (ala etc/docker/daemon.json Omarchy, tanpa bagian ufw)
+    printf '{\n  "log-driver": "json-file",\n  "log-opts": { "max-size": "10m", "max-file": "5" }\n}\n' | sudo install -Dm644 /dev/stdin /etc/docker/daemon.json
+  fi
+  systemctl is-active --quiet docker.socket || systemctl is-active --quiet docker || { echo "Starting the Docker daemon..."; sudo systemctl enable --now docker.socket >/dev/null 2>&1 || sudo systemctl enable --now docker >/dev/null 2>&1; }
+  dock info >/dev/null 2>&1 || { echo "Docker daemon is not reachable." >&2; return 1; }
+}
+
+run_db() {
+  local db="$1" name; name=$(name_of "$db"); [[ -n $name ]] || { echo "Unknown database: $db" >&2; return 1; }
+  if dock ps -a --format '{{.Names}}' | grep -qx "$name"; then
+    if dock ps --format '{{.Names}}' | grep -qx "$name"; then echo "$db ($name) is already running."; else echo "Starting existing $db ($name)..."; dock start "$name" >/dev/null; fi
+    return 0
+  fi
+  echo "Installing $db..."
+  case $db in
+    MySQL)      dock run -d --restart unless-stopped -p "127.0.0.1:3306:3306" --name=mysql8 -e MYSQL_ROOT_PASSWORD= -e MYSQL_ALLOW_EMPTY_PASSWORD=true mysql:8.4 ;;
+    PostgreSQL) dock run -d --restart unless-stopped -p "127.0.0.1:5432:5432" --name=postgres18 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:18 ;;
+    MariaDB)    dock run -d --restart unless-stopped -p "127.0.0.1:3306:3306" --name=mariadb11 -e MARIADB_ROOT_PASSWORD= -e MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=true mariadb:11.8 ;;
+    Redis)      dock run -d --restart unless-stopped -p "127.0.0.1:6379:6379" --name=redis redis:7 ;;
+    MongoDB)    dock run -d --restart unless-stopped -p "127.0.0.1:27017:27017" --name mongodb -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin123 mongo:noble ;;
+    MSSQL)      dock run -d --restart unless-stopped -p "127.0.0.1:1433:1433" --name mssql -e MSSQL_PID=Developer -e ACCEPT_EULA=Y -e "MSSQL_SA_PASSWORD=@dmin123" mcr.microsoft.com/mssql/server:2022-CU12-ubuntu-22.04 ;;
+  esac >/dev/null && echo "  $db ready: $(info_of "$db")"
+}
+
+pick() { printf '%s\n' "${DBS[@]}" | fzf --multi --layout=reverse --info=inline --color=16 --prompt="$1" --header='tab: multi-select, enter: confirm, esc: cancel' 2>/dev/null; }
+ours() { command -v docker >/dev/null || return 0; local db n; for db in "${DBS[@]}"; do n=$(name_of "$db"); dock ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$n" && echo "$db"; done; }
+
+case "${1:-}" in
+  install) shift; ensure_docker || exit 1
+           if (( $# )); then choices=("$@"); else mapfile -t choices < <(pick '  Install database : '); fi
+           (( ${#choices[@]} )) || { echo "No databases selected."; exit 0; }
+           for db in "${choices[@]}"; do run_db "$db"; done ;;
+  remove)  shift; command -v docker >/dev/null || { echo "Docker is not installed."; exit 0; }
+           if (( $# )); then choices=("$@"); else mapfile -t choices < <(ours | fzf --multi --layout=reverse --info=inline --color=16 --color='pointer:red,marker:red' --prompt='  Remove database : ' --header='tab: multi-select, enter: remove (data is deleted)' 2>/dev/null); fi
+           (( ${#choices[@]} )) || { echo "No databases selected."; exit 0; }
+           hypr-tui --confirm "Remove ${choices[*]} (container and its data)?" || { echo "Cancelled."; exit 1; }
+           for db in "${choices[@]}"; do dock rm -f "$(name_of "$db")" >/dev/null && echo "Removed $db"; done ;;
+  list)    command -v docker >/dev/null || { echo "Docker is not installed."; exit 0; }
+           printf '\e[32mDevelopment databases\e[0m\n\n'; for db in $(ours); do printf '%-11s %-11s %s\n' "$db" "$(dock ps -a --filter "name=^$(name_of "$db")$" --format '{{.Status}}' | cut -d' ' -f1)" "$(info_of "$db")"; done ;;
+  installed) [[ -n $(ours) ]] ;;
+  *) echo "usage: hypr-docker-db install|remove [DB...] | list | installed   (DB: ${DBS[*]})" >&2; exit 2 ;;
+esac

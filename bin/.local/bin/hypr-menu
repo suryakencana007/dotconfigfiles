@@ -162,6 +162,10 @@ dev_items() { # $1 verb, $2 prefix nama submenu (dev_ | rmdev_)
     dev_item "$1" "󰅩" "OCaml" ocaml
     dev_item "$1" "󰅩" "Clojure" clojure
     dev_item "$1" "󰅩" "Scala" scala
+    # Docker DB (omarchy-install-docker-dbs): install selalu; remove hanya bila ada container database kita
+    if [[ $1 == install ]] || ~/.local/bin/hypr-docker-db installed 2>/dev/null; then
+      printf '%s\t%s\n' "󰡨  Docker DB" "~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-docker-db $1"
+    fi
   )
   if [[ -n $out ]]; then printf '%s\n' "$out"; else printf '%s\t%s\n' "󰋽  Nothing installed yet" "back"; fi
 }
