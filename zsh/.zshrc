@@ -61,6 +61,14 @@ if (( $+commands[fzf] )); then
   export FZF_ALT_C_OPTS="--preview 'eza --tree --level=2 --color=always --icons {}'"
 fi
 
+# ---- mise: versi runtime (node, ruby, go, python, ...) untuk dev env dari menu Install > Development ----
+# Dipasang saat pertama dipakai (hypr-dev-env). activate = versi per proyek (.mise.toml) mengikuti cd;
+# shims di PATH supaya program non-interaktif (editor, skrip) juga menemukan tool mise.
+if (( $+commands[mise] )); then
+  eval "$(mise activate zsh)"
+  [[ :$PATH: == *:$HOME/.local/share/mise/shims:* ]] || export PATH="$PATH:$HOME/.local/share/mise/shims"
+fi
+
 # ---- zoxide: cd pintar. `cd proj` lompat ke folder yang sering dipakai, `cdi` = pilih interaktif ----
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"
 

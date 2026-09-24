@@ -1,16 +1,24 @@
 #!/usr/bin/env bash
 # Menu bertingkat ala omarchy-menu, ditampilkan lewat rofi (dmenu). Super+Alt+Space.
-# Tiap entri: "glyph  Label". Esc menutup; "Back" atau BackSpace (saat filter kosong) kembali ke menu induk.
+# Tiap entri: "glyph  Label"; entri submenu diberi 󰅂 di kanan. Esc menutup; "Back" atau BackSpace (saat filter kosong) kembali ke menu induk.
 # Uji tanpa GUI:  HYPR_MENU_TEST=1 hypr-menu   (memilih entri pertama tiap level dan mencetak aksinya)
 set -uo pipefail
 
 KEYBINDINGS="$HOME/.local/bin/hypr-keybindings"
 BACK="󰁍  Back"
+# Lebar jendela menu (lebih sempit dari launcher di layout.rasi, 560px) dan posisi tab-stop 󰅂 submenu.
+# Lebar teks di dalam baris = lebar - border 2 - padding jendela 28 - padding elemen 24 = lebar - 54.
+# Chevron 9px (diukur dengan Pango); tab-stop harus < lebar teks - 9, kalau tidak rofi memotong baris dengan "…".
+MENU_WIDTH="${HYPR_MENU_WIDTH:-400}"
+CHEVRON_TAB_STOP="$(( MENU_WIDTH - 78 ))px"
 
 menu() { # $1 judul, $2 "back" bila BackSpace boleh berarti kembali. stdin: "label\taksi". Mencetak aksi terpilih.
   local title="$1" back="${2:-}" lines labels choice filter="" out rc
+  # Entri yang membuka submenu (aksi "menu:...") diberi 󰅂 yang ditambatkan di tepi kanan: label tampil
+  # memakai TAB + chevron dan rofi diberi tab-stop dekat tepi kanan (element-text { tab-stops }).
+  local chev; chev=$(printf '\U000F0142')
   lines=$(cat)
-  labels=$(printf '%s\n' "$lines" | cut -f1)
+  labels=$(printf '%s\n' "$lines" | awk -F'\t' -v chev="$chev" '{ if ($2 ~ /^menu:/) print $1 "\t" chev; else print $1 }')
   if [[ ${HYPR_MENU_TEST:-} == 1 ]]; then
     choice=$(printf '%s\n' "$labels" | head -1); echo "[test] $title -> $choice" >&2
   else
@@ -22,13 +30,14 @@ menu() { # $1 judul, $2 "back" bila BackSpace boleh berarti kembali. stdin: "lab
     while true; do
       # Tanpa -no-custom: saat filter tidak cocok dengan entri mana pun, rofi tetap melaporkan tombol custom
       # (dengan -no-custom ia diam saja, BackSpace jadi mati). Enter pada filter tanpa hasil ditolak di bawah.
-      out=$(printf '%s\n' "$labels" | rofi -dmenu -i -p "$title" -filter "$filter" -format $'s\tf' \
-            "${keys[@]}" -theme-str 'configuration { show-icons: false; }'); rc=$?
+      # Pemisah keluaran rofi = US (0x1f), bukan TAB: label submenu sendiri mengandung TAB (sebelum 󰅂).
+      out=$(printf '%s\n' "$labels" | rofi -dmenu -i -p "$title" -filter "$filter" -format $'s\x1ff' \
+            "${keys[@]}" -theme-str 'configuration { show-icons: false; } window { width: '"$MENU_WIDTH"'px; } element-text { tab-stops: [ '"$CHEVRON_TAB_STOP"' ]; }'); rc=$?
       case $rc in
-        0)  choice=${out%%$'\t'*}
+        0)  choice=${out%%$'\x1f'*}
             if printf '%s\n' "$labels" | grep -qxF -- "$choice"; then break; fi
-            filter=${out#*$'\t'} ;;                                     # bukan entri (teks bebas): buka lagi
-        10) filter=${out#*$'\t'}
+            filter=${out#*$'\x1f'} ;;                                   # bukan entri (teks bebas): buka lagi
+        10) filter=${out#*$'\x1f'}
             [[ -z $filter ]] && { echo back; return 0; }
             filter=${filter%?} ;;
         *)  return 1 ;;
@@ -36,6 +45,7 @@ menu() { # $1 judul, $2 "back" bila BackSpace boleh berarti kembali. stdin: "lab
     done
   fi
   [[ -z $choice ]] && return 1
+  choice=${choice%$'\t'"$chev"}                       # buang penanda submenu sebelum dicocokkan
   printf '%s\n' "$lines" | awk -F'\t' -v c="$choice" '$1 == c { print $2; exit }'
 }
 
@@ -56,7 +66,7 @@ run_menu() { # $1 judul, $2 nama fungsi yang mencetak entri, $3 fungsi menu indu
 }
 
 root_items() { cat <<'ITEMS'
-󰀻  Apps	menu:apps
+󰀻  Apps	rofi -show drun
 󰧑  Learn	menu:learn
 󱓞  Trigger	menu:trigger
 󰔎  Toggle	menu:toggle
@@ -120,25 +130,41 @@ ITEMS
 install_items() { cat <<'ITEMS'
 󰏖  Package	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install repo
 󰣇  AUR	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install aur
+󰵮  Development	menu:development
 ITEMS
 }
-update_items() { cat <<'ITEMS'
-󰑓  Resi shell	~/.local/bin/hypr-tui ~/.local/bin/resi-shell update
-  Firmware	~/.local/bin/hypr-tui ~/.local/bin/hypr-update-firmware
-  Process	menu:process
-ITEMS
+# Lingkungan pengembangan (hypr-dev-env, berbasis mise seperti Omarchy). "✓" = sudah terpasang (mise use idempotent).
+DEVENV="$HOME/.local/bin/hypr-dev-env"
+dev_item() { # $1 glyph, $2 label, $3 env
+  local mark=""; "$DEVENV" installed "$3" 2>/dev/null && mark="  ✓"
+  printf '%s  %s%s\t%s\n' "$1" "$2" "$mark" "~/.local/bin/hypr-tui $DEVENV install $3"
 }
-process_items() { cat <<'ITEMS'
-󰍜  Shell (Noctalia)	~/.local/bin/hypr-tui ~/.local/bin/hypr-restart-shell
-ITEMS
+development_items() {
+  dev_item "󰫏" "Ruby on Rails" ruby
+  printf '%s\t%s\n' "󰌞  JavaScript" "menu:dev_javascript"
+  dev_item "󰟣" "Go" go
+  printf '%s\t%s\n' "󰌟  PHP" "menu:dev_php"
+  dev_item "󰌠" "Python" python
+  printf '%s\t%s\n' "󰘧  Elixir" "menu:dev_elixir"
+  dev_item "󰅩" "Zig" zig
+  dev_item "󱘗" "Rust" rust
+  dev_item "󰬷" "Java" java
+  dev_item "󰪮" ".NET" dotnet
+  dev_item "󰅩" "OCaml" ocaml
+  dev_item "󰅩" "Clojure" clojure
+  dev_item "󰅩" "Scala" scala
 }
-remove_items() { cat <<'ITEMS'
-󰏖  Package	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install remove
-ITEMS
+dev_javascript_items() { dev_item "󰎙" "Node.js" node; dev_item "󰌞" "Bun" bun; dev_item "󰌞" "Deno" deno; }
+dev_php_items()        { dev_item "󰌟" "PHP" php; dev_item "󰌟" "Laravel" laravel; dev_item "󰌟" "Symfony" symfony; }
+dev_elixir_items()     { dev_item "󰘧" "Elixir" elixir; dev_item "󰘧" "Phoenix" phoenix; }
+# Remove > Development: hanya yang terpasang (ala "when" di Omarchy).
+remove_dev_item() { "$DEVENV" installed "$3" 2>/dev/null || return 0; printf '%s  %s\t%s\n' "$1" "$2" "~/.local/bin/hypr-tui $DEVENV remove $3"; }
+remove_development_items() {
+  local e; for e in ruby node bun deno go php laravel symfony python elixir phoenix zig rust java dotnet ocaml clojure scala; do
+    remove_dev_item "󰅩" "$e" "$e"
+  done
+  "$DEVENV" list >/dev/null 2>&1 || true
 }
-# Suspend/Hibernate hanya tampil bila logind bisa melakukannya (ala "when" di Omarchy: omarchy-hibernation-available).
-# Hibernate butuh swap non-zram sebesar image + hook resume + parameter resume= di kernel; lihat NOTES.md.
-can_power() { [[ $(busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager "Can$1" 2>/dev/null) == 's "yes"' ]]; }
 system_items() {
   printf '%s\t%s\n' "󰌾  Lock" "noctalia msg session lock"
   can_power Suspend   && printf '%s\t%s\n' "󰒲  Suspend" "noctalia msg session suspend"
@@ -150,13 +176,17 @@ system_items() {
 ITEMS
 }
 
-apps()    { [[ ${HYPR_MENU_TEST:-} == 1 ]] && { echo "[test] exec: rofi -show drun" >&2; return; }; setsid -f rofi -show drun >/dev/null 2>&1; }
 learn()   { run_menu "Learn"   learn_items   root; }
 trigger() { run_menu "Trigger" trigger_items root; }
 toggle()  { run_menu "Toggle"  toggle_items  root; }
 style()   { run_menu "Style"   style_items   root; }
 setup()   { run_menu "Setup"   setup_items   root; }
 install() { run_menu "Install" install_items root; }
+development()        { run_menu "Development" development_items install; }
+dev_javascript()     { run_menu "JavaScript"  dev_javascript_items development; }
+dev_php()            { run_menu "PHP"         dev_php_items        development; }
+dev_elixir()         { run_menu "Elixir"      dev_elixir_items     development; }
+remove_development() { run_menu "Remove"      remove_development_items remove; }
 update()  { run_menu "Update"  update_items  root; }
 process() { run_menu "Restart" process_items update; }
 remove()  { run_menu "Remove"  remove_items  root; }

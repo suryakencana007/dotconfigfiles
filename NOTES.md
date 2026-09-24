@@ -154,6 +154,16 @@ Hyprland's window borders, and the login screen.
   `monitors.lua`. It is idempotent (last applied source in `~/.local/state/resi/power/applied`),
   single-instance (flock), and re-applies on every `upower --monitor` event. Panel eDP-2 on
   legionarch only offers 144 Hz, so the refresh step is a no-op there.
+- **Install > Development = Omarchy's dev-env installer on mise** (`bin/hypr-dev-env`, ported from
+  `omarchy-install-dev-env` / `omarchy-remove-dev-env`). Same tool choices: mise for everything it
+  can version (`mise use --global <tool>@latest`, PHP via the `static-php-builds` alias, uv after
+  Python), rustup for Rust, opam for OCaml. Differences: mise is not in the base package list (Omarchy
+  ships `mise-bin`); `hypr-dev-env` offers to install it on first use, and `.zshrc` activates it only
+  when present (plus shims on PATH, like Omarchy's env-bootstrap). `omarchy-pkg-add` became
+  `pacman -S --needed` / `yay` (symfony-cli is AUR). The menu marks installed environments with ✓
+  (Omarchy greys them out) using the same detection paths (`~/.local/share/mise/installs/<tool>`,
+  `~/.rustup`, `~/.opam`, `~/.mix/archives/phx_new*`), and Remove > Development lists only those.
+  Not ported: Docker DB (needs docker, not installed here).
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one

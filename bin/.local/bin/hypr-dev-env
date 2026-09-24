@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# Pemasang lingkungan pengembangan ala Omarchy (omarchy-install-dev-env / omarchy-remove-dev-env), berbasis mise
+# (https://mise.jdx.dev): satu alat untuk versi runtime (node, ruby, go, python, java, ...). Rust lewat rustup,
+# OCaml lewat opam, persis Omarchy. Dipanggil dari hypr-menu > Install > Development dan > Remove > Development
+# lewat hypr-tui. mise tidak dipasang default; ditawarkan saat pertama dipakai.
+#   hypr-dev-env install <env>    hypr-dev-env remove <env>    hypr-dev-env installed <env>    hypr-dev-env list
+# <env>: ruby node bun deno go php laravel symfony python elixir phoenix rust java zig ocaml dotnet clojure scala
+set -uo pipefail
+
+ENVS=(ruby node bun deno go php laravel symfony python elixir phoenix rust java zig ocaml dotnet clojure scala)
+MISE_DIR="$HOME/.local/share/mise/installs"
+export MISE_MINIMUM_RELEASE_AGE=0        # ala Omarchy: jangan tahan versi baru berhari-hari
+
+usage() { echo "usage: hypr-dev-env install|remove|installed <env> | list"; echo "env: ${ENVS[*]}"; }
+pkg_add() { sudo pacman -S --needed --noconfirm "$@"; }
+aur_add() { command -v yay >/dev/null || { echo "yay (AUR helper) is required" >&2; return 1; }; yay -S --needed --noconfirm "$@"; }
+
+ensure_mise() {
+  command -v mise >/dev/null && return 0
+  hypr-tui --box "mise is not installed." "" \
+    "mise (https://mise.jdx.dev) manages runtime versions (node, ruby, go, python, java, ...)." \
+    "It is the tool Omarchy uses for its development environments."; echo
+  hypr-tui --confirm "Install mise now?" || { echo "Cancelled."; return 1; }
+  pkg_add mise || return 1
+  echo; echo "Note: open a new terminal afterwards so the shell picks up mise (activated in .zshrc)."; echo
+}
+
+installed() { # ala kondisi "disabled" di menu Omarchy
+  case "$1" in
+    rust)    [[ -d $HOME/.rustup ]] ;;
+    ocaml)   [[ -d $HOME/.opam ]] ;;
+    laravel) [[ -x $HOME/.local/bin/laravel || -x $HOME/.config/composer/vendor/bin/laravel ]] ;;
+    symfony) pacman -Q symfony-cli >/dev/null 2>&1 ;;
+    phoenix) compgen -G "$HOME/.mix/archives/phx_new*" >/dev/null ;;
+    *)       [[ -d $MISE_DIR/$1 ]] ;;
+  esac
+}
+
+install_php() {
+  mise tool-alias set php github:nunomaduro/static-php-builds
+  mise use --global php@latest
+  mise x php -- composer global config bin-dir "$HOME/.local/bin"
+}
+install_node() { echo -e "Installing Node.js...\n"; mise use --global node; }
+
+do_install() {
+  case "$1" in
+    rust)  echo -e "Installing Rust (rustup)...\n"; bash -c "$(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs)" -- -y; return ;;
+    ocaml) echo -e "Installing OCaml (opam)...\n"; bash -c "$(curl -fsSL https://raw.githubusercontent.com/ocaml/opam/master/shell/install.sh)"
+           opam init --yes; eval "$(opam env)"; opam install ocaml-lsp-server odoc ocamlformat utop --yes; return ;;
+  esac
+  ensure_mise || return 1
+  case "$1" in
+    ruby)    echo -e "Installing Ruby on Rails...\n"; pkg_add libyaml
+             mise settings add ruby.compile false; mise settings add idiomatic_version_file_enable_tools ruby
+             mise use --global ruby@latest; echo "gem: --no-document" >~/.gemrc
+             mise x ruby -- gem install rails --no-document; echo -e "\nYou can now run: rails new myproject" ;;
+    node)    install_node ;;
+    bun)     echo -e "Installing Bun...\n";  mise use -g bun@latest ;;
+    deno)    echo -e "Installing Deno...\n"; mise use -g deno@latest ;;
+    go)      echo -e "Installing Go...\n";   mise use --global go@latest ;;
+    php)     echo -e "Installing PHP...\n";  install_php ;;
+    laravel) echo -e "Installing PHP and Laravel...\n"; install_php; install_node
+             mise x php -- composer global require laravel/installer; echo -e "\nYou can now run: laravel new myproject" ;;
+    symfony) echo -e "Installing PHP and Symfony...\n"; install_php; aur_add symfony-cli
+             echo -e "\nYou can now run: symfony new --webapp myproject" ;;
+    python)  echo -e "Installing Python...\n"; mise use --global python@latest
+             echo -e "\nInstalling uv...\n"; curl -fsSL https://astral.sh/uv/install.sh | sh ;;
+    elixir)  echo -e "Installing Elixir...\n"; mise use --global erlang@latest; mise use --global elixir@latest
+             mise x elixir -- mix local.hex --force ;;
+    phoenix) echo -e "Installing Phoenix Framework...\n"; mise use --global erlang@latest; mise use --global elixir@latest
+             mise x elixir -- mix local.hex --force; mise x elixir -- mix local.rebar --force
+             mise x elixir -- mix archive.install hex phx_new --force; echo -e "\nYou can now run: mix phx.new my_app" ;;
+    java)    echo -e "Installing Java...\n"; mise use --global java@latest ;;
+    zig)     echo -e "Installing Zig...\n";  mise use --global zig@latest; mise use -g zls@latest ;;
+    dotnet)  echo -e "Installing .NET...\n"; mise use --global dotnet@latest ;;
+    clojure) echo -e "Installing Clojure...\n"; pkg_add rlwrap; mise use --global clojure@latest ;;
+    scala)   echo -e "Installing Scala...\n"; mise use --global java@latest; mise use --global scala@latest; mise use --global scala-cli@latest ;;
+  esac
+}
+
+mise_drop() { local t; for t in "$@"; do mise uninstall "$t" --all 2>/dev/null; mise rm -g "$t" 2>/dev/null; done; }
+do_remove() {
+  hypr-tui --confirm "Remove $1?" || { echo "Cancelled."; return 1; }
+  case "$1" in
+    rust)  echo -e "Removing Rust...\n"; rustup self uninstall -y 2>/dev/null || true; return ;;
+    ocaml) echo -e "Removing OCaml...\n"; opam switch remove default -y 2>/dev/null || true; rm -rf ~/.opam
+           [[ -f /usr/local/bin/opam ]] && sudo rm -f /usr/local/bin/opam; return ;;
+    symfony) echo -e "Removing Symfony CLI...\n"; sudo pacman -Rns --noconfirm symfony-cli; return ;;
+  esac
+  command -v mise >/dev/null || { echo "mise is not installed; nothing to remove."; return 0; }
+  case "$1" in
+    ruby)    echo -e "Removing Ruby...\n"; mise_drop ruby; rm -f ~/.gemrc ;;
+    node|bun|deno|go|java|dotnet|clojure) echo -e "Removing $1...\n"; mise_drop "$1" ;;
+    php)     echo -e "Removing PHP...\n"; mise_drop php; mise tool-alias unset php 2>/dev/null ;;
+    laravel) echo -e "Removing Laravel...\n"; mise x php -- composer global remove laravel/installer 2>/dev/null || true
+             rm -f "$HOME/.local/bin/laravel" "$HOME/.config/composer/vendor/bin/laravel" ;;
+    python)  echo -e "Removing Python...\n"; mise_drop python; rm -f ~/.local/bin/uv ~/.local/bin/uvx ~/.cargo/bin/uv 2>/dev/null ;;
+    elixir|phoenix) echo -e "Removing Elixir/Erlang...\n"; mise_drop elixir erlang ;;
+    zig)     echo -e "Removing Zig...\n"; mise_drop zig zls ;;
+    scala)   echo -e "Removing Scala...\n"; mise_drop scala scala-cli ;;
+  esac
+}
+
+cmd="${1:-}"; env="${2:-}"
+case "$cmd" in
+  list) printf '%s\n' "${ENVS[@]}"; exit 0 ;;
+  install|remove|installed) [[ " ${ENVS[*]} " == *" $env "* ]] || { usage >&2; exit 2; } ;;
+  *) usage >&2; exit 2 ;;
+esac
+case "$cmd" in
+  installed) installed "$env" ;;
+  install)   do_install "$env" ;;
+  remove)    do_remove "$env" ;;
+esac

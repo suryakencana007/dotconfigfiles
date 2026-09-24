@@ -335,6 +335,7 @@ update() {
   step "Update"
   pacman_packages; aur_packages
   step "Upgrade AUR packages"; if run yay -Sua --noconfirm; then ok "AUR up to date"; else warn "AUR upgrade failed; continuing with the rest of the update"; fi
+  if have mise; then step "Update mise tools"; if MISE_MINIMUM_RELEASE_AGE=0 run mise up; then ok "mise tools up to date"; else warn "mise up failed; continuing"; fi; fi
   stow_all; tmux_plugins; nvim_plugins
   have hyprctl && run hyprctl reload >/dev/null; have noctalia && run noctalia msg config-reload >/dev/null 2>&1 || true
   # autostart.lua only runs at Hyprland start: (re)launch the battery watcher now. hypr-power is single-instance

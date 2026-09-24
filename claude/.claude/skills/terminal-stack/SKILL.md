@@ -45,3 +45,8 @@ untuk video/* dan audio/*. Uji decode: `mpv --length=2 --really-quiet --msg-leve
   user di alacritty, lalu verifikasi dengan `pacman -Q`. AUR lewat `yay`/`paru`.
 - Sesi desktop login sebelum `chsh`, jadi `$SHELL` masih bash sampai re-login; alacritty dipaksa zsh.
 - `man` (man-db) terpasang; `hostname` tidak (paket inetutils), tidak masalah.
+
+## mise (dev env dari menu Install > Development)
+`.zshrc` mengaktifkan mise hanya bila terpasang: `eval "$(mise activate zsh)"` + shims `~/.local/share/mise/shims` di PATH.
+mise dipasang saat pertama dipakai oleh `hypr-dev-env` (paket bin), bukan dari daftar paket resi. `resi-shell update`
+menjalankan `mise up` bila ada. Alias/tool global mise: `mise use -g <tool>@latest`; per proyek: `.mise.toml`.
