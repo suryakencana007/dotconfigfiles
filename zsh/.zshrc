@@ -69,6 +69,9 @@ if (( $+commands[mise] )); then
   [[ :$PATH: == *:$HOME/.local/share/mise/shims:* ]] || export PATH="$PATH:$HOME/.local/share/mise/shims"
 fi
 
+# ---- rustup/cargo (dari menu Install > Development > Rust): binari di ~/.cargo/bin ----
+[[ -d $HOME/.cargo/bin ]] && export PATH="$PATH:$HOME/.cargo/bin"
+
 # ---- zoxide: cd pintar. `cd proj` lompat ke folder yang sering dipakai, `cdi` = pilih interaktif ----
 (( $+commands[zoxide] )) && eval "$(zoxide init zsh --cmd cd)"
 

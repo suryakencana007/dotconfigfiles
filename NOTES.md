@@ -166,6 +166,11 @@ Hyprland's window borders, and the login screen.
   `pacman -S --needed` / `yay` (symfony-cli is AUR). The menu marks installed environments with ✓
   (Omarchy greys them out) using the same detection paths (`~/.local/share/mise/installs/<tool>`,
   `~/.rustup`, `~/.opam`, `~/.mix/archives/phx_new*`), and Remove > Development, like Omarchy, lists only installed ones (groups appear only when a member is installed; a "Nothing installed yet" placeholder goes back). Remove > AUR filters with `pacman -Qqm`.
+  Rust: rustup lives in `~/.cargo/bin`, which is NOT on the Hyprland session PATH, so the
+  first removal silently did nothing (`rustup ... 2>/dev/null || true`); `hypr-dev-env remove
+  rust` now calls `~/.cargo/bin/rustup` explicitly and falls back to deleting `~/.rustup` and
+  `~/.cargo`. Install runs rustup with `--no-modify-path` (it otherwise appends to ~/.zshenv,
+  ~/.profile, ~/.bashrc, ~/.bash_profile); `.zshrc` adds `~/.cargo/bin` to PATH when present.
   Docker DB (`bin/hypr-docker-db`) ports omarchy-install-docker-dbs with the same `docker run`
   lines (ports on 127.0.0.1, dev credentials, `--restart unless-stopped`), plus list/remove and
   "already exists -> start it". Like Omarchy the user is NOT added to the docker group (that is
