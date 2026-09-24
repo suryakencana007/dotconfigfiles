@@ -160,8 +160,8 @@ Each top-level folder is a Stow package mirroring `$HOME`:
 |---|---|---|
 | `zsh` | `.zshrc`, `.p10k.zsh` | file links |
 | `git` | `.gitconfig` (delta pager only, no identity) | file links |
-| `alacritty` | `.config/alacritty/alacritty.toml` | folder link (`themes/` is rendered by Noctalia into the repo folder, gitignored) |
-| `tmux` | `.config/tmux/tmux.conf` | folder link (`plugins/` is TPM's, lives in the repo folder, gitignored) |
+| `alacritty` | `.config/alacritty/alacritty.toml` | plain stow: folder link when `~/.config/alacritty` did not exist yet (then `themes/` is rendered into the repo folder, gitignored), per-file link when it did |
+| `tmux` | `.config/tmux/tmux.conf` | same as alacritty (`plugins/` is TPM's, gitignored when it lands in the repo folder) |
 | `nvim` | `.config/nvim` (LazyVim + Noctalia theme template) | folder link |
 | `rofi` | `.config/rofi/{config,layout}.rasi` | folder link (`noctalia.rasi` is rendered, ignored) |
 | `hypr` | `.config/hypr/*.lua`, `bindings/*.lua` | `--no-folding` (real dir) |

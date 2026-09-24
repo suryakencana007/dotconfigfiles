@@ -12,8 +12,8 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 |---|---|---|
 | zsh | `.zshrc`, `.p10k.zsh` | file |
 | git | `.gitconfig` | file |
-| alacritty | `.config/alacritty/alacritty.toml` | symlink per file: `~/.config/alacritty` folder nyata (sudah ada sebelum stow), `themes/` render Noctalia di home, di luar repo |
-| tmux | `.config/tmux/tmux.conf` | symlink per file: `~/.config/tmux` folder nyata, `plugins/` TPM di home, di luar repo |
+| alacritty | `.config/alacritty/alacritty.toml` | stow biasa, hasilnya TERGANTUNG MESIN: kalau `~/.config/alacritty` sudah ada sebelum stow -> symlink per file, `themes/` render di home (legionarch); kalau belum -> dilipat jadi symlink folder, `themes/` ada di dalam folder repo, di-gitignore (dynarch). Cek: `ls -ld ~/.config/alacritty` |
+| tmux | `.config/tmux/tmux.conf` | sama seperti alacritty: per file (folder sudah ada) atau symlink folder dengan `plugins/` TPM di dalam folder repo, di-gitignore (dynarch) |
 | nvim | seluruh `.config/nvim` | folder (symlink folder utuh) |
 | mpv | `.config/mpv/{mpv.conf,input.conf}` | folder |
 | hypr, noctalia | `.config/hypr/*`, `.config/noctalia/*` | `--no-folding` (folder nyata, supaya overlay host dan file render Noctalia bisa masuk tanpa ke repo) |
@@ -52,7 +52,7 @@ sistem baru = tambah barisnya di daftar itu. `resi-shell doctor` = audit cepat (
    config-reload, uji zsh/tmux/nvim), baru `git add -A && git commit` dengan pesan singkat, lalu `git push`.
    Commit hanya kalau user minta atau sudah jadi alur yang disepakati.
 7. Jangan memasukkan rahasia: `.gitconfig` di repo sengaja tanpa identitas; identitas ada di config lokal repo.
-8. Paket yang terlipat (alacritty, tmux, nvim, rofi, mpv): file di dalamnya terlihat sebagai FILE BIASA lewat symlink
+8. Paket yang terlipat (nvim, rofi, mpv; alacritty dan tmux di mesin yang melipat): file di dalamnya terlihat sebagai FILE BIASA lewat symlink
    folder, padahal itu file repo. Jangan pernah `mv`/hapus "file biasa" di path home tanpa cek `realpath` dulu:
    2026-09-24 installer lama memindahkan `tmux.conf` dan `alacritty.toml` ke `.pre-resi` di dalam repo saat dijalankan
    ulang (tmux jalan tanpa config, alacritty ditulis ulang Noctalia). Installer sekarang punya guard `in_repo`, dan
