@@ -17,6 +17,9 @@ git clone https://github.com/suryakencana007/dotconfigfiles.git ~/dotconfigfiles
 Heavily inspired by [Omarchy](https://omarchy.org) (bindings, menu, tmux and window rules were ported from
 its Lua config) and built on [Noctalia](https://noctalia.dev).
 
+See [NOTES.md](NOTES.md) for the *why* behind the decisions here, gotchas to know before editing, and
+things that were tried and rejected.
+
 ---
 
 ## What you get
