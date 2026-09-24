@@ -5,13 +5,14 @@
 # Pakai:  hypr-pkg-install repo     pasang paket repo resmi (pacman)
 #         hypr-pkg-install aur      pasang paket AUR (yay)
 #         hypr-pkg-install remove   hapus paket yang terpasang eksplisit (pacman -Rns, beserta dependensi yatim)
+#         hypr-pkg-install remove-aur   sama, tetapi daftarnya hanya paket asing/AUR (pacman -Qqm)
 # Dari menu dibuka lewat: hypr-tui --class hypr-pkg-install hypr-pkg-install <mode> (jendela mengambang + prompt Done).
 # Tombol di fzf: tab = pilih banyak, alt-p = sembunyikan/tampilkan pratinjau, alt-j/k = gulir pratinjau,
 #                alt-d/u = gulir setengah halaman, (AUR) alt-b = lihat PKGBUILD, alt-B = kembali ke info.
 set -uo pipefail
 
 mode="${1:-repo}"
-case "$mode" in repo|aur|remove) ;; *) echo "usage: hypr-pkg-install repo|aur|remove" >&2; exit 2 ;; esac
+case "$mode" in repo|aur|remove|remove-aur) ;; *) echo "usage: hypr-pkg-install repo|aur|remove|remove-aur" >&2; exit 2 ;; esac
 
 for dep in fzf pacman; do command -v "$dep" >/dev/null || { echo "$dep is required" >&2; exit 1; }; done
 [[ $mode == aur ]] && ! command -v yay >/dev/null && { echo "yay (AUR helper) is required" >&2; exit 1; }
@@ -53,12 +54,13 @@ case "$mode" in
     command -v updatedb >/dev/null && sudo updatedb >/dev/null 2>&1
     exit $code
     ;;
-  remove)
-    # Daftar = paket yang dipasang eksplisit (pacman -Qqe), bukan dependensi. Penanda merah sebagai peringatan.
-    fzf_args+=( --prompt='  Remove package : ' --preview 'pacman -Qi {1}'
+  remove|remove-aur)
+    # Daftar = paket yang dipasang eksplisit (pacman -Qqe), atau hanya paket asing/AUR (pacman -Qqm). Penanda merah.
+    if [[ $mode == remove-aur ]]; then list_cmd="pacman -Qqm"; prompt='  Remove AUR package : '; else list_cmd="pacman -Qqe"; prompt='  Remove package : '; fi
+    fzf_args+=( --prompt="$prompt" --preview 'pacman -Qi {1}'
       --preview-label='alt-p: toggle description, alt-j/k: scroll, tab: multi-select'
       --color='pointer:red,marker:red' )
-    pkg_names=$(pacman -Qqe | fzf "${fzf_args[@]}")
+    pkg_names=$($list_cmd | fzf "${fzf_args[@]}")
     [[ -z $pkg_names ]] && exit 0
     # Tampilkan semua yang akan ikut terhapus (termasuk dependensi yatim) lalu minta konfirmasi.
     mapfile -t victims < <(echo "$pkg_names" | xargs pacman -Rs -p 2>/dev/null | grep -vE '^(Packages|Total|$)' | sed 's/^/  /')

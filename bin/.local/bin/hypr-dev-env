@@ -81,6 +81,7 @@ do_install() {
 
 mise_drop() { local t; for t in "$@"; do mise uninstall "$t" --all 2>/dev/null; mise rm -g "$t" 2>/dev/null; done; }
 do_remove() {
+  installed "$1" || { echo "$1 is not installed; nothing to remove."; return 0; }
   hypr-tui --confirm "Remove $1?" || { echo "Cancelled."; return 1; }
   case "$1" in
     rust)  echo -e "Removing Rust...\n"; rustup self uninstall -y 2>/dev/null || true; return ;;

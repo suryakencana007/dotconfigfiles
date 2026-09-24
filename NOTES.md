@@ -162,8 +162,13 @@ Hyprland's window borders, and the login screen.
   when present (plus shims on PATH, like Omarchy's env-bootstrap). `omarchy-pkg-add` became
   `pacman -S --needed` / `yay` (symfony-cli is AUR). The menu marks installed environments with ✓
   (Omarchy greys them out) using the same detection paths (`~/.local/share/mise/installs/<tool>`,
-  `~/.rustup`, `~/.opam`, `~/.mix/archives/phx_new*`), and Remove > Development lists only those.
+  `~/.rustup`, `~/.opam`, `~/.mix/archives/phx_new*`), and Remove > Development shows the same list (Omarchy hides uninstalled ones; here removing an uninstalled one just says so). Remove > AUR filters with `pacman -Qqm`.
   Not ported: Docker DB (needs docker, not installed here).
+- **`hypr-menu` self-check.** Commit b8b94b6 accidentally deleted `update_items`, `process_items`,
+  `remove_items` and `can_power` while a block of functions was replaced by text offsets, so Update
+  and Remove opened as empty menus (only "Back") and System lost Suspend. `HYPR_MENU_CHECK=1
+  hypr-menu` now verifies that every `menu:X` target and every `run_menu` items function is
+  defined; `resi-shell doctor` runs it. Run it after editing the menu.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one

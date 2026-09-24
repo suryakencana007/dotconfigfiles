@@ -6,7 +6,7 @@ set -uo pipefail
 
 KEYBINDINGS="$HOME/.local/bin/hypr-keybindings"
 BACK="󰁍  Back"
-# Lebar jendela menu (lebih sempit dari launcher di layout.rasi, 560px) dan posisi tab-stop 󰅂 submenu.
+# Lebar jendela menu (sama dengan launcher di layout.rasi, 400px; di-override di sini supaya tab-stop pasti cocok) dan posisi tab-stop 󰅂 submenu.
 # Lebar teks di dalam baris = lebar - border 2 - padding jendela 28 - padding elemen 24 = lebar - 54.
 # Chevron 9px (diukur dengan Pango); tab-stop harus < lebar teks - 9, kalau tidak rofi memotong baris dengan "…".
 MENU_WIDTH="${HYPR_MENU_WIDTH:-400}"
@@ -133,38 +133,58 @@ install_items() { cat <<'ITEMS'
 󰵮  Development	menu:development
 ITEMS
 }
-# Lingkungan pengembangan (hypr-dev-env, berbasis mise seperti Omarchy). "✓" = sudah terpasang (mise use idempotent).
+# Lingkungan pengembangan (hypr-dev-env, berbasis mise seperti Omarchy). Daftar yang sama dipakai Install dan Remove;
+# "✓" = sudah terpasang (install idempotent; remove pada yang belum terpasang hanya memberi pesan).
 DEVENV="$HOME/.local/bin/hypr-dev-env"
-dev_item() { # $1 glyph, $2 label, $3 env
-  local mark=""; "$DEVENV" installed "$3" 2>/dev/null && mark="  ✓"
-  printf '%s  %s%s\t%s\n' "$1" "$2" "$mark" "~/.local/bin/hypr-tui $DEVENV install $3"
+dev_item() { # $1 verb (install|remove), $2 glyph, $3 label, $4 env
+  local mark=""; "$DEVENV" installed "$4" 2>/dev/null && mark="  ✓"
+  printf '%s  %s%s\t%s\n' "$2" "$3" "$mark" "~/.local/bin/hypr-tui $DEVENV $1 $4"
 }
-development_items() {
-  dev_item "󰫏" "Ruby on Rails" ruby
-  printf '%s\t%s\n' "󰌞  JavaScript" "menu:dev_javascript"
-  dev_item "󰟣" "Go" go
-  printf '%s\t%s\n' "󰌟  PHP" "menu:dev_php"
-  dev_item "󰌠" "Python" python
-  printf '%s\t%s\n' "󰘧  Elixir" "menu:dev_elixir"
-  dev_item "󰅩" "Zig" zig
-  dev_item "󱘗" "Rust" rust
-  dev_item "󰬷" "Java" java
-  dev_item "󰪮" ".NET" dotnet
-  dev_item "󰅩" "OCaml" ocaml
-  dev_item "󰅩" "Clojure" clojure
-  dev_item "󰅩" "Scala" scala
+dev_items() { # $1 verb, $2 prefix nama submenu (dev_ | rmdev_)
+  dev_item "$1" "󰫏" "Ruby on Rails" ruby
+  printf '%s\t%s\n' "󰌞  JavaScript" "menu:${2}javascript"
+  dev_item "$1" "󰟣" "Go" go
+  printf '%s\t%s\n' "󰌟  PHP" "menu:${2}php"
+  dev_item "$1" "󰌠" "Python" python
+  printf '%s\t%s\n' "󰘧  Elixir" "menu:${2}elixir"
+  dev_item "$1" "󰅩" "Zig" zig
+  dev_item "$1" "󱘗" "Rust" rust
+  dev_item "$1" "󰬷" "Java" java
+  dev_item "$1" "󰪮" ".NET" dotnet
+  dev_item "$1" "󰅩" "OCaml" ocaml
+  dev_item "$1" "󰅩" "Clojure" clojure
+  dev_item "$1" "󰅩" "Scala" scala
 }
-dev_javascript_items() { dev_item "󰎙" "Node.js" node; dev_item "󰌞" "Bun" bun; dev_item "󰌞" "Deno" deno; }
-dev_php_items()        { dev_item "󰌟" "PHP" php; dev_item "󰌟" "Laravel" laravel; dev_item "󰌟" "Symfony" symfony; }
-dev_elixir_items()     { dev_item "󰘧" "Elixir" elixir; dev_item "󰘧" "Phoenix" phoenix; }
-# Remove > Development: hanya yang terpasang (ala "when" di Omarchy).
-remove_dev_item() { "$DEVENV" installed "$3" 2>/dev/null || return 0; printf '%s  %s\t%s\n' "$1" "$2" "~/.local/bin/hypr-tui $DEVENV remove $3"; }
-remove_development_items() {
-  local e; for e in ruby node bun deno go php laravel symfony python elixir phoenix zig rust java dotnet ocaml clojure scala; do
-    remove_dev_item "󰅩" "$e" "$e"
-  done
-  "$DEVENV" list >/dev/null 2>&1 || true
+dev_javascript_items() { dev_item "$1" "󰎙" "Node.js" node; dev_item "$1" "󰌞" "Bun" bun; dev_item "$1" "󰌞" "Deno" deno; }
+dev_php_items()        { dev_item "$1" "󰌟" "PHP" php; dev_item "$1" "󰌟" "Laravel" laravel; dev_item "$1" "󰌟" "Symfony" symfony; }
+dev_elixir_items()     { dev_item "$1" "󰘧" "Elixir" elixir; dev_item "$1" "󰘧" "Phoenix" phoenix; }
+development_items()        { dev_items install dev_; }
+install_js_items()         { dev_javascript_items install; }
+install_php_items()        { dev_php_items install; }
+install_elixir_items()     { dev_elixir_items install; }
+remove_development_items() { dev_items remove rmdev_; }
+remove_js_items()          { dev_javascript_items remove; }
+remove_php_items()         { dev_php_items remove; }
+remove_elixir_items()      { dev_elixir_items remove; }
+update_items() { cat <<'ITEMS'
+󰑓  Resi shell	~/.local/bin/hypr-tui ~/.local/bin/resi-shell update
+  Firmware	~/.local/bin/hypr-tui ~/.local/bin/hypr-update-firmware
+  Process	menu:process
+ITEMS
 }
+process_items() { cat <<'ITEMS'
+󰍜  Shell (Noctalia)	~/.local/bin/hypr-tui ~/.local/bin/hypr-restart-shell
+ITEMS
+}
+remove_items() { cat <<'ITEMS'
+󰏖  Package	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install remove
+󰣇  AUR	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install remove-aur
+󰵮  Development	menu:remove_development
+ITEMS
+}
+# Suspend/Hibernate hanya tampil bila logind bisa melakukannya (ala "when" di Omarchy: omarchy-hibernation-available).
+# Hibernate butuh swap non-zram sebesar image + hook resume + parameter resume= di kernel; lihat NOTES.md.
+can_power() { [[ $(busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager "Can$1" 2>/dev/null) == 's "yes"' ]]; }
 system_items() {
   printf '%s\t%s\n' "󰌾  Lock" "noctalia msg session lock"
   can_power Suspend   && printf '%s\t%s\n' "󰒲  Suspend" "noctalia msg session suspend"
@@ -183,14 +203,25 @@ style()   { run_menu "Style"   style_items   root; }
 setup()   { run_menu "Setup"   setup_items   root; }
 install() { run_menu "Install" install_items root; }
 development()        { run_menu "Development" development_items install; }
-dev_javascript()     { run_menu "JavaScript"  dev_javascript_items development; }
-dev_php()            { run_menu "PHP"         dev_php_items        development; }
-dev_elixir()         { run_menu "Elixir"      dev_elixir_items     development; }
-remove_development() { run_menu "Remove"      remove_development_items remove; }
+dev_javascript()     { run_menu "JavaScript"  install_js_items     development; }
+dev_php()            { run_menu "PHP"         install_php_items    development; }
+dev_elixir()         { run_menu "Elixir"      install_elixir_items development; }
+remove_development() { run_menu "Remove development" remove_development_items remove; }
+rmdev_javascript()   { run_menu "Remove JavaScript"  remove_js_items     remove_development; }
+rmdev_php()          { run_menu "Remove PHP"         remove_php_items    remove_development; }
+rmdev_elixir()       { run_menu "Remove Elixir"      remove_elixir_items remove_development; }
 update()  { run_menu "Update"  update_items  root; }
 process() { run_menu "Restart" process_items update; }
 remove()  { run_menu "Remove"  remove_items  root; }
 system()  { run_menu "System"  system_items  root; }
 root()    { run_menu "Menu"    root_items; }
+
+# Pemeriksaan mandiri (HYPR_MENU_CHECK=1): semua target "menu:X" punya fungsi X, dan semua fungsi *_items yang dipakai run_menu ada.
+if [[ ${HYPR_MENU_CHECK:-} == 1 ]]; then
+  bad=0
+  for fn in $(grep -oE 'menu:[a-z_]+' "$0" | cut -d: -f2 | sort -u); do declare -F "$fn" >/dev/null || { echo "missing menu function: $fn"; bad=1; }; done
+  for fn in $(grep -oE 'run_menu "[^"]+" +[a-z_]+' "$0" | awk '{print $NF}' | sort -u); do declare -F "$fn" >/dev/null || { echo "missing items function: $fn"; bad=1; }; done
+  (( bad )) && exit 1; echo "hypr-menu: all menu targets resolve"; exit 0
+fi
 
 root

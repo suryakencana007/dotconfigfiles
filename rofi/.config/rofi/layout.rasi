@@ -7,7 +7,7 @@
 window {
   location:         center;
   anchor:           center;
-  width:            560px;
+  width:            400px;   /* sama dengan lebar hypr-menu (HYPR_MENU_WIDTH) */
   background-color: @bg;
   border:           1px;
   border-color:     @border;
