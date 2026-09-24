@@ -37,7 +37,7 @@ browser_exec() { # perintah browser default; hanya keluarga Chromium yang punya 
   sed -n 's/^Exec=\([^ ]*\).*/\1/p' "$HOME/.local/share/applications/$b" /usr/share/applications/"$b" 2>/dev/null | head -1
 }
 
-list_webapps() { grep -lF "Exec=$MARK" "$DESKTOP_DIR"/*.desktop 2>/dev/null | while read -r f; do basename "${f%.desktop}"; done | sort; }
+list_webapps() { grep -lF "Exec=$MARK" "$DESKTOP_DIR"/*.desktop 2>/dev/null | while read -r f; do basename "${f%.desktop}"; done | sort; return 0; }
 
 install_webapp() {
   local name url icon_ref
