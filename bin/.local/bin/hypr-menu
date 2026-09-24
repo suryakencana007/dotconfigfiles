@@ -20,10 +20,14 @@ menu() { # $1 judul, $2 "back" bila BackSpace boleh berarti kembali. stdin: "lab
     local -a keys=()
     [[ $back == back ]] && keys=(-kb-custom-1 BackSpace -kb-remove-char-back "Shift+BackSpace,Control+h")
     while true; do
-      out=$(printf '%s\n' "$labels" | rofi -dmenu -i -p "$title" -no-custom -filter "$filter" -format $'s\tf' \
+      # Tanpa -no-custom: saat filter tidak cocok dengan entri mana pun, rofi tetap melaporkan tombol custom
+      # (dengan -no-custom ia diam saja, BackSpace jadi mati). Enter pada filter tanpa hasil ditolak di bawah.
+      out=$(printf '%s\n' "$labels" | rofi -dmenu -i -p "$title" -filter "$filter" -format $'s\tf' \
             "${keys[@]}" -theme-str 'configuration { show-icons: false; }'); rc=$?
       case $rc in
-        0)  choice=${out%%$'\t'*}; break ;;
+        0)  choice=${out%%$'\t'*}
+            if printf '%s\n' "$labels" | grep -qxF -- "$choice"; then break; fi
+            filter=${out#*$'\t'} ;;                                     # bukan entri (teks bebas): buka lagi
         10) filter=${out#*$'\t'}
             [[ -z $filter ]] && { echo back; return 0; }
             filter=${filter%?} ;;

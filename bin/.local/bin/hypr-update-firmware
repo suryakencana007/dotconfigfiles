@@ -24,12 +24,7 @@ if ! out=$(fwupdmgr refresh --force 2>&1); then
   else
     hypr-tui --box "Could not download the LVFS metadata (offline, or cdn.fwupd.org unreachable)."
   fi
-  echo
-  if fwupdmgr get-remotes 2>/dev/null | grep -qE '^\s*Age:\s+[0-9]'; then    # metadata lama masih ada -> tetap lanjut
-    echo "Continuing with the previously downloaded metadata."
-  else
-    exit 1
-  fi
+  echo "Continuing with the metadata already on this machine, if any."
 fi
 echo
 sudo fwupdmgr update; code=$?

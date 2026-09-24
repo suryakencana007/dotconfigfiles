@@ -109,7 +109,11 @@ Hyprland's window borders, and the login screen.
   in `~/.config/hypr` outside the repo (hypr is `--no-folding`) and `monitors.lua` loads them with
   `dofile` when present, after the generic catch-all rule. Omarchy's Setup > Monitors just opens
   `monitors.lua` in an editor; the user asked for the graphical tool instead. nwg-displays is not in
-  the package list; the wrapper offers to install it on first use.
+  the package list; the wrapper offers to install it on first use. The package's own launcher entry
+  (`Exec=nwg-displays`) is shadowed by `bin/.local/share/applications/nwg-displays.desktop`
+  (same desktop-file id, `Exec=hypr-monitors`) so the app launcher is safe too. nwg-displays also
+  creates empty `~/.config/hypr/monitors.conf` and `workspaces.conf` on every start regardless of
+  `-m/-w`; they are placeholders for hyprlang `source=` users and harmless here.
 - **Processes spawned by Hyprland inherit stdin = `/dev/tty1`** (greetd runs Hyprland on that
   console), so `[[ -t 0 ]]` is true for anything launched from a keybind or the menu, and a prompt
   printed there lands on the invisible console. `hypr-monitors` learned this the hard way: its
@@ -142,7 +146,10 @@ Hyprland's window borders, and the login screen.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one
-  character (Shift+Backspace / Ctrl+H still delete directly).
+  character (Shift+Backspace / Ctrl+H still delete directly). rofi runs without `-no-custom` on
+  purpose: with it, a custom key is ignored whenever the filter matches nothing, which made
+  Backspace dead after a typo. Free-text Enter is rejected by the script instead (it reopens the
+  same level with the filter kept). Verified with `wtype` key injection on 2026-09-24.
 
 ## Noctalia's two config layers (read this before debugging "my change didn't work")
 

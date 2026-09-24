@@ -50,7 +50,7 @@ case "${1:-}" in
   --done) show_done "${2:-0}"; exit 0 ;;
   --confirm) confirm "${2:-Continue?}"; exit $? ;;
   --box) shift; box "$@"; exit 0 ;;
-  --class|-c) class="$2"; shift 2 ;;
+  --class|-c) [[ -n ${2:-} ]] || { echo "usage: hypr-tui --class CLASS command [args...]" >&2; exit 2; }; class="$2"; shift 2 ;;
 esac
 (( $# )) || { echo "usage: hypr-tui [--class CLASS] command [args...]" >&2; exit 2; }
 

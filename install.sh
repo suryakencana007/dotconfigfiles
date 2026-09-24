@@ -239,7 +239,8 @@ doctor() {
   local broken; broken=$(find "$HOME" -maxdepth 6 -xtype l -lname '*dotconfigfiles*' 2>/dev/null); [ -z "$broken" ] && ok "no broken symlinks" || { warn "broken symlinks: $broken"; bad=1; }
   # file kunci harus ada DAN berasal dari repo (stow -n diam saja kalau file sumbernya hilang dari repo)
   for f in .zshrc .p10k.zsh .gitconfig .config/alacritty/alacritty.toml .config/tmux/tmux.conf .config/hypr/hyprland.lua \
-           .config/noctalia/shell.toml .config/nvim/init.lua .config/rofi/config.rasi .config/mpv/mpv.conf .local/bin/resi-shell; do
+           .config/hypr/monitors.lua .config/noctalia/shell.toml .config/nvim/init.lua .config/rofi/config.rasi .config/mpv/mpv.conf \
+           .local/bin/resi-shell .local/bin/hypr-menu .local/bin/hypr-tui .local/share/applications/nwg-displays.desktop; do
     if [ ! -e "$HOME/$f" ]; then warn "missing: ~/$f"; bad=1
     elif ! in_repo "$HOME/$f"; then warn "not from the repo (plain file replaced the symlink): ~/$f"; bad=1; fi
   done
@@ -333,7 +334,7 @@ update() {
   git_sync
   step "Update"
   pacman_packages; aur_packages
-  step "Upgrade AUR packages"; run yay -Sua --noconfirm; ok "AUR up to date"
+  step "Upgrade AUR packages"; if run yay -Sua --noconfirm; then ok "AUR up to date"; else warn "AUR upgrade failed; continuing with the rest of the update"; fi
   stow_all; tmux_plugins; nvim_plugins
   have hyprctl && run hyprctl reload >/dev/null; have noctalia && run noctalia msg config-reload >/dev/null 2>&1 || true
   ok "update done"

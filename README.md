@@ -169,7 +169,7 @@ Each top-level folder is a Stow package mirroring `$HOME`:
 | `noctalia` | `.config/noctalia/*.toml`, `templates/` | `--no-folding` (real dir) |
 | `gtk` | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (dark mode; colors are rendered by Noctalia) | `--no-folding` |
 | `mpv` | `.config/mpv/{mpv.conf,input.conf}` (gpu-next on the compositor GPU, VA-API decode, default player for video/audio) | folder link |
-| `bin` | `.local/bin/{hypr-keybindings,hypr-menu,hypr-theme,hypr-theme-carousel,hypr-record,hypr-pkg-install,hypr-tui,hypr-update-firmware,hypr-restart-shell,hypr-monitors,hypr-clamshell,hypr-lid-close,rofi-toggle,resi-shell}` | `--no-folding` |
+| `bin` | `.local/share/applications/nwg-displays.desktop` (launcher entry overridden to go through `hypr-monitors`), `.local/bin/{hypr-keybindings,hypr-menu,hypr-theme,hypr-theme-carousel,hypr-record,hypr-pkg-install,hypr-tui,hypr-update-firmware,hypr-restart-shell,hypr-monitors,hypr-clamshell,hypr-lid-close,rofi-toggle,resi-shell}` | `--no-folding` |
 | `claude` | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` |
 | `hosts/<hostname>` | machine-specific overlay, see below | `--no-folding`, from `hosts/` |
 | `resi/` | installer data: package lists, greeter and greetd templates | not stowed |
