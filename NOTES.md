@@ -60,6 +60,32 @@ Hyprland's window borders, and the login screen.
   notes that the pattern exists so a second host (`dynarch`) could be added later without anyone
   needing to explain the convention from scratch.
 
+- **Install menu is a straight port of Omarchy's `omarchy-pkg-install` / `omarchy-pkg-aur-install`**
+  (`bin/hypr-pkg-install repo|aur`): `pacman -Slq` or `yay -Slqa` piped into fzf with the same
+  preview bindings, then `pacman -S --noconfirm` / `yay -S --noconfirm aur/...`. Omarchy's
+  `omarchy-sudo-keepalive` is inlined; the floating terminal and the "Done! Press any key" prompt
+  (`omarchy-launch-floating-terminal-with-presentation` + `omarchy-show-done`) are `bin/hypr-tui`,
+  which any menu entry can use. The picker runs in its own alacritty class (`hypr-pkg-install`,
+  floating 1000x800) because the 65% preview pane needs more height than the generic `TUI.float`
+  rule gives. Nothing new to install: fzf, pacman and yay are already in the package lists.
+- **Update menu = `resi-shell update` (menu > Update > Resi shell)**, mirroring `omarchy-update`:
+  a boxed "Ready to update?" notice and a Yes/No confirmation before anything runs (`-y` skips it),
+  the whole run captured with `script` to `~/.cache/resi-shell-update.log`, and a reboot offer at
+  the end when the running kernel is no longer installed or the Hyprland binary was replaced
+  (`omarchy-update-restart`). The `git pull` step (`git_sync`) never shows raw git errors: with
+  uncommitted changes it lists them and offers stash / pull / stash pop (automatic with `-y`), a
+  branch that is ahead of origin stops with "git pull --rebase && git push", and a conflict on
+  stash pop stops with the conflicting files listed (the stash is kept). Omarchy draws these with gum; ours are plain bash (a box-drawing
+  notice and horizontal `[ Yes ] [ No ]` buttons driven by arrow keys/Tab/y/n/Esc), so gum is not a
+  dependency. Confirmation comes before the sudo prompt on purpose.
+- **Everything shown to the user is English** (installer output, doctor checks, TUI prompts, menu
+  labels, README). Code comments in the scripts and the Claude skills stay Indonesian; that is the
+  owner's working language. Keep new user-facing strings English.
+- **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
+  apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
+  the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one
+  character (Shift+Backspace / Ctrl+H still delete directly).
+
 ## Noctalia's two config layers (read this before debugging "my change didn't work")
 
 Noctalia merges two layers, and the second always wins for any key it defines:

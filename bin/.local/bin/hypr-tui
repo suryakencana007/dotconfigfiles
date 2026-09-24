@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Jalankan perintah di terminal mengambang lalu tunggu tombol sebelum menutup
+# (ala omarchy-launch-floating-terminal-with-presentation + omarchy-show-done). Dipakai hypr-menu.
+#   hypr-tui [--class KELAS] perintah [arg...]     default class TUI.float (rule floating-window di windows.lua)
+#   hypr-tui --done [kode]                          hanya cetak "Done/Failed, press any key" (untuk skrip lain)
+set -uo pipefail
+
+show_done() {
+  local code="${1:-0}"
+  : 2>/dev/null <>/dev/tty || return 0
+  while read -rsn 1 -t 0.1 _ </dev/tty; do :; done          # buang ketikan yang tertinggal
+  if (( code == 0 )); then
+    printf '\n\033[32m● \033[0mDone! Press any key to close...' >/dev/tty
+  else
+    printf '\n\033[31m● \033[0mFailed (exit code %d)! Press any key to close...' "$code" >/dev/tty
+  fi
+  read -rsn 1 </dev/tty; echo >/dev/tty
+}
+
+class="TUI.float"
+case "${1:-}" in
+  --done) show_done "${2:-0}"; exit 0 ;;
+  --class|-c) class="$2"; shift 2 ;;
+esac
+(( $# )) || { echo "usage: hypr-tui [--class CLASS] command [args...]" >&2; exit 2; }
+
+if [[ ${HYPR_TUI_INNER:-} != 1 ]]; then
+  export HYPR_TUI_INNER=1
+  exec alacritty --class "$class" -e "$0" "$@"
+fi
+
+# Di dalam terminal: jalankan perintah; Ctrl-C (130) langsung tutup, selain itu tunggu tombol.
+"$@"; code=$?
+(( code == 130 )) || show_done "$code"

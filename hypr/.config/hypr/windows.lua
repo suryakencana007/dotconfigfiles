@@ -28,6 +28,12 @@ o.window("^hypr-keybindings$", { center = true })
 o.window("^hypr-keybindings$", { size = { 900, 860 } })
 o.window("^hypr-keybindings$", { tag = "+terminal" })
 
+-- Pemasang paket (menu Install > Package / AUR): daftar + pratinjau info paket butuh jendela lebih tinggi.
+o.window("^hypr-pkg-install$", { float = true })
+o.window("^hypr-pkg-install$", { center = true })
+o.window("^hypr-pkg-install$", { size = { 1000, 800 } })
+o.window("^hypr-pkg-install$", { tag = "+terminal" })
+
 -- Theme carousel (Super+Shift+Ctrl+Space): overlay satu layar penuh, mengambang & disematkan di atas segalanya.
 o.window("^hypr-theme-carousel$", { float = true })
 o.window("^hypr-theme-carousel$", { move = "0 0" })

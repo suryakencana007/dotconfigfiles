@@ -29,14 +29,14 @@ things that were tried and rejected.
 | **Compositor** | Hyprland 0.56+ with the native Lua config, split into modules (`looknfeel`, `input`, `windows`, `bindings/*`). Omarchy defaults: gaps 5/10, `Super+W` close, `Super+arrows` focus, `Super+1..0` workspaces, groups, resize, universal `Super+C/V/X/A` clipboard, Quake-style scratchpad on ``Super+` ``. Blur, subtle window opacity, Noctalia-themed borders. |
 | **Capture** | Screenshots by Noctalia's native screencopy capture (frozen region select, annotator, clipboard + `~/Pictures/Screenshots`); screen recording by gpu-screen-recorder (KMS capture, GPU encoding, 60 fps, desktop audio), toggled from one key like Omarchy, with a red REC button in the bar while recording (click to stop). |
 | **Shell** | Noctalia v5: transparent bar with island-style capsule groups, control center, notifications, clipboard history, wallpaper picker, OSD, polkit agent, idle lock (10 min) and screen-off (11 min), blurred lock screen with a centered compact login box. |
-| **Launcher & menu** | rofi 2.0 (Wayland). `Super+Alt+Space` = app launcher, `Super+Space` = Omarchy-style hierarchical menu (Apps, Learn, Trigger, Toggle, Style, Setup, About, System). Both toggle: press again to close. |
+| **Launcher & menu** | rofi 2.0 (Wayland). `Super+Alt+Space` = app launcher, `Super+Space` = Omarchy-style hierarchical menu (Apps, Learn, Trigger, Toggle, Style, Setup, Install, Update, About, System). Install > Package / AUR opens a floating fzf picker with package previews (multi-select with Tab), like Omarchy's; Update > Resi shell runs `resi-shell update` in a floating terminal, after a Yes/No confirmation like Omarchy's update screen. In a submenu, Backspace on an empty filter goes back. Both toggle: press again to close. |
 | **Login** | greetd + noctalia-greeter; wallpaper, palette, font, corner radius and monitor layout are auto-synced from the desktop (`noctalia/greeter.toml`) without a password prompt. |
 | **GTK apps** | Thunar and other GTK3/GTK4 apps use adw-gtk3 + Papirus icons in dark mode, colored by Noctalia's GTK templates. |
 | **Media** | mpv + yt-dlp as the default video/audio player, hardware decoding on the iGPU, floating window without transparency. |
 | **Terminal** | alacritty (MesloLGS Nerd Font, opacity, Noctalia colors), zsh + oh-my-zsh + Powerlevel10k (lean, one line, ANSI colors so it follows the theme), fzf/fzf-tab, zoxide, eza, bat, fd, ripgrep, delta, dust, duf, btop, tldr, lazygit. |
 | **tmux** | Omarchy's config: `Ctrl+Space` prefix, `Alt+Enter` split, `Alt+1..9` windows, status bar on top, TPM with resurrect + continuum (sessions survive reboots). |
 | **Neovim** | LazyVim with a base16 colorscheme rendered by Noctalia (live reload on theme change), transparent background. |
-| **Helpers** | `hypr-keybindings` (`Super+K`, searchable list formatted like Omarchy's), `hypr-menu`, `hypr-theme-carousel` (`Super+Shift+Ctrl+Space`: sliding wallpaper carousel like omarchy-shell's theme picker, the centered card is the selection), `hypr-theme` (rofi: palettes, dark/light, gallery), `hypr-record` (screen recording toggle), `rofi-toggle`, `resi-shell`. |
+| **Helpers** | `hypr-keybindings` (`Super+K`, searchable list formatted like Omarchy's), `hypr-menu`, `hypr-theme-carousel` (`Super+Shift+Ctrl+Space`: sliding wallpaper carousel like omarchy-shell's theme picker, the centered card is the selection), `hypr-theme` (rofi: palettes, dark/light, gallery), `hypr-record` (screen recording toggle), `hypr-pkg-install` (fzf package picker for repo/AUR, used by the menu), `hypr-tui` (runs a command in a floating terminal and waits for a key before closing, like Omarchy's presentation wrapper), `rofi-toggle`, `resi-shell`. |
 | **Claude Code** | Skills and agents that know this setup (`hyprland-config`, `noctalia-config`, `terminal-stack`, `dotfiles-stow`; agents `hyprland-tweaker`, `noctalia-tweaker`, `dotfiles-keeper`). |
 
 ### Key bindings (the ones you will use every day)
@@ -146,7 +146,7 @@ Once installed, the same script is available as `resi-shell`:
 | Command | What it does |
 |---|---|
 | `resi-shell install [--dry-run]` | full setup, safe to repeat |
-| `resi-shell update` | `git pull`, new packages, restow, plugin updates, reload Hyprland and Noctalia |
+| `resi-shell update [-y]` | asks for confirmation (skip with `-y`), then `git pull` (uncommitted local changes are stashed and re-applied after asking; a diverged branch or a conflict stops with instructions), full pacman + AUR upgrade, new packages, restow, plugin updates, reload Hyprland and Noctalia; offers a reboot when the kernel or Hyprland was replaced. Output is logged to `~/.cache/resi-shell-update.log` |
 | `resi-shell doctor` | health check: stow packages, broken links, key files present and pointing into the repo, Noctalia include in `hyprland.lua`, Hyprland/Noctalia/rofi/tmux/zsh configs, repo state |
 | `resi-shell packages` | print the package lists |
 
@@ -168,7 +168,7 @@ Each top-level folder is a Stow package mirroring `$HOME`:
 | `noctalia` | `.config/noctalia/*.toml`, `templates/` | `--no-folding` (real dir) |
 | `gtk` | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (dark mode; colors are rendered by Noctalia) | `--no-folding` |
 | `mpv` | `.config/mpv/{mpv.conf,input.conf}` (gpu-next on the compositor GPU, VA-API decode, default player for video/audio) | folder link |
-| `bin` | `.local/bin/{hypr-keybindings,hypr-menu,hypr-theme,hypr-theme-carousel,hypr-record,rofi-toggle,resi-shell}` | `--no-folding` |
+| `bin` | `.local/bin/{hypr-keybindings,hypr-menu,hypr-theme,hypr-theme-carousel,hypr-record,hypr-pkg-install,hypr-tui,rofi-toggle,resi-shell}` | `--no-folding` |
 | `claude` | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` |
 | `hosts/<hostname>` | machine-specific overlay, see below | `--no-folding`, from `hosts/` |
 | `resi/` | installer data: package lists, greeter and greetd templates | not stowed |

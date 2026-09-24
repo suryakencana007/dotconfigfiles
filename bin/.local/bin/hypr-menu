@@ -1,20 +1,35 @@
 #!/usr/bin/env bash
 # Menu bertingkat ala omarchy-menu, ditampilkan lewat rofi (dmenu). Super+Alt+Space.
-# Tiap entri: "glyph  Label". Esc menutup, "Back" kembali ke menu sebelumnya.
+# Tiap entri: "glyph  Label". Esc menutup; "Back" atau BackSpace (saat filter kosong) kembali ke menu induk.
 # Uji tanpa GUI:  HYPR_MENU_TEST=1 hypr-menu   (memilih entri pertama tiap level dan mencetak aksinya)
 set -uo pipefail
 
 KEYBINDINGS="$HOME/.local/bin/hypr-keybindings"
 BACK="󰁍  Back"
 
-menu() { # $1 judul, stdin: baris "label\taksi". Mencetak aksi yang dipilih.
-  local title="$1" lines labels choice
+menu() { # $1 judul, $2 "back" bila BackSpace boleh berarti kembali. stdin: "label\taksi". Mencetak aksi terpilih.
+  local title="$1" back="${2:-}" lines labels choice filter="" out rc
   lines=$(cat)
   labels=$(printf '%s\n' "$lines" | cut -f1)
   if [[ ${HYPR_MENU_TEST:-} == 1 ]]; then
     choice=$(printf '%s\n' "$labels" | head -1); echo "[test] $title -> $choice" >&2
   else
-    choice=$(printf '%s\n' "$labels" | rofi -dmenu -i -p "$title" -no-custom -theme-str 'configuration { show-icons: false; }') || return 1
+    # BackSpace di submenu: filter kosong = kembali (seperti entri Back); filter terisi = hapus satu huruf.
+    # rofi tidak bisa membedakan keduanya, jadi BackSpace dipetakan ke kb-custom-1 (exit 10) dan skrip
+    # ini yang memutuskan: kembali, atau buka ulang rofi dengan filter yang dipotong satu huruf.
+    local -a keys=()
+    [[ $back == back ]] && keys=(-kb-custom-1 BackSpace -kb-remove-char-back "Shift+BackSpace,Control+h")
+    while true; do
+      out=$(printf '%s\n' "$labels" | rofi -dmenu -i -p "$title" -no-custom -filter "$filter" -format $'s\tf' \
+            "${keys[@]}" -theme-str 'configuration { show-icons: false; }'); rc=$?
+      case $rc in
+        0)  choice=${out%%$'\t'*}; break ;;
+        10) filter=${out#*$'\t'}
+            [[ -z $filter ]] && { echo back; return 0; }
+            filter=${filter%?} ;;
+        *)  return 1 ;;
+      esac
+    done
   fi
   [[ -z $choice ]] && return 1
   printf '%s\n' "$lines" | awk -F'\t' -v c="$choice" '$1 == c { print $2; exit }'
@@ -25,7 +40,7 @@ run_menu() { # $1 judul, $2 nama fungsi yang mencetak entri, $3 fungsi menu indu
   while true; do
     # Grup harus selalu sukses: dengan pipefail, "[[ -n $parent ]] &&" yang gagal di menu utama
     # akan membuat pipeline dianggap gagal dan menu langsung tertutup.
-    action=$( { $items; if [[ -n $parent ]]; then printf '%s\t%s\n' "$BACK" "back"; fi; true; } | menu "$title") || return 0
+    action=$( { $items; if [[ -n $parent ]]; then printf '%s\t%s\n' "$BACK" "back"; fi; true; } | menu "$title" "${parent:+back}") || return 0
     case "$action" in
       back) [[ -n $parent ]] && $parent; return 0 ;;
       menu:*) "${action#menu:}"; return 0 ;;
@@ -41,17 +56,19 @@ root_items() { cat <<'ITEMS'
 󰧑  Learn	menu:learn
 󱓞  Trigger	menu:trigger
 󰔎  Toggle	menu:toggle
-  Style	menu:style
-  Setup	menu:setup
-  About	alacritty --class TUI.float -e sh -c 'fastfetch; read -n1'
-  System	menu:system
+󰏘  Style	menu:style
+󱁤  Setup	menu:setup
+󰣇  Install	menu:install
+󰚰  Update	menu:update
+󰋽  About	~/.local/bin/hypr-tui fastfetch
+󰌢  System	menu:system
 ITEMS
 }
 learn_items() { cat <<ITEMS
-  Keybindings	$KEYBINDINGS --toggle
-  Tmux keybindings	alacritty --class TUI.float -e sh -c 'tmux list-keys -N | less -R'
+󰌌  Keybindings	$KEYBINDINGS --toggle
+󰆍  Tmux keybindings	alacritty --class TUI.float -e sh -c 'tmux list-keys -N | less -R'
 󰊤  Hyprland wiki	brave https://wiki.hypr.land/
-󰈙  Noctalia docs	brave https://docs.noctalia.dev/
+󰨪  Noctalia docs	brave https://docs.noctalia.dev/
 ITEMS
 }
 trigger_items() { cat <<'ITEMS'
@@ -75,27 +92,36 @@ toggle_items() { cat <<'ITEMS'
 ITEMS
 }
 style_items() { cat <<'ITEMS'
-󰏘  Theme switcher (carousel)	~/.local/bin/hypr-theme-carousel
+󰃣  Theme switcher (carousel)	~/.local/bin/hypr-theme-carousel
 󰸉  Palette & mode	~/.local/bin/hypr-theme
-󰸉  Wallpaper (Noctalia)	noctalia msg panel-toggle wallpaper
-󰑓  Random wallpaper	noctalia msg wallpaper-random
-󰔎  Dark mode	noctalia msg theme-mode-set dark
+󰈟  Wallpaper (Noctalia)	noctalia msg panel-toggle wallpaper
+󰒞  Random wallpaper	noctalia msg wallpaper-random
+󰖔  Dark mode	noctalia msg theme-mode-set dark
 󰖨  Light mode	noctalia msg theme-mode-set light
-  Noctalia settings	noctalia msg settings-toggle
+󰒓  Noctalia settings	noctalia msg settings-toggle
 ITEMS
 }
 setup_items() { cat <<'ITEMS'
 󰕾  Audio	noctalia msg panel-toggle control-center audio
-󰖩  Network	noctalia msg panel-toggle control-center network
+󰛳  Network	noctalia msg panel-toggle control-center network
 󰂯  Bluetooth	noctalia msg panel-toggle control-center bluetooth
 󰍹  Display	noctalia msg settings-open display
-󰌌  Hyprland config	alacritty -e nvim ~/.config/hypr/hyprland.lua
-  Noctalia config	alacritty -e nvim ~/.config/noctalia/
-  Dotfiles	alacritty -e sh -c 'cd ~/dotconfigfiles && exec lazygit'
+󰈮  Hyprland config	alacritty -e nvim ~/.config/hypr/hyprland.lua
+󰈙  Noctalia config	alacritty -e nvim ~/.config/noctalia/
+󰊢  Dotfiles	alacritty -e sh -c 'cd ~/dotconfigfiles && exec lazygit'
+ITEMS
+}
+install_items() { cat <<'ITEMS'
+󰏖  Package	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install repo
+󰣇  AUR	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install aur
+ITEMS
+}
+update_items() { cat <<'ITEMS'
+󰑓  Resi shell	~/.local/bin/hypr-tui ~/.local/bin/resi-shell update
 ITEMS
 }
 system_items() { cat <<'ITEMS'
-  Lock	noctalia msg session lock
+󰌾  Lock	noctalia msg session lock
 󰒲  Suspend	noctalia msg session suspend
 󰍃  Logout	noctalia msg session logout
 󰜉  Reboot	noctalia msg session reboot
@@ -109,6 +135,8 @@ trigger() { run_menu "Trigger" trigger_items root; }
 toggle()  { run_menu "Toggle"  toggle_items  root; }
 style()   { run_menu "Style"   style_items   root; }
 setup()   { run_menu "Setup"   setup_items   root; }
+install() { run_menu "Install" install_items root; }
+update()  { run_menu "Update"  update_items  root; }
 system()  { run_menu "System"  system_items  root; }
 root()    { run_menu "Menu"    root_items; }
 

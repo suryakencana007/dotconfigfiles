@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Pemasang paket ala Omarchy (omarchy-pkg-install / omarchy-pkg-aur-install): pilih satu atau
+# banyak paket lewat fzf dengan pratinjau info paket, lalu pasang. Dipanggil dari hypr-menu > Install.
+# Pakai:  hypr-pkg-install repo     paket repo resmi (pacman)
+#         hypr-pkg-install aur      paket AUR (yay)
+# Dari menu dibuka lewat: hypr-tui --class hypr-pkg-install hypr-pkg-install repo|aur (jendela mengambang + prompt Done).
+# Tombol di fzf: tab = pilih banyak, alt-p = sembunyikan/tampilkan pratinjau, alt-j/k = gulir pratinjau,
+#                alt-d/u = gulir setengah halaman, (AUR) alt-b = lihat PKGBUILD, alt-B = kembali ke info.
+set -uo pipefail
+
+mode="${1:-repo}"
+case "$mode" in repo|aur) ;; *) echo "usage: hypr-pkg-install repo|aur" >&2; exit 2 ;; esac
+
+for dep in fzf pacman; do command -v "$dep" >/dev/null || { echo "$dep is required" >&2; exit 1; }; done
+[[ $mode == aur ]] && ! command -v yay >/dev/null && { echo "yay (AUR helper) is required" >&2; exit 1; }
+
+# Minta sudo sekali, lalu jaga kredensialnya tetap hidup selama pemasangan (omarchy-sudo-keepalive).
+sudo_keepalive() {
+  sudo -v || return 1
+  while true; do sudo -n true; sleep 60; done 2>/dev/null &
+  trap "kill $! 2>/dev/null" EXIT
+}
+
+fzf_args=(
+  --multi --layout=reverse --info=inline --color=16 --color='pointer:green,marker:green'
+  --preview-label-pos=bottom --preview-window='down:65%:wrap'
+  --bind 'alt-p:toggle-preview'
+  --bind 'alt-d:preview-half-page-down,alt-u:preview-half-page-up'
+  --bind 'alt-k:preview-up,alt-j:preview-down'
+)
+
+case "$mode" in
+  repo)
+    fzf_args+=( --prompt='  Install package : ' --preview 'pacman -Sii {1}'
+      --preview-label='alt-p: toggle description, alt-j/k: scroll, tab: multi-select' )
+    pkg_names=$(pacman -Slq | fzf "${fzf_args[@]}")
+    [[ -z $pkg_names ]] && exit 0
+    sudo_keepalive || exit 1
+    echo "$pkg_names" | tr '\n' ' ' | xargs sudo pacman -S --noconfirm
+    ;;
+  aur)
+    fzf_args+=( --prompt='  Install from AUR : ' --preview 'yay -Siia {1}'
+      --preview-label='alt-p: toggle description, alt-b: PKGBUILD, alt-j/k: scroll, tab: multi-select'
+      --bind 'alt-b:change-preview:yay -Gpa {1} | tail -n +5'
+      --bind 'alt-B:change-preview:yay -Siia {1}' )
+    pkg_names=$(yay -Slqa | fzf "${fzf_args[@]}")
+    [[ -z $pkg_names ]] && exit 0
+    sudo_keepalive || exit 1
+    echo "$pkg_names" | sed 's/^/aur\//' | tr '\n' ' ' | xargs yay -S --noconfirm
+    code=$?
+    command -v updatedb >/dev/null && sudo updatedb >/dev/null 2>&1
+    exit $code
+    ;;
+esac
