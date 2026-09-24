@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# Mode baterai otomatis: saat charger dicabut -> profil power-saver, brightness dibatasi, refresh panel diturunkan
+# bila panel punya mode lebih rendah; saat charger dipasang -> balanced, brightness & refresh dikembalikan.
+#   hypr-power status        cetak sumber daya & keadaan yang terpasang
+#   hypr-power apply         terapkan sesuai sumber daya sekarang (idempotent)
+#   hypr-power watch         jalan terus (autostart.lua): terapkan saat mulai, lalu tiap event upower
+# Uji: HYPR_POWER_FORCE=ac|battery memaksa sumber daya. Tidak butuh root: ppd lewat D-Bus, sisanya user.
+set -uo pipefail
+
+BATTERY_BRIGHTNESS_MAX=50          # % maksimum saat pindah ke baterai (boleh dinaikkan manual sesudahnya)
+STATE_DIR="$HOME/.local/state/resi/power"
+HYPR_STATE_DIR="$HOME/.local/state/resi/hypr"
+REFRESH_FLAG="$HYPR_STATE_DIR/power.lua"   # dimuat monitors.lua sebelum clamshell.lua
+
+source_now() {
+  case "${HYPR_POWER_FORCE:-}" in ac|battery) echo "$HYPR_POWER_FORCE"; return ;; esac
+  local p; for p in /sys/class/power_supply/*; do
+    [[ $(<"$p/type") == Mains && $(cat "$p/online" 2>/dev/null) == 1 ]] && { echo ac; return; }
+  done
+  for p in /sys/class/power_supply/*; do [[ $(<"$p/type") == Battery ]] && { echo battery; return; }; done
+  echo ac                                            # desktop tanpa baterai
+}
+backlight() { # perangkat backlight panel; nvidia_0 palsu di laptop hybrid
+  local b; for b in /sys/class/backlight/*; do [[ -e $b && $(basename "$b") != nvidia_* ]] && { basename "$b"; return; }; done
+  return 1
+}
+brightness_pct() { local b; b=$(backlight) || return 1; echo $(( $(<"/sys/class/backlight/$b/brightness") * 100 / $(<"/sys/class/backlight/$b/max_brightness") )); }
+set_brightness() { local b; b=$(backlight) || return 0; brightnessctl -q -d "$b" set "$1%" 2>/dev/null || true; }
+set_profile() { command -v powerprofilesctl >/dev/null || return 0
+  powerprofilesctl list 2>/dev/null | grep -q "^\*\? *$1:" && powerprofilesctl set "$1" 2>/dev/null || true; }
+internal_monitor() { hyprctl monitors all -j 2>/dev/null | jq -r '.[] | select(.name | test("^(eDP|LVDS|DSI)-")).name' | head -1; }
+notify() { command -v noctalia >/dev/null && noctalia msg notification-show "$1" "$2" >/dev/null 2>&1 || true; }
+
+# Mode refresh terendah pada resolusi asli panel, hanya bila lebih rendah dari mode aktif (mis. 60 Hz di panel 144 Hz).
+low_refresh_mode() {
+  local mon="$1"; hyprctl monitors all -j 2>/dev/null | jq -r --arg m "$mon" '
+    .[] | select(.name == $m) | . as $mo |
+    [ .availableModes[] | capture("^(?<w>[0-9]+)x(?<h>[0-9]+)@(?<hz>[0-9.]+)Hz")
+      | select((.w|tonumber) == $mo.width and (.h|tonumber) == $mo.height) | .hz | tonumber ] as $hz
+    | if ($hz | length) > 0 and ($hz | min) < ($mo.refreshRate - 1) then "\($mo.width)x\($mo.height)@\($hz | min)" else empty end'
+}
+
+apply() {
+  local src; src=$(source_now)
+  mkdir -p "$STATE_DIR" "$HYPR_STATE_DIR"
+  [[ -f $STATE_DIR/applied && $(<"$STATE_DIR/applied") == "$src" ]] && return 0   # tidak berubah
+  local mon; mon=$(internal_monitor)
+  if [[ $src == battery ]]; then
+    set_profile power-saver
+    local cur; cur=$(brightness_pct 2>/dev/null || echo "")
+    if [[ -n $cur ]] && (( cur > BATTERY_BRIGHTNESS_MAX )); then
+      echo "$cur" >"$STATE_DIR/brightness-before"; set_brightness "$BATTERY_BRIGHTNESS_MAX"
+    else rm -f "$STATE_DIR/brightness-before"; fi
+    local mode=""; [[ -n $mon ]] && mode=$(low_refresh_mode "$mon")
+    if [[ -n $mode ]]; then
+      printf 'hl.monitor({ output = "%s", mode = "%s", position = "auto", scale = 1 })\n' "$mon" "$mode" >"$REFRESH_FLAG"
+      hyprctl reload >/dev/null 2>&1 || true
+    fi
+    notify "Battery mode" "power-saver, brightness ≤ ${BATTERY_BRIGHTNESS_MAX}%${mode:+, $mode}"
+  else
+    set_profile balanced
+    if [[ -f $STATE_DIR/brightness-before ]]; then set_brightness "$(<"$STATE_DIR/brightness-before")"; rm -f "$STATE_DIR/brightness-before"; fi
+    if [[ -f $REFRESH_FLAG ]]; then rm -f "$REFRESH_FLAG"; hyprctl reload >/dev/null 2>&1 || true; fi
+    [[ -f $STATE_DIR/applied ]] && notify "Plugged in" "balanced profile, brightness and refresh restored"
+  fi
+  echo "$src" >"$STATE_DIR/applied"
+}
+
+case "${1:-status}" in
+  status)
+    printf 'source=%s applied=%s profile=%s brightness=%s%% refresh_flag=%s\n' "$(source_now)" \
+      "$(cat "$STATE_DIR/applied" 2>/dev/null || echo none)" "$(powerprofilesctl get 2>/dev/null || echo n/a)" \
+      "$(brightness_pct 2>/dev/null || echo n/a)" "$([[ -f $REFRESH_FLAG ]] && echo present || echo absent)" ;;
+  apply) apply ;;
+  watch)
+    mkdir -p "$STATE_DIR"
+    exec 9>"$STATE_DIR/watch.lock"; flock -n 9 || exit 0      # satu pemantau saja
+    apply
+    command -v upower >/dev/null || { echo "upower is required for watch mode" >&2; exit 1; }
+    upower --monitor 2>/dev/null | while read -r _; do apply; done ;;
+  *) echo "usage: hypr-power status|apply|watch" >&2; exit 2 ;;
+esac

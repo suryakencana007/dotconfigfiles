@@ -17,6 +17,13 @@ for _, name in ipairs({ "nwg-monitors.lua", "nwg-workspaces.lua" }) do
   if f then f:close(); pcall(dofile, home .. "/.config/hypr/" .. name) end
 end
 
+-- Mode baterai (skrip hypr-power): refresh panel diturunkan saat di baterai, bila panel punya mode lebih rendah.
+local powerflag = home .. "/.local/state/resi/hypr/power.lua"
+do
+  local f = io.open(powerflag, "r")
+  if f then f:close(); pcall(dofile, powerflag) end
+end
+
 -- Clamshell mode (skrip hypr-clamshell): lid tertutup + monitor eksternal aktif -> layar internal dimatikan.
 -- Keadaannya file Lua kecil di luar repo yang dimuat paling akhir supaya menang atas aturan di atas.
 local clamshell = home .. "/.local/state/resi/hypr/clamshell.lua"

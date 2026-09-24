@@ -143,6 +143,17 @@ Hyprland's window borders, and the login screen.
   `hypr-lid-close` additionally locks right away when no external monitor is connected, so the
   lock is already up before logind suspends. Not ported: Omarchy's manual internal-display
   toggle/mirror binds and its scale bookkeeping.
+- **Battery mode** (`bin/hypr-power`, started by `autostart.lua` as `hypr-power watch`). Findings on
+  legionarch (2026-09-24): ~18 W idle on battery with panel at 100% / 144 Hz, profile `balanced`,
+  and the GTX 1660 Ti held in D0 by Hyprland because the HDMI/DP ports are wired to it (Hyprland
+  renders on amdgpu, NVIDIA is opened only for its connectors; RTD3 would need
+  `AQ_DRM_DEVICES` restricted to the AMD card and would lose those ports, so it was not done).
+  BIOS has no CPPC, so it is acpi-cpufreq/schedutil, not amd-pstate. The watcher needs no root:
+  power-profiles-daemon is driven over D-Bus, brightness via brightnessctl (first non-`nvidia_*`
+  backlight; `nvidia_0` is a bogus device on hybrid laptops), refresh via a flag file loaded by
+  `monitors.lua`. It is idempotent (last applied source in `~/.local/state/resi/power/applied`),
+  single-instance (flock), and re-applies on every `upower --monitor` event. Panel eDP-2 on
+  legionarch only offers 144 Hz, so the refresh step is a no-op there.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one

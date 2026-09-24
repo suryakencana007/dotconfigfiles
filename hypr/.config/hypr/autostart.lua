@@ -7,6 +7,9 @@ hl.on("hyprland.start", function()
   -- Shell desktop: bar, launcher, notifikasi, lock, idle, wallpaper, OSD, polkit agent.
   hl.exec_cmd("noctalia")
 
+  -- Mode baterai otomatis: power-saver + brightness dibatasi saat charger dicabut (hypr-power).
+  hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-power watch")
+
   -- Automount USB (Thunar sudah bisa mount manual lewat gvfs).
   if o.cmd_present("udiskie") then
     hl.exec_cmd("udiskie --automount --no-notify --no-tray")
