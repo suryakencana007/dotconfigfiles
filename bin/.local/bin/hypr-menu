@@ -60,6 +60,7 @@ root_items() { cat <<'ITEMS'
 󱁤  Setup	menu:setup
 󰣇  Install	menu:install
 󰚰  Update	menu:update
+󰭌  Remove	menu:remove
 󰋽  About	~/.local/bin/hypr-tui fastfetch
 󰌢  System	menu:system
 ITEMS
@@ -120,6 +121,10 @@ update_items() { cat <<'ITEMS'
 󰑓  Resi shell	~/.local/bin/hypr-tui ~/.local/bin/resi-shell update
 ITEMS
 }
+remove_items() { cat <<'ITEMS'
+󰏖  Package	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install remove
+ITEMS
+}
 system_items() { cat <<'ITEMS'
 󰌾  Lock	noctalia msg session lock
 󰒲  Suspend	noctalia msg session suspend
@@ -137,6 +142,7 @@ style()   { run_menu "Style"   style_items   root; }
 setup()   { run_menu "Setup"   setup_items   root; }
 install() { run_menu "Install" install_items root; }
 update()  { run_menu "Update"  update_items  root; }
+remove()  { run_menu "Remove"  remove_items  root; }
 system()  { run_menu "System"  system_items  root; }
 root()    { run_menu "Menu"    root_items; }
 

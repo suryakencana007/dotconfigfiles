@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# Pemasang paket ala Omarchy (omarchy-pkg-install / omarchy-pkg-aur-install): pilih satu atau
-# banyak paket lewat fzf dengan pratinjau info paket, lalu pasang. Dipanggil dari hypr-menu > Install.
-# Pakai:  hypr-pkg-install repo     paket repo resmi (pacman)
-#         hypr-pkg-install aur      paket AUR (yay)
-# Dari menu dibuka lewat: hypr-tui --class hypr-pkg-install hypr-pkg-install repo|aur (jendela mengambang + prompt Done).
+# Pemasang/penghapus paket ala Omarchy (omarchy-pkg-install / omarchy-pkg-aur-install / omarchy-pkg-remove):
+# pilih satu atau banyak paket lewat fzf dengan pratinjau info paket, lalu pasang atau hapus.
+# Dipanggil dari hypr-menu > Install dan > Remove.
+# Pakai:  hypr-pkg-install repo     pasang paket repo resmi (pacman)
+#         hypr-pkg-install aur      pasang paket AUR (yay)
+#         hypr-pkg-install remove   hapus paket yang terpasang eksplisit (pacman -Rns, beserta dependensi yatim)
+# Dari menu dibuka lewat: hypr-tui --class hypr-pkg-install hypr-pkg-install <mode> (jendela mengambang + prompt Done).
 # Tombol di fzf: tab = pilih banyak, alt-p = sembunyikan/tampilkan pratinjau, alt-j/k = gulir pratinjau,
 #                alt-d/u = gulir setengah halaman, (AUR) alt-b = lihat PKGBUILD, alt-B = kembali ke info.
 set -uo pipefail
 
 mode="${1:-repo}"
-case "$mode" in repo|aur) ;; *) echo "usage: hypr-pkg-install repo|aur" >&2; exit 2 ;; esac
+case "$mode" in repo|aur|remove) ;; *) echo "usage: hypr-pkg-install repo|aur|remove" >&2; exit 2 ;; esac
 
 for dep in fzf pacman; do command -v "$dep" >/dev/null || { echo "$dep is required" >&2; exit 1; }; done
 [[ $mode == aur ]] && ! command -v yay >/dev/null && { echo "yay (AUR helper) is required" >&2; exit 1; }
@@ -50,5 +52,15 @@ case "$mode" in
     code=$?
     command -v updatedb >/dev/null && sudo updatedb >/dev/null 2>&1
     exit $code
+    ;;
+  remove)
+    # Daftar = paket yang dipasang eksplisit (pacman -Qqe), bukan dependensi. Penanda merah sebagai peringatan.
+    fzf_args+=( --prompt='  Remove package : ' --preview 'pacman -Qi {1}'
+      --preview-label='alt-p: toggle description, alt-j/k: scroll, tab: multi-select'
+      --color='pointer:red,marker:red' )
+    pkg_names=$(pacman -Qqe | fzf "${fzf_args[@]}")
+    [[ -z $pkg_names ]] && exit 0
+    sudo_keepalive || exit 1
+    echo "$pkg_names" | tr '\n' ' ' | xargs sudo pacman -Rns --noconfirm
     ;;
 esac

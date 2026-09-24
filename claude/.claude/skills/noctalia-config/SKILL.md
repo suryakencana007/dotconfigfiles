@@ -66,7 +66,7 @@ di file .toml mana pun di `~/.config/noctalia/`. Sintaks `{{colors.<token>.defau
 (primary, secondary, tertiary, error, surface*, on_*, outline) plus `terminal_*`. Referensi:
 https://docs.noctalia.dev/noctalia/theming/templates/
 
-Launcher: Super+Space = `hypr-menu` (menu ala Omarchy via rofi; submenu Install > Package/AUR = `hypr-tui --class hypr-pkg-install hypr-pkg-install repo|aur` (fzf + pratinjau pacman/yay, rule float 1000x800 di windows.lua), Update > Resi shell = `hypr-tui resi-shell update` (konfirmasi tombol horizontal Yes/No murni bash, log ~/.cache/resi-shell-update.log; semua teks ke pengguna wajib bahasa Inggris). `hypr-tui` = terminal mengambang TUI.float + prompt "Done, press any key" ala omarchy-show-done. BackSpace di submenu saat filter kosong = Back), Super+Alt+Space = `rofi -show drun`; tema rofi di
+Launcher: Super+Space = `hypr-menu` (menu ala Omarchy via rofi; submenu Install > Package/AUR dan Remove > Package = `hypr-tui --class hypr-pkg-install hypr-pkg-install repo|aur|remove` (fzf + pratinjau pacman/yay, rule float 1000x800 di windows.lua), Update > Resi shell = `hypr-tui resi-shell update` (konfirmasi tombol horizontal Yes/No murni bash, log ~/.cache/resi-shell-update.log; semua teks ke pengguna wajib bahasa Inggris). `hypr-tui` = terminal mengambang TUI.float + prompt "Done, press any key" ala omarchy-show-done. BackSpace di submenu saat filter kosong = Back), Super+Alt+Space = `rofi -show drun`; tema rofi di
 `~/.config/rofi/`. Launcher Noctalia tetap ada di ikon bar. Blur rofi lewat layer rule namespace `^rofi$` di looknfeel.lua.
 Supaya program CLI ikut tema: pakai warna ANSI 0-15, bukan indeks 256 (sudah diterapkan di p10k, bat `ansi`, fzf `--color=16`, tmux).
 

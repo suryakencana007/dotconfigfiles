@@ -60,9 +60,12 @@ Hyprland's window borders, and the login screen.
   notes that the pattern exists so a second host (`dynarch`) could be added later without anyone
   needing to explain the convention from scratch.
 
-- **Install menu is a straight port of Omarchy's `omarchy-pkg-install` / `omarchy-pkg-aur-install`**
-  (`bin/hypr-pkg-install repo|aur`): `pacman -Slq` or `yay -Slqa` piped into fzf with the same
-  preview bindings, then `pacman -S --noconfirm` / `yay -S --noconfirm aur/...`. Omarchy's
+- **Install and Remove menus are a straight port of Omarchy's `omarchy-pkg-install` /
+  `omarchy-pkg-aur-install` / `omarchy-pkg-remove`** (`bin/hypr-pkg-install repo|aur|remove`):
+  `pacman -Slq`, `yay -Slqa` or `pacman -Qqe` piped into fzf with the same preview bindings, then
+  `pacman -S --noconfirm` / `yay -S --noconfirm aur/...` / `pacman -Rns --noconfirm` (red markers
+  for removal). Omarchy's other Remove entries (AI, gaming, dev envs, web apps) are Omarchy-specific
+  and were not ported. Omarchy's
   `omarchy-sudo-keepalive` is inlined; the floating terminal and the "Done! Press any key" prompt
   (`omarchy-launch-floating-terminal-with-presentation` + `omarchy-show-done`) are `bin/hypr-tui`,
   which any menu entry can use. The picker runs in its own alacritty class (`hypr-pkg-install`,
