@@ -7,3 +7,12 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })   
 for ws = 1, 5 do
   hl.workspace_rule({ workspace = tostring(ws), persistent = true })
 end
+
+-- Layout dari nwg-displays (menu Setup > Monitors, skrip hypr-monitors): file ini ditulis nwg-displays,
+-- ada di ~/.config/hypr di luar repo (hypr di-stow --no-folding), dan menimpa aturan umum di atas
+-- untuk output yang disebut. Hapus filenya untuk kembali ke aturan umum.
+local home = os.getenv("HOME")
+for _, name in ipairs({ "nwg-monitors.lua", "nwg-workspaces.lua" }) do
+  local f = io.open(home .. "/.config/hypr/" .. name, "r")
+  if f then f:close(); pcall(dofile, home .. "/.config/hypr/" .. name) end
+end

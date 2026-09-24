@@ -100,6 +100,22 @@ Hyprland's window borders, and the login screen.
   `hyprctl dispatch 'hl.dsp.exec_cmd("noctalia")'` so it inherits the session environment rather
   than the terminal's, then poll `noctalia msg status` until it answers. Omarchy's other Process
   entry (Hyprsunset) has no equivalent here: night light is built into Noctalia.
+- **Setup > Monitors = nwg-displays with redirected output** (`bin/hypr-monitors`). nwg-displays 0.4.4
+  writes both `monitors.conf` and, for Hyprland 0.55+, `monitors.lua` containing `hl.monitor({...})`
+  blocks, then runs `hyprctl reload`. Its default path is `~/.config/hypr/monitors.lua`, which here
+  is a per-file stow symlink into the repo, so a plain `nwg-displays` would overwrite our
+  `monitors.lua`. The wrapper passes `-m ~/.config/hypr/nwg-monitors.conf -w
+  ~/.config/hypr/nwg-workspaces.conf`; the generated `nwg-monitors.lua` / `nwg-workspaces.lua` live
+  in `~/.config/hypr` outside the repo (hypr is `--no-folding`) and `monitors.lua` loads them with
+  `dofile` when present, after the generic catch-all rule. Omarchy's Setup > Monitors just opens
+  `monitors.lua` in an editor; the user asked for the graphical tool instead. nwg-displays is not in
+  the package list; the wrapper offers to install it on first use.
+- **Processes spawned by Hyprland inherit stdin = `/dev/tty1`** (greetd runs Hyprland on that
+  console), so `[[ -t 0 ]]` is true for anything launched from a keybind or the menu, and a prompt
+  printed there lands on the invisible console. `hypr-monitors` learned this the hard way: its
+  "not installed" prompt went to tty1 and the menu entry looked dead. Scripts must not use
+  `-t 0` alone to decide whether to open a floating terminal; check `HYPR_TUI_INNER=1` (set by
+  `hypr-tui` inside the terminal it opened) and treat `/dev/ttyN` as non-interactive.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one

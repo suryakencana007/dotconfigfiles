@@ -14,7 +14,7 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
 | `helpers.lua` | `o.bind(keys, desc, cmd|dispatcher|function, opts)`, `o.rebind`, `o.window(match, rules)`, `o.cmd_present`, `o.exec_on_start` |
 | `looknfeel.lua` | gaps 5/10, border 2, rounding 0, blur 8/3, shadow, animasi Omarchy, dwindle, misc, layer rule blur Noctalia |
 | `input.lua` | keyboard us, repeat 40/250, numlock, touchpad clickfinger, gesture 3 jari |
-| `monitors.lua` | `hl.monitor` auto, workspace 1-5 persistent |
+| `monitors.lua` | `hl.monitor` auto, workspace 1-5 persistent, lalu `dofile` `~/.config/hypr/nwg-monitors.lua` + `nwg-workspaces.lua` bila ada (ditulis nwg-displays lewat `hypr-monitors`, di luar repo). JANGAN jalankan nwg-displays tanpa `-m/-w`: path default-nya `~/.config/hypr/monitors.lua` = symlink ke repo, akan tertimpa |
 | `windows.lua` | suppress maximize, tag `default-opacity` (0.985/0.96), tag `floating-window`, tag `terminal`, rule dialog portal, media tanpa opacity |
 | `qconsole.lua` | scratchpad ala Quake console (disalin dari Omarchy), Super+` |
 | `autostart.lua` | import env ke systemd/dbus, `noctalia`, `udiskie` |
@@ -48,7 +48,10 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
    Alt+panah, Alt+angka, Ctrl+Alt+panah (tmux, tanpa prefix). Jangan bentrok.
 7. Baris `pcall(function() require("noctalia").apply_theme() end)` di akhir `hyprland.lua` harus tetap mengandung
    teks `require("noctalia")`, karena hook template Noctalia mencarinya.
-8. Dispatcher yang terbukti ada di 0.56: `hl.dsp.focus({ workspace = "N" | direction = "l" | monitor = "+1" })`,
+8. Proses yang diluncurkan Hyprland (bind, exec_cmd, menu) mewarisi stdin `/dev/tty1`, jadi `[[ -t 0 ]]` true dan
+   prompt tercetak ke konsol yang tidak terlihat. Skrip yang butuh interaksi harus membuka terminal mengambang lewat
+   `hypr-tui` dan mendeteksi lewat `HYPR_TUI_INNER=1`, bukan `-t 0` saja.
+9. Dispatcher yang terbukti ada di 0.56: `hl.dsp.focus({ workspace = "N" | direction = "l" | monitor = "+1" })`,
    `hl.dsp.window.move({ workspace = "N", follow = false })`, `hl.dsp.window.close()`, `hl.dsp.exec_cmd("cmd")`.
    Tidak ada `hl.dsp.workspace.go`. Window rule ke workspace: `o.window("^Class$", { workspace = "5" })`,
    tambah ` silent` untuk tanpa pindah fokus. Cek class jendela: `hyprctl clients -j`.

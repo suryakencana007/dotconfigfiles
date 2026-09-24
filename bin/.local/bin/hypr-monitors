@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Buka nwg-displays (pengaturan monitor grafis) dari hypr-menu > Setup > Monitors.
+# nwg-displays menulis dua file Lua yang dimuat monitors.lua kalau ada:
+#   ~/.config/hypr/nwg-monitors.lua    hl.monitor({...}) per output
+#   ~/.config/hypr/nwg-workspaces.lua  hl.workspace_rule({...}) bila dialog Workspaces dipakai
+# Path default nwg-displays adalah ~/.config/hypr/monitors.lua, yang di sini adalah symlink ke repo dotfiles
+# dan akan tertimpa; karena itu -m/-w diarahkan ke nama nwg-*. Setelah Apply, nwg-displays memanggil hyprctl reload.
+set -uo pipefail
+
+MON="$HOME/.config/hypr/nwg-monitors.conf"
+WS="$HOME/.config/hypr/nwg-workspaces.conf"
+
+# Terminal interaktif sungguhan? Proses yang diluncurkan Hyprland mewarisi stdin /dev/tty1 (konsol tempat greetd
+# menjalankan Hyprland), jadi [[ -t 0 ]] saja menipu: prompt akan tercetak ke tty1 yang tidak terlihat.
+interactive() { [[ ${HYPR_TUI_INNER:-} == 1 ]] && return 0; [[ -t 0 ]] || return 1; [[ $(tty 2>/dev/null) != /dev/tty[0-9]* ]]; }
+
+if ! command -v nwg-displays >/dev/null; then
+  interactive || exec hypr-tui "$0"                    # dari menu: tawarkan pemasangan di terminal mengambang
+  hypr-tui --box "nwg-displays is not installed." "" "It is the graphical monitor layout tool (position, scale, refresh rate, mirroring)."; echo
+  hypr-tui --confirm "Install nwg-displays now?" || { echo "Cancelled."; exit 1; }
+  sudo pacman -S --needed --noconfirm nwg-displays || exit $?
+  echo; echo "Starting nwg-displays..."
+  setsid -f nwg-displays -m "$MON" -w "$WS" >/dev/null 2>&1
+  exit 0
+fi
+
+exec nwg-displays -m "$MON" -w "$WS"

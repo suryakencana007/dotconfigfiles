@@ -107,6 +107,7 @@ setup_items() { cat <<'ITEMS'
 󰛳  Network	noctalia msg panel-toggle control-center network
 󰂯  Bluetooth	noctalia msg panel-toggle control-center bluetooth
 󰍹  Display	noctalia msg settings-open display
+󰍺  Monitors (nwg-displays)	~/.local/bin/hypr-monitors
 󰈮  Hyprland config	alacritty -e nvim ~/.config/hypr/hyprland.lua
 󰈙  Noctalia config	alacritty -e nvim ~/.config/noctalia/
 󰊢  Dotfiles	alacritty -e sh -c 'cd ~/dotconfigfiles && exec lazygit'

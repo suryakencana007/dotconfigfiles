@@ -43,6 +43,10 @@ o.window("^hypr-theme-carousel$", { rounding = 0 })
 o.window("^hypr-theme-carousel$", { tag = "-default-opacity" })
 o.window("^hypr-theme-carousel$", { opacity = "1 1" })
 
+-- nwg-displays (Setup > Monitors): mengambang di tengah, ukuran diatur aplikasinya sendiri.
+o.window("^nwg-displays$", { float = true })
+o.window("^nwg-displays$", { center = true })
+
 -- Jendela Settings Noctalia (dari docs Noctalia).
 o.window("dev.noctalia.Noctalia", { float = true })
 o.window("dev.noctalia.Noctalia", { size = { 1080, 920 } })
