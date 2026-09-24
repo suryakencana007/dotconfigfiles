@@ -132,9 +132,14 @@ remove_items() { cat <<'ITEMS'
 󰏖  Package	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install remove
 ITEMS
 }
-system_items() { cat <<'ITEMS'
-󰌾  Lock	noctalia msg session lock
-󰒲  Suspend	noctalia msg session suspend
+# Suspend/Hibernate hanya tampil bila logind bisa melakukannya (ala "when" di Omarchy: omarchy-hibernation-available).
+# Hibernate butuh swap non-zram sebesar image + hook resume + parameter resume= di kernel; lihat NOTES.md.
+can_power() { [[ $(busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager "Can$1" 2>/dev/null) == 's "yes"' ]]; }
+system_items() {
+  printf '%s\t%s\n' "󰌾  Lock" "noctalia msg session lock"
+  can_power Suspend   && printf '%s\t%s\n' "󰒲  Suspend" "noctalia msg session suspend"
+  can_power Hibernate && printf '%s\t%s\n' "󰤁  Hibernate" "systemctl hibernate"
+  cat <<'ITEMS'
 󰍃  Logout	noctalia msg session logout
 󰜉  Reboot	noctalia msg session reboot
 󰐥  Shutdown	noctalia msg session shutdown

@@ -116,6 +116,15 @@ Hyprland's window borders, and the login screen.
   "not installed" prompt went to tty1 and the menu entry looked dead. Scripts must not use
   `-t 0` alone to decide whether to open a floating terminal; check `HYPR_TUI_INNER=1` (set by
   `hypr-tui` inside the terminal it opened) and treat `/dev/ttyN` as non-interactive.
+- **System > Hibernate is conditional**, like Omarchy's `when: omarchy-hibernation-available`:
+  `hypr-menu` asks logind (`busctl … CanHibernate` / `CanSuspend`) and only lists what answers
+  "yes". On legionarch hibernate is "na": the only swap is zram (RAM-backed, cannot hold a
+  hibernation image), there is no `resume` initramfs hook and no `resume=` kernel parameter.
+  Enabling it would take a real swap file at least `/sys/power/image_size` (~12 GiB here, Omarchy
+  uses the full RAM size, 30 GiB) on the 46 GB ext4 root, `HOOKS+=(resume)` in
+  `/etc/mkinitcpio.conf.d/`, `resume=<root PARTUUID> resume_offset=<filefrag offset>` in
+  `/etc/kernel/cmdline`, and an initramfs/UKI rebuild for Limine. Omarchy's
+  `omarchy-hibernation-setup` is Btrfs + limine-entry-tool specific, so it was not ported as is.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one
