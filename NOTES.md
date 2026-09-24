@@ -196,6 +196,18 @@ through the GUI instead, or removed from `settings.toml` by hand. `resi-shell do
   machine still ends up on `simpledrm`, check `lsmod | grep -E 'nvidia|amdgpu'` and
   `journalctl -k -b | grep -i nvidia` before assuming it's a driver bug.
 
+- **`dynarch` (Dynabook G83/HS, BIOS 8.90) needs `acpi_mask_gpe=0x6F` on the kernel command line.**
+  Its firmware raises ACPI GPE `6F` about 290 times a second from boot (`/proc/interrupts` IRQ 9, `sci`
+  and `gpe6F` in `/sys/firmware/acpi/interrupts/`). Every event runs a BIOS method, so `kacpid` +
+  `kworker` ate one full core (25% "sys" CPU with the desktop idle) and the laptop drew 11 W at 45%
+  brightness instead of ~5.5 W. `6F` is not the EC's GPE (that is `6E`, which is fine), so the kernel's
+  EC storm detection never kicked in. Diagnosed 2026-09-24. Test without rebooting:
+  `echo disable | sudo tee /sys/firmware/acpi/interrupts/gpe6F`, then watch `upower -i ... | grep
+  energy-rate`. Permanent: the parameter is in `/boot/EFI/BOOT/limine.conf` (`cmdline:` line; the
+  limine pacman hook only copies EFI binaries and never rewrites that file). Result: 5.4 W, ~10 h,
+  charger detection, brightness keys and USB-C still work. Bootloader config is outside this repo,
+  so a reinstall must re-add it by hand; check Dynabook for a BIOS newer than 8.90 first.
+
 ## Evaluated and rejected
 
 - **walker** as a launcher — see "rofi over walker" above.
