@@ -60,6 +60,11 @@ case "$mode" in
       --color='pointer:red,marker:red' )
     pkg_names=$(pacman -Qqe | fzf "${fzf_args[@]}")
     [[ -z $pkg_names ]] && exit 0
+    # Tampilkan semua yang akan ikut terhapus (termasuk dependensi yatim) lalu minta konfirmasi.
+    mapfile -t victims < <(echo "$pkg_names" | xargs pacman -Rs -p 2>/dev/null | grep -vE '^(Packages|Total|$)' | sed 's/^/  /')
+    (( ${#victims[@]} )) || { echo "Nothing to remove."; exit 1; }
+    echo; hypr-tui --box "The following ${#victims[@]} package(s) will be removed (with unused dependencies):" "" "${victims[@]}"; echo
+    hypr-tui --confirm "Remove them?" || { echo "Removal cancelled."; exit 1; }
     sudo_keepalive || exit 1
     echo "$pkg_names" | tr '\n' ' ' | xargs sudo pacman -Rns --noconfirm
     ;;

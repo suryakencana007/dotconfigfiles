@@ -3,7 +3,35 @@
 # (ala omarchy-launch-floating-terminal-with-presentation + omarchy-show-done). Dipakai hypr-menu.
 #   hypr-tui [--class KELAS] perintah [arg...]     default class TUI.float (rule floating-window di windows.lua)
 #   hypr-tui --done [kode]                          hanya cetak "Done/Failed, press any key" (untuk skrip lain)
+#   hypr-tui --confirm "Pertanyaan?"                tombol horizontal [ Yes ] [ No ] ala gum confirm; exit 0 = Yes
+#   hypr-tui --box "baris" ["baris"...]             cetak baris-baris di dalam kotak
+# box/confirm sama dengan yang ada di install.sh (installer harus mandiri sebelum bin ter-stow).
 set -uo pipefail
+
+c_btn=$'\e[1;7m'; c_off=$'\e[0m'
+box() { local w=0 l; for l in "$@"; do (( ${#l} > w )) && w=${#l}; done
+  local bar; bar="$(printf '─%.0s' $(seq 1 $((w + 4))))"
+  printf '┌%s┐\n' "$bar"; for l in "$@"; do printf '│  %s%*s  │\n' "$l" $((w - ${#l})) ''; done; printf '└%s┘\n' "$bar"; }
+confirm() { # $1 pertanyaan; panah/Tab/h/l pindah, Enter pilih, y/n langsung, Esc/q = No
+  [[ -t 0 ]] || { local a; read -rp "$1 [y/N] " a; [[ $a =~ ^[Yy] ]]; return; }
+  local sel=0 key
+  printf '\033[?25l'
+  while true; do
+    printf '\r\033[K  %s   ' "$1"
+    if (( sel == 0 )); then printf '%s  Yes  %s    No   ' "$c_btn" "$c_off"; else printf '   Yes    %s  No   %s' "$c_btn" "$c_off"; fi
+    IFS= read -rsn1 key </dev/tty || { sel=1; break; }
+    case "$key" in
+      $'\e') if read -rsn2 -t 0.05 key </dev/tty; then [[ $key == '[C' || $key == '[D' || $key == '[Z' ]] && sel=$((1 - sel))
+              else sel=1; break; fi ;;
+      $'\t'|h|l|j|k|' ') sel=$((1 - sel)) ;;
+      y|Y) sel=0; break ;;
+      n|N|q) sel=1; break ;;
+      '') break ;;
+    esac
+  done
+  printf '\033[?25h\n'
+  (( sel == 0 ))
+}
 
 show_done() {
   local code="${1:-0}"
@@ -20,6 +48,8 @@ show_done() {
 class="TUI.float"
 case "${1:-}" in
   --done) show_done "${2:-0}"; exit 0 ;;
+  --confirm) confirm "${2:-Continue?}"; exit $? ;;
+  --box) shift; box "$@"; exit 0 ;;
   --class|-c) class="$2"; shift 2 ;;
 esac
 (( $# )) || { echo "usage: hypr-tui [--class CLASS] command [args...]" >&2; exit 2; }

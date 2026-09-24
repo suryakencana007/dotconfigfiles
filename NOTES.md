@@ -64,7 +64,9 @@ Hyprland's window borders, and the login screen.
   `omarchy-pkg-aur-install` / `omarchy-pkg-remove`** (`bin/hypr-pkg-install repo|aur|remove`):
   `pacman -Slq`, `yay -Slqa` or `pacman -Qqe` piped into fzf with the same preview bindings, then
   `pacman -S --noconfirm` / `yay -S --noconfirm aur/...` / `pacman -Rns --noconfirm` (red markers
-  for removal). Omarchy's other Remove entries (AI, gaming, dev envs, web apps) are Omarchy-specific
+  for removal). Removal first prints the full list from `pacman -Rs -p` (`-Rns -p` is rejected by
+  pacman) in a box and asks Yes/No via `hypr-tui --confirm`; the box/confirm code is duplicated in
+  `install.sh` on purpose, because the installer must work before `bin` is stowed. Omarchy's other Remove entries (AI, gaming, dev envs, web apps) are Omarchy-specific
   and were not ported. Omarchy's
   `omarchy-sudo-keepalive` is inlined; the floating terminal and the "Done! Press any key" prompt
   (`omarchy-launch-floating-terminal-with-presentation` + `omarchy-show-done`) are `bin/hypr-tui`,
