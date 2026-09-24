@@ -277,6 +277,21 @@ update_confirm() {
   confirm "Continue with update?" || { echo "Update cancelled."; exit 1; }
 }
 
+# Ala omarchy-update-orphan-pkgs + omarchy-update-pkg-prune: paket yatim ditawarkan untuk dihapus (default No,
+# dilewati saat -y: hanya dilaporkan), cache paket dipangkas ke 2 versi terakhir (paccache dari pacman-contrib).
+update_cleanup() {
+  step "Clean up"
+  local -a orphans; mapfile -t orphans < <(pacman -Qtdq 2>/dev/null || true)
+  if (( ${#orphans[@]} )); then
+    printf '  orphaned: %s\n' "${orphans[@]}"
+    if (( YES )); then warn "${#orphans[@]} orphaned package(s) left in place (unattended run)"
+    elif confirm "Remove ${#orphans[@]} orphaned package(s)?"; then run sudo pacman -Rns --noconfirm "${orphans[@]}" && ok "orphans removed"
+    else echo "  keeping orphaned packages"; fi
+  else ok "no orphaned packages"; fi
+  if have paccache; then run sudo paccache -rk2 >/dev/null && ok "package cache pruned (2 versions kept)" || warn "paccache failed"
+  else warn "paccache not found (pacman-contrib); package cache not pruned"; fi
+}
+
 # Ala omarchy-update-restart: tawarkan reboot bila kernel yang berjalan sudah tidak terpasang
 # atau binary Hyprland yang berjalan sudah diganti.
 update_restart() {
@@ -336,6 +351,7 @@ update() {
   step "Update"
   pacman_packages; aur_packages
   step "Upgrade AUR packages"; if run yay -Sua --noconfirm; then ok "AUR up to date"; else warn "AUR upgrade failed; continuing with the rest of the update"; fi
+  update_cleanup
   if have mise; then step "Update mise tools"; if MISE_MINIMUM_RELEASE_AGE=0 run mise up; then ok "mise tools up to date"; else warn "mise up failed; continuing"; fi; fi
   stow_all; tmux_plugins; nvim_plugins
   have hyprctl && run hyprctl reload >/dev/null; have noctalia && run noctalia msg config-reload >/dev/null 2>&1 || true
@@ -343,7 +359,9 @@ update() {
   # (flock), so this is a no-op when it is already running. Spawned through Hyprland like autostart does.
   if have hyprctl && hyprctl version >/dev/null 2>&1 && [ -x "$HOME/.local/bin/hypr-power" ]; then
     run hyprctl dispatch "hl.dsp.exec_cmd(\"$HOME/.local/bin/hypr-power watch\")" >/dev/null 2>&1 && ok "battery watcher (hypr-power) running" || warn "could not start hypr-power watch"
+    [ -x "$HOME/.local/bin/hypr-updates" ] && run hyprctl dispatch "hl.dsp.exec_cmd(\"$HOME/.local/bin/hypr-updates watch\")" >/dev/null 2>&1 && ok "update checker (hypr-updates) running"
   fi
+  [ -x "$HOME/.local/bin/hypr-updates" ] && "$HOME/.local/bin/hypr-updates" check >/dev/null 2>&1 || true   # bersihkan indikator bar
   ok "update done"
   update_restart
 }

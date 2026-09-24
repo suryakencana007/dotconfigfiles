@@ -177,6 +177,7 @@ remove_elixir_items()      { dev_elixir_items remove; }
 update_items() { cat <<'ITEMS'
 󰑓  Resi shell	~/.local/bin/hypr-tui ~/.local/bin/resi-shell update
   Firmware	~/.local/bin/hypr-tui ~/.local/bin/hypr-update-firmware
+󰑓  Check for updates	~/.local/bin/hypr-tui sh -c "~/.local/bin/hypr-updates check && ~/.local/bin/hypr-updates list"
   Process	menu:process
 ITEMS
 }

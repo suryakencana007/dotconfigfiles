@@ -87,7 +87,7 @@ Rekam: skrip `hypr-record` (bin) = toggle gpu-screen-recorder (AUR, parameter al
 -fallback-cpu-encoding yes -a default_output -ac aac; region WxH+X+Y dari slurp), cadangan wl-screenrec/wf-recorder.
 Output ~/Videos/screenrecording-*.mp4, log ~/.cache/hypr-record.log, notifikasi `notification-show`; `hypr-record status`.
 Indikator bar: saat merekam skrip menulis `~/.config/noctalia/zz-recording.toml` (override lajur `end` + widget
-`rec` custom_button merah, klik = berhenti) lalu config-reload; dihapus saat selesai. `hypr-record indicator on|off`
+`rec` custom_button merah, klik = berhenti) lalu config-reload; dihapus saat selesai. `hypr-record indicator on|off`. Indikator update paket: `hypr-updates` menulis `~/.config/noctalia/zy-updates.toml` (custom_button "updates", glyph package, label = jumlah) dengan pola lane `end` yang sama; nama `zy-` sengaja sebelum `zz-recording` supaya REC yang sementara menang saat keduanya ada
 untuk uji tampilan. File runtime ini di luar repo. Catatan: pgrep -x gagal untuk nama proses >15 huruf.
 
 ## Theme switcher

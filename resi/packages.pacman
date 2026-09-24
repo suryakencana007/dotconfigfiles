@@ -3,6 +3,7 @@
 base-devel
 git
 stow
+pacman-contrib
 openssh
 sudo
 man-db

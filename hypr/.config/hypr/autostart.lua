@@ -9,6 +9,8 @@ hl.on("hyprland.start", function()
 
   -- Mode baterai otomatis: power-saver + brightness dibatasi saat charger dicabut (hypr-power).
   hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-power watch")
+  -- Indikator update paket di bar: cek repo + AUR tiap 6 jam (hypr-updates).
+  hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-updates watch")
 
   -- Automount USB (Thunar sudah bisa mount manual lewat gvfs).
   if o.cmd_present("udiskie") then

@@ -169,6 +169,14 @@ Hyprland's window borders, and the login screen.
   and Remove opened as empty menus (only "Back") and System lost Suspend. `HYPR_MENU_CHECK=1
   hypr-menu` now verifies that every `menu:X` target and every `run_menu` items function is
   defined; `resi-shell doctor` runs it. Run it after editing the menu.
+- **Update indicator and cleanup** (2026-09-25). `bin/hypr-updates` is our version of Omarchy's
+  SystemUpdate bar widget: `checkupdates` (pacman-contrib, refreshes a temporary db without root;
+  falls back to `pacman -Qu` when missing) plus `yay -Qua`, every 6 hours from a watcher started by
+  `autostart.lua`. It reuses the REC-indicator trick (a generated Noctalia TOML adding a
+  `custom_button` to the bar's `end` lane, then `noctalia msg config-reload`). `resi-shell update`
+  runs `hypr-updates check` at the end so the button disappears, and now also offers to remove
+  orphans (`pacman -Qtdq`, default No, only reported with `-y`) and prunes the cache with
+  `paccache -rk2`, mirroring omarchy-update-orphan-pkgs / omarchy-update-pkg-prune.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one
