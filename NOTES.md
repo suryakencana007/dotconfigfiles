@@ -171,12 +171,17 @@ Hyprland's window borders, and the login screen.
   rust` now calls `~/.cargo/bin/rustup` explicitly and falls back to deleting `~/.rustup` and
   `~/.cargo`. Install runs rustup with `--no-modify-path` (it otherwise appends to ~/.zshenv,
   ~/.profile, ~/.bashrc, ~/.bash_profile); `.zshrc` adds `~/.cargo/bin` to PATH when present.
-  Docker DB (`bin/hypr-docker-db`) ports omarchy-install-docker-dbs with the same `docker run`
-  lines (ports on 127.0.0.1, dev credentials, `--restart unless-stopped`), plus list/remove and
-  "already exists -> start it". Like Omarchy the user is NOT added to the docker group (that is
-  passwordless root); the CLI goes through sudo unless the socket is writable. Docker is offered
-  for install on first use and a minimal `/etc/docker/daemon.json` (log rotation only; Omarchy's
-  dns/bip lines belong to its ufw setup) is written if none exists.
+  Docker DB (`bin/hypr-docker-db`) ports omarchy-install-docker-dbs with the same `run` lines
+  (ports on 127.0.0.1, dev credentials, `--restart unless-stopped`), plus list/remove and
+  "already exists -> start it". Engine choice (2026-09-25, user's request): **rootless Podman**
+  instead of Docker. It needs no root daemon and no sudo, which dissolves Omarchy's "docker group
+  = passwordless root" trade-off; `podman-docker` provides a `docker` CLI, `podman-compose` and
+  `DOCKER_HOST` (set in `.zshrc`) keep docker-compose/lazydocker working; `podman.socket` and
+  `podman-restart.service` (user units) give the API socket and honour restart policies at login.
+  Image names are fully qualified (`docker.io/library/...`) so they resolve under both engines.
+  subuid/subgid for the user already existed on legionarch. If Docker is already installed the
+  script still uses it (through sudo, no docker group) and writes a minimal log-rotation
+  `/etc/docker/daemon.json`.
 - **`hypr-menu` self-check.** Commit b8b94b6 accidentally deleted `update_items`, `process_items`,
   `remove_items` and `can_power` while a block of functions was replaced by text offsets, so Update
   and Remove opened as empty menus (only "Back") and System lost Suspend. `HYPR_MENU_CHECK=1

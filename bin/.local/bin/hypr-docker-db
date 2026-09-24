@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Database pengembangan di container Docker, ala omarchy-install-docker-dbs: MySQL, PostgreSQL, Redis, MongoDB,
-# MariaDB, MSSQL dengan opsi pengembangan (port hanya di 127.0.0.1, password kosong/sederhana, restart otomatis).
-# Docker tidak dipasang default; ditawarkan saat pertama dipakai. CLI docker lewat sudo, seperti Omarchy: user
-# TIDAK dimasukkan ke grup docker (setara root tanpa password); bila socket sudah writable, sudo dilewati.
+# Database pengembangan di container, ala omarchy-install-docker-dbs: MySQL, PostgreSQL, Redis, MongoDB, MariaDB,
+# MSSQL dengan opsi pengembangan (port hanya di 127.0.0.1, password kosong/sederhana, restart otomatis).
+# Engine: Podman rootless (disarankan; tanpa daemon root, tanpa sudo, tanpa grup docker) dengan podman-docker sebagai
+# CLI `docker` yang kompatibel dan podman-compose; Docker tetap didukung bila sudah terpasang (CLI lewat sudo, seperti
+# Omarchy: user TIDAK dimasukkan ke grup docker). Belum ada engine -> ditawarkan pemasangan Podman saat pertama dipakai.
 #   hypr-docker-db install [DB...]   pilih lewat fzf bila tanpa argumen
 #   hypr-docker-db remove  [DB...]   hapus container (data ikut hilang)
 #   hypr-docker-db list              status container database
@@ -19,19 +20,38 @@ info_of() { case $1 in
   MariaDB)    echo "127.0.0.1:3306  user root, empty password (same port as MySQL: run one of them)" ;;
   MSSQL)      echo "127.0.0.1:1433  user sa, password @dmin123" ;; esac; }
 
-dock() { if [[ -w /var/run/docker.sock ]]; then docker "$@"; else sudo docker "$@"; fi; }
+engine() { if command -v podman >/dev/null; then echo podman; elif command -v docker >/dev/null; then echo docker; fi; }
+dock() {
+  case "$(engine)" in
+    podman) podman "$@" ;;                                                   # rootless: sebagai user, tanpa sudo
+    docker) if [[ -w /var/run/docker.sock ]]; then docker "$@"; else sudo docker "$@"; fi ;;
+    *) echo "No container engine installed." >&2; return 1 ;;
+  esac
+}
+have_engine() { [[ -n $(engine) ]]; }
 
-ensure_docker() {
-  if ! command -v docker >/dev/null; then
-    hypr-tui --box "Docker is not installed." "" "Needed to run development databases in containers (docker + docker-compose)."; echo
-    hypr-tui --confirm "Install Docker now?" || { echo "Cancelled."; return 1; }
-    sudo pacman -S --needed --noconfirm docker docker-compose || return 1
+ensure_engine() {
+  if ! have_engine; then
+    hypr-tui --box "No container engine is installed." "" \
+      "Podman (rootless, no daemon, no sudo) will be installed with podman-docker (a docker-compatible CLI)" \
+      "and podman-compose. docker-compose and lazydocker also work through DOCKER_HOST (set by .zshrc)."; echo
+    hypr-tui --confirm "Install Podman now?" || { echo "Cancelled."; return 1; }
+    sudo pacman -S --needed --noconfirm podman podman-docker podman-compose || return 1
+    sudo touch /etc/containers/nodocker 2>/dev/null || true                # bungkam pesan "Emulate Docker CLI"
+    echo; echo "Open a new terminal afterwards so DOCKER_HOST (for docker-compose/lazydocker) is set."; echo
   fi
-  if [[ ! -f /etc/docker/daemon.json ]]; then   # batasi log container (ala etc/docker/daemon.json Omarchy, tanpa bagian ufw)
-    printf '{\n  "log-driver": "json-file",\n  "log-opts": { "max-size": "10m", "max-file": "5" }\n}\n' | sudo install -Dm644 /dev/stdin /etc/docker/daemon.json
-  fi
-  systemctl is-active --quiet docker.socket || systemctl is-active --quiet docker || { echo "Starting the Docker daemon..."; sudo systemctl enable --now docker.socket >/dev/null 2>&1 || sudo systemctl enable --now docker >/dev/null 2>&1; }
-  dock info >/dev/null 2>&1 || { echo "Docker daemon is not reachable." >&2; return 1; }
+  case "$(engine)" in
+    podman)
+      # Socket API (untuk docker-compose/lazydocker) dan podman-restart (menghormati --restart saat login).
+      systemctl --user enable --now podman.socket >/dev/null 2>&1 || true
+      systemctl --user enable --now podman-restart.service >/dev/null 2>&1 || true ;;
+    docker)
+      if [[ ! -f /etc/docker/daemon.json ]]; then   # batasi log container (ala etc/docker/daemon.json Omarchy, tanpa bagian ufw)
+        printf '{\n  "log-driver": "json-file",\n  "log-opts": { "max-size": "10m", "max-file": "5" }\n}\n' | sudo install -Dm644 /dev/stdin /etc/docker/daemon.json
+      fi
+      systemctl is-active --quiet docker.socket || systemctl is-active --quiet docker || { echo "Starting the Docker daemon..."; sudo systemctl enable --now docker.socket >/dev/null 2>&1 || sudo systemctl enable --now docker >/dev/null 2>&1; } ;;
+  esac
+  dock info >/dev/null 2>&1 || { echo "Container engine is not reachable." >&2; return 1; }
 }
 
 run_db() {
@@ -42,30 +62,30 @@ run_db() {
   fi
   echo "Installing $db..."
   case $db in
-    MySQL)      dock run -d --restart unless-stopped -p "127.0.0.1:3306:3306" --name=mysql8 -e MYSQL_ROOT_PASSWORD= -e MYSQL_ALLOW_EMPTY_PASSWORD=true mysql:8.4 ;;
-    PostgreSQL) dock run -d --restart unless-stopped -p "127.0.0.1:5432:5432" --name=postgres18 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:18 ;;
-    MariaDB)    dock run -d --restart unless-stopped -p "127.0.0.1:3306:3306" --name=mariadb11 -e MARIADB_ROOT_PASSWORD= -e MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=true mariadb:11.8 ;;
-    Redis)      dock run -d --restart unless-stopped -p "127.0.0.1:6379:6379" --name=redis redis:7 ;;
-    MongoDB)    dock run -d --restart unless-stopped -p "127.0.0.1:27017:27017" --name mongodb -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin123 mongo:noble ;;
+    MySQL)      dock run -d --restart unless-stopped -p "127.0.0.1:3306:3306" --name=mysql8 -e MYSQL_ROOT_PASSWORD= -e MYSQL_ALLOW_EMPTY_PASSWORD=true docker.io/library/mysql:8.4 ;;
+    PostgreSQL) dock run -d --restart unless-stopped -p "127.0.0.1:5432:5432" --name=postgres18 -e POSTGRES_HOST_AUTH_METHOD=trust docker.io/library/postgres:18 ;;
+    MariaDB)    dock run -d --restart unless-stopped -p "127.0.0.1:3306:3306" --name=mariadb11 -e MARIADB_ROOT_PASSWORD= -e MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=true docker.io/library/mariadb:11.8 ;;
+    Redis)      dock run -d --restart unless-stopped -p "127.0.0.1:6379:6379" --name=redis docker.io/library/redis:7 ;;
+    MongoDB)    dock run -d --restart unless-stopped -p "127.0.0.1:27017:27017" --name mongodb -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=admin123 docker.io/library/mongo:noble ;;
     MSSQL)      dock run -d --restart unless-stopped -p "127.0.0.1:1433:1433" --name mssql -e MSSQL_PID=Developer -e ACCEPT_EULA=Y -e "MSSQL_SA_PASSWORD=@dmin123" mcr.microsoft.com/mssql/server:2022-CU12-ubuntu-22.04 ;;
   esac >/dev/null && echo "  $db ready: $(info_of "$db")"
 }
 
 pick() { printf '%s\n' "${DBS[@]}" | fzf --multi --layout=reverse --info=inline --color=16 --prompt="$1" --header='tab: multi-select, enter: confirm, esc: cancel' 2>/dev/null; }
-ours() { command -v docker >/dev/null || return 0; local db n; for db in "${DBS[@]}"; do n=$(name_of "$db"); dock ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$n" && echo "$db"; done; }
+ours() { have_engine || return 0; local db n; for db in "${DBS[@]}"; do n=$(name_of "$db"); dock ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$n" && echo "$db"; done; }
 
 case "${1:-}" in
-  install) shift; ensure_docker || exit 1
+  install) shift; ensure_engine || exit 1
            if (( $# )); then choices=("$@"); else mapfile -t choices < <(pick '  Install database : '); fi
            (( ${#choices[@]} )) || { echo "No databases selected."; exit 0; }
            for db in "${choices[@]}"; do run_db "$db"; done ;;
-  remove)  shift; command -v docker >/dev/null || { echo "Docker is not installed."; exit 0; }
+  remove)  shift; have_engine || { echo "No container engine is installed."; exit 0; }
            if (( $# )); then choices=("$@"); else mapfile -t choices < <(ours | fzf --multi --layout=reverse --info=inline --color=16 --color='pointer:red,marker:red' --prompt='  Remove database : ' --header='tab: multi-select, enter: remove (data is deleted)' 2>/dev/null); fi
            (( ${#choices[@]} )) || { echo "No databases selected."; exit 0; }
            hypr-tui --confirm "Remove ${choices[*]} (container and its data)?" || { echo "Cancelled."; exit 1; }
            for db in "${choices[@]}"; do dock rm -f "$(name_of "$db")" >/dev/null && echo "Removed $db"; done ;;
-  list)    command -v docker >/dev/null || { echo "Docker is not installed."; exit 0; }
-           printf '\e[32mDevelopment databases\e[0m\n\n'; for db in $(ours); do printf '%-11s %-11s %s\n' "$db" "$(dock ps -a --filter "name=^$(name_of "$db")$" --format '{{.Status}}' | cut -d' ' -f1)" "$(info_of "$db")"; done ;;
+  list)    have_engine || { echo "No container engine is installed."; exit 0; }
+           printf '\e[32mDevelopment databases (%s)\e[0m\n\n' "$(engine)"; for db in $(ours); do printf '%-11s %-11s %s\n' "$db" "$(dock ps -a --filter "name=^$(name_of "$db")$" --format '{{.Status}}' | cut -d' ' -f1)" "$(info_of "$db")"; done ;;
   installed) [[ -n $(ours) ]] ;;
   *) echo "usage: hypr-docker-db install|remove [DB...] | list | installed   (DB: ${DBS[*]})" >&2; exit 2 ;;
 esac

@@ -69,6 +69,12 @@ if (( $+commands[mise] )); then
   [[ :$PATH: == *:$HOME/.local/share/mise/shims:* ]] || export PATH="$PATH:$HOME/.local/share/mise/shims"
 fi
 
+# ---- Podman rootless sebagai pengganti Docker (menu Install > Development > Docker DB) ----
+# podman-docker menyediakan CLI `docker`; DOCKER_HOST mengarahkan docker-compose/lazydocker ke socket Podman user.
+if (( $+commands[podman] )) && ! (( $+commands[dockerd] )); then
+  export DOCKER_HOST="unix://${XDG_RUNTIME_DIR:-/run/user/$UID}/podman/podman.sock"
+fi
+
 # ---- rustup/cargo (dari menu Install > Development > Rust): binari di ~/.cargo/bin ----
 [[ -d $HOME/.cargo/bin ]] && export PATH="$PATH:$HOME/.cargo/bin"
 

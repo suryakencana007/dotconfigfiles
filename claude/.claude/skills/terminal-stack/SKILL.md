@@ -46,6 +46,10 @@ untuk video/* dan audio/*. Uji decode: `mpv --length=2 --really-quiet --msg-leve
 - Sesi desktop login sebelum `chsh`, jadi `$SHELL` masih bash sampai re-login; alacritty dipaksa zsh.
 - `man` (man-db) terpasang; `hostname` tidak (paket inetutils), tidak masalah.
 
+## Podman (container engine untuk Docker DB)
+`.zshrc` mengekspor `DOCKER_HOST` ke socket Podman user bila podman ada dan dockerd tidak, supaya docker-compose dan
+lazydocker memakai Podman. `podman-docker` memberi CLI `docker`. Service user: `podman.socket`, `podman-restart.service`.
+
 ## mise (dev env dari menu Install > Development)
 `.zshrc` mengaktifkan mise hanya bila terpasang: `eval "$(mise activate zsh)"` + shims `~/.local/share/mise/shims` di PATH.
 mise dipasang saat pertama dipakai oleh `hypr-dev-env` (paket bin), bukan dari daftar paket resi. `resi-shell update`
