@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Saat lid ditutup (bind switch:on:Lid Switch), ala omarchy-system-lid-close:
+#  - tanpa monitor eksternal: kunci layar sekarang juga, supaya lock sudah aman sebelum logind menyuspend
+#    (Noctalia juga mengunci lewat inhibitor "Lock before sleep", ini hanya memberi start lebih awal);
+#  - dengan monitor eksternal: jangan kunci, jangan suspend (logind HandleLidSwitchDocked=ignore) -> clamshell.
+set -uo pipefail
+lid_closed() { local s; for s in /proc/acpi/button/lid/*/state; do [[ -r $s && $(<"$s") == *closed* ]] && return 0; done; return 1; }
+external_connected() { # konektor non-internal yang tersambung menurut DRM
+  local st; for st in /sys/class/drm/card*-*/status; do
+    [[ -e $st ]] || continue; [[ $st =~ -(eDP|LVDS|DSI)-[^/]+/status$ ]] && continue
+    [[ $(<"$st") == connected ]] && return 0
+  done; return 1
+}
+if lid_closed && ! external_connected; then
+  noctalia msg session lock >/dev/null 2>&1 || true
+fi
+exec "$HOME/.local/bin/hypr-clamshell"

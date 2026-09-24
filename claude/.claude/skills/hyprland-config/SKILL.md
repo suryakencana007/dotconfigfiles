@@ -14,7 +14,7 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
 | `helpers.lua` | `o.bind(keys, desc, cmd|dispatcher|function, opts)`, `o.rebind`, `o.window(match, rules)`, `o.cmd_present`, `o.exec_on_start` |
 | `looknfeel.lua` | gaps 5/10, border 2, rounding 0, blur 8/3, shadow, animasi Omarchy, dwindle, misc, layer rule blur Noctalia |
 | `input.lua` | keyboard us, repeat 40/250, numlock, touchpad clickfinger, gesture 3 jari |
-| `monitors.lua` | `hl.monitor` auto, workspace 1-5 persistent, lalu `dofile` `~/.config/hypr/nwg-monitors.lua` + `nwg-workspaces.lua` bila ada (ditulis nwg-displays lewat `hypr-monitors`, di luar repo). JANGAN jalankan nwg-displays tanpa `-m/-w`: path default-nya `~/.config/hypr/monitors.lua` = symlink ke repo, akan tertimpa |
+| `monitors.lua` | `hl.monitor` auto, workspace 1-5 persistent, lalu `dofile` `~/.config/hypr/nwg-monitors.lua` + `nwg-workspaces.lua` bila ada (ditulis nwg-displays lewat `hypr-monitors`, di luar repo). JANGAN jalankan nwg-displays tanpa `-m/-w`: path default-nya `~/.config/hypr/monitors.lua` = symlink ke repo, akan tertimpa. Paling akhir memuat `~/.local/state/resi/hypr/clamshell.lua` (ditulis `hypr-clamshell`: internal disabled saat lid tertutup + monitor eksternal aktif) dan berlangganan `monitor.added/removed` -> exec hypr-clamshell (langganan disimpan di `_G.__resi_clamshell_subs` dan dilepas tiap reload) |
 | `windows.lua` | suppress maximize, tag `default-opacity` (0.985/0.96), tag `floating-window`, tag `terminal`, rule dialog portal, media tanpa opacity |
 | `qconsole.lua` | scratchpad ala Quake console (disalin dari Omarchy), Super+` |
 | `autostart.lua` | import env ke systemd/dbus, `noctalia`, `udiskie` |
@@ -23,7 +23,7 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
 | `bindings/noctalia.lua` | semua yang lewat `noctalia msg ...` (control center, session, clipboard, lock, notifikasi, toggle), Super+Shift+Ctrl+Space = `hypr-theme-carousel --toggle` (carousel GTK4, class `hypr-theme-carousel` dengan rule float/center/pin/dim_around di windows.lua; palet/mode lewat `hypr-theme` di menu Style), Super+Ctrl+Alt+Space = panel Wallhaven. Super+Space = `hypr-menu` (menu ala Omarchy via rofi; launcher Noctalia tidak diikat tombol, ada di ikon bar) |
 | `bindings/media.lua` | tombol XF86 volume/brightness/media lewat `noctalia msg` |
 | `bindings/clipboard.lua` | Super+C/V/X/A universal (disalin dari Omarchy, butuh tag `terminal`) |
-| `bindings/utilities.lua` | screenshot Noctalia (`noctalia msg screenshot-region|screenshot-fullscreen`; window via hyprshot), rekam `hypr-record` (Alt+Print toggle, Ctrl+Alt+Print layar), hyprpicker, zoom, Super+K = `hypr-keybindings` (skrip di paket bin, format ala Omarchy; `--print` untuk cek di terminal) |
+| `bindings/utilities.lua` | screenshot Noctalia (`noctalia msg screenshot-region|screenshot-fullscreen`; window via hyprshot), rekam `hypr-record` (Alt+Print toggle, Ctrl+Alt+Print layar), hyprpicker, zoom, Super+K = `hypr-keybindings` (skrip di paket bin, format ala Omarchy; `--print` untuk cek di terminal). Bind switch `switch:on/off:Lid Switch` (locked=true, tanpa deskripsi) -> `hypr-lid-close` / `hypr-clamshell` |
 | `noctalia.lua` | **HASIL RENDER Noctalia** (warna border dari tema). Jangan diedit, jangan dipindah, sudah di-gitignore |
 
 ## Aturan kerja

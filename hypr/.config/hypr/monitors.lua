@@ -16,3 +16,20 @@ for _, name in ipairs({ "nwg-monitors.lua", "nwg-workspaces.lua" }) do
   local f = io.open(home .. "/.config/hypr/" .. name, "r")
   if f then f:close(); pcall(dofile, home .. "/.config/hypr/" .. name) end
 end
+
+-- Clamshell mode (skrip hypr-clamshell): lid tertutup + monitor eksternal aktif -> layar internal dimatikan.
+-- Keadaannya file Lua kecil di luar repo yang dimuat paling akhir supaya menang atas aturan di atas.
+local clamshell = home .. "/.local/state/resi/hypr/clamshell.lua"
+do
+  local f = io.open(clamshell, "r")
+  if f then f:close(); pcall(dofile, clamshell) end
+end
+-- Sinkronkan ulang saat monitor dicolok/dicabut (ala omarchy-hyprland-monitor-watch). Langganan lama
+-- dilepas dulu supaya tidak menumpuk tiap reload.
+if _G.__resi_clamshell_subs then
+  for _, sub in ipairs(_G.__resi_clamshell_subs) do pcall(function() sub:remove() end) end
+end
+_G.__resi_clamshell_subs = {}
+for _, ev in ipairs({ "monitor.added", "monitor.removed" }) do
+  table.insert(_G.__resi_clamshell_subs, hl.on(ev, function() hl.exec_cmd(home .. "/.local/bin/hypr-clamshell") end))
+end

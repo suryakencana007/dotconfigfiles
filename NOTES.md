@@ -125,6 +125,20 @@ Hyprland's window borders, and the login screen.
   `/etc/mkinitcpio.conf.d/`, `resume=<root PARTUUID> resume_offset=<filefrag offset>` in
   `/etc/kernel/cmdline`, and an initramfs/UKI rebuild for Limine. Omarchy's
   `omarchy-hibernation-setup` is Btrfs + limine-entry-tool specific, so it was not ported as is.
+- **Lid close and clamshell mode.** Suspend on lid close needs nothing from us: logind's default
+  `HandleLidSwitch=suspend` is active, the kernel uses `deep` (S3) sleep, and Noctalia holds a
+  "Lock before sleep" delay inhibitor (`lock_before_suspend = true`). With an external monitor
+  logind ignores the lid (`HandleLidSwitchDocked=ignore`), so `bin/hypr-clamshell` (a simplified
+  `omarchy-hyprland-monitor-clamshell`) switches the internal panel off: it writes
+  `hl.monitor({ output = "eDP-2", disabled = true })` to `~/.local/state/resi/hypr/clamshell.lua`,
+  which `monitors.lua` loads last, then reloads Hyprland; lid open or unplugging the external
+  monitor removes the file, reloads and forces DPMS on. The flag-file approach (instead of a live
+  `hyprctl` keyword) means other reloads, e.g. Noctalia theme changes, do not silently re-enable
+  the panel. Triggers: Hyprland `switch:on/off:Lid Switch` binds and `monitor.added/removed`
+  events registered in `monitors.lua` (Omarchy uses a socket-watching daemon for the latter).
+  `hypr-lid-close` additionally locks right away when no external monitor is connected, so the
+  lock is already up before logind suspends. Not ported: Omarchy's manual internal-display
+  toggle/mirror binds and its scale bookkeeping.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one

@@ -15,3 +15,8 @@ end)
 o.bind("SUPER + CTRL + ALT + Z", "Reset zoom", function()
   hl.config({ cursor = { zoom_factor = 1 } })
 end)
+
+-- Lid laptop (ala Omarchy): tutup -> kunci (bila tanpa monitor eksternal) + clamshell; buka -> layar internal kembali.
+-- locked = true: tetap berlaku saat layar terkunci (bindl). Tanpa deskripsi supaya tidak muncul di daftar Super+K.
+o.bind("switch:on:Lid Switch",  nil, os.getenv("HOME") .. "/.local/bin/hypr-lid-close", { locked = true })
+o.bind("switch:off:Lid Switch", nil, os.getenv("HOME") .. "/.local/bin/hypr-clamshell", { locked = true })

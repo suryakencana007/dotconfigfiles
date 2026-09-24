@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Clamshell mode ala Omarchy (omarchy-hyprland-monitor-clamshell, disederhanakan):
+#   lid tertutup + ada monitor eksternal aktif  -> layar internal (eDP/LVDS/DSI) dimatikan
+#   selain itu                                 -> layar internal dinyalakan lagi
+# Keadaan disimpan sebagai file Lua kecil yang dimuat monitors.lua paling akhir, lalu hyprctl reload;
+# dengan begitu reload lain (ganti tema Noctalia, dll) tidak diam-diam menyalakan layar internal lagi.
+# Dipanggil oleh: bind switch Lid Switch (bindings/utilities.lua), event monitor.added/removed (monitors.lua),
+# dan hypr-lid-close. Tanpa monitor eksternal, menutup lid tetap ditangani logind (suspend).
+#   hypr-clamshell            sinkronkan keadaan
+#   hypr-clamshell status     cetak keputusan tanpa mengubah apa pun
+# Uji: CLAMSHELL_LID=closed|open memaksa keadaan lid.
+set -uo pipefail
+
+STATE_DIR="$HOME/.local/state/resi/hypr"
+FLAG="$STATE_DIR/clamshell.lua"
+
+internal_monitor() { hyprctl monitors all -j 2>/dev/null | jq -r '.[] | select(.name | test("^(eDP|LVDS|DSI)-")).name' | head -1; }
+lid_closed() {
+  case "${CLAMSHELL_LID:-}" in closed) return 0 ;; open) return 1 ;; esac
+  local s; for s in /proc/acpi/button/lid/*/state; do [[ -r $s && $(<"$s") == *closed* ]] && return 0; done; return 1
+}
+external_active() { # ada monitor aktif selain internal?
+  hyprctl monitors -j 2>/dev/null | jq -e --arg i "$1" '[.[] | select(.name != $i and .disabled != true)] | length > 0' >/dev/null
+}
+
+INTERNAL=$(internal_monitor)
+[[ -n $INTERNAL ]] || exit 0
+[[ $INTERNAL =~ ^[A-Za-z0-9._-]+$ ]] || { echo "Refusing unsafe internal monitor name: $INTERNAL" >&2; exit 1; }
+
+want_clamshell=0
+lid_closed && external_active "$INTERNAL" && want_clamshell=1
+
+if [[ ${1:-} == status ]]; then
+  decision="internal ON"; (( want_clamshell )) && decision="internal OFF (clamshell)"
+  printf 'internal=%s lid=%s external_active=%s flag=%s -> %s\n' "$INTERNAL" \
+    "$(lid_closed && echo closed || echo open)" "$(external_active "$INTERNAL" && echo yes || echo no)" \
+    "$([[ -f $FLAG ]] && echo present || echo absent)" "$decision"
+  exit 0
+fi
+
+if (( want_clamshell )); then
+  mkdir -p "$STATE_DIR"
+  cfg=$(printf 'hl.monitor({ output = "%s", disabled = true })' "$INTERNAL")
+  if [[ ! -f $FLAG || $(<"$FLAG") != "$cfg" ]]; then
+    printf '%s\n' "$cfg" >"$FLAG"
+    hyprctl reload >/dev/null 2>&1 || true
+  fi
+else
+  if [[ -f $FLAG ]]; then
+    rm -f "$FLAG"
+    hyprctl reload >/dev/null 2>&1 || true
+    hyprctl dispatch "hl.dsp.dpms({ action = \"on\", monitor = \"$INTERNAL\" })" >/dev/null 2>&1 || true
+  fi
+fi
