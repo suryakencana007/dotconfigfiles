@@ -82,8 +82,8 @@ ITEMS
 learn_items() { cat <<ITEMS
 󰌌  Keybindings	$KEYBINDINGS --toggle
 󰆍  Tmux keybindings	alacritty --class TUI.float -e sh -c 'tmux list-keys -N | less -R'
-󰊤  Hyprland wiki	brave https://wiki.hypr.land/
-󰨪  Noctalia docs	brave https://docs.noctalia.dev/
+󰊤  Hyprland wiki	~/.local/bin/hypr-webapp launch https://wiki.hypr.land/
+󰨪  Noctalia docs	~/.local/bin/hypr-webapp launch https://docs.noctalia.dev/
 ITEMS
 }
 trigger_items() { cat <<'ITEMS'
@@ -132,6 +132,7 @@ install_items() { cat <<'ITEMS'
 󰏖  Package	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install repo
 󰣇  AUR	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install aur
 󰵮  Development	menu:development
+󰖟  Web App	~/.local/bin/hypr-tui ~/.local/bin/hypr-webapp install
 ITEMS
 }
 # Lingkungan pengembangan (hypr-dev-env, berbasis mise seperti Omarchy). Daftar yang sama dipakai Install dan Remove;
@@ -191,6 +192,9 @@ remove_items() { cat <<'ITEMS'
 󰣇  AUR	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install remove-aur
 󰵮  Development	menu:remove_development
 ITEMS
+  # Web App hanya bila ada launcher web app (ala "when" di Omarchy)
+  [[ -n $(~/.local/bin/hypr-webapp list 2>/dev/null) ]] && printf '%s\t%s\n' "󰖟  Web App" "~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-webapp remove"
+  true
 }
 # Suspend/Hibernate hanya tampil bila logind bisa melakukannya (ala "when" di Omarchy: omarchy-hibernation-available).
 # Hibernate butuh swap non-zram sebesar image + hook resume + parameter resume= di kernel; lihat NOTES.md.

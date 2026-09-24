@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# Web app ala Omarchy (omarchy-webapp-install / omarchy-launch-webapp / omarchy-webapp-remove): situs web dibuka
+# sebagai jendela aplikasi sendiri (Brave/Chromium --app=URL) dengan launcher .desktop dan ikon di launcher.
+#   hypr-webapp install [name url [icon]]   buat launcher; tanpa argumen = tanya interaktif (di hypr-tui)
+#   hypr-webapp remove [name...]            hapus launcher + ikon; tanpa argumen = pilih lewat fzf
+#   hypr-webapp launch <url> [args...]      buka url sebagai jendela app di browser default (dipakai .desktop)
+#   hypr-webapp list                        daftar web app yang terpasang
+# Ikon: apple-touch-icon situs -> /apple-touch-icon.png -> layanan favicon Google (256px), atau URL/berkas/nama ikon.
+set -uo pipefail
+
+ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
+DESKTOP_DIR="$HOME/.local/share/applications"
+MARK="hypr-webapp launch"          # penanda di Exec= untuk mengenali launcher buatan skrip ini
+
+safe_name() { printf '%s\n' "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^[:alnum:]]\+/-/g; s/^-//; s/-$//'; }
+normalize_url() { local u="$1"; [[ $u =~ ^[a-zA-Z][a-zA-Z0-9+.-]*: ]] || u="https://$u"; printf '%s' "$u"; }
+require_url() { [[ $1 =~ [[:space:]] ]] && { echo "URL must not contain whitespace." >&2; return 1; }
+  [[ ${1,,} =~ ^https?:// ]] || { echo "URL must be http or https." >&2; return 1; }; }
+require_plain_name() { [[ $1 == */* || -z $1 ]] && { echo "App name must be non-empty and must not contain '/'." >&2; return 1; }; return 0; }
+download_icon() { curl -fsSL --max-time 10 -o "$2" "$1" 2>/dev/null && [[ -s $2 && $(file -b --mime-type "$2") == image/* ]]; }
+fetch_site_icon() { # $1 url situs, $2 tujuan
+  local origin page icon_url; origin=$(sed -E 's|^(https?://[^/]+).*|\1|' <<<"$1")
+  page=$(curl -fsSL --max-time 5 "$1" 2>/dev/null | head -c 100000 | tr '\n' ' ')
+  icon_url=$(grep -oiE "<link[^>]*rel=[\"'][^\"']*apple-touch-icon[^\"']*[\"'][^>]*>" <<<"$page" | grep -oiE "href=[\"'][^\"']+" | head -1 | sed -E "s/^href=[\"']//")
+  case $icon_url in http://*|https://*) ;; //*) icon_url="https:$icon_url" ;; /*) icon_url="$origin$icon_url" ;; ?*) icon_url="$origin/$icon_url" ;; esac
+  { [[ -n $icon_url ]] && download_icon "$icon_url" "$2"; } || download_icon "$origin/apple-touch-icon.png" "$2" ||
+    download_icon "https://www.google.com/s2/favicons?domain=$1&sz=256" "$2"
+}
+update_icon_cache() { gtk-update-icon-cache "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true; }
+# Escape nilai .desktop (spesifikasi Desktop Entry): backslash, tab, CR, LF, spasi awal.
+desktop_escape() { local v="$1"; v=${v//\\/\\\\}; v=${v//$'\t'/\\t}; v=${v//$'\r'/\\r}; v=${v//$'\n'/\\n}; [[ $v == " "* ]] && v="\\s${v# }"; printf '%s' "$v"; }
+desktop_exec_arg() { printf '"%s"' "$(printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/`/\\`/g' -e 's/\$/\\$/g' -e 's/%/%%/g')"; }
+
+browser_exec() { # perintah browser default; hanya keluarga Chromium yang punya --app
+  local b; b=$(xdg-settings get default-web-browser 2>/dev/null)
+  case $b in google-chrome*|brave*|microsoft-edge*|opera*|vivaldi*|chromium*|helium*) ;; *) b="brave-browser.desktop" ;; esac
+  sed -n 's/^Exec=\([^ ]*\).*/\1/p' "$HOME/.local/share/applications/$b" /usr/share/applications/"$b" 2>/dev/null | head -1
+}
+
+list_webapps() { grep -lF "Exec=$MARK" "$DESKTOP_DIR"/*.desktop 2>/dev/null | while read -r f; do basename "${f%.desktop}"; done | sort; }
+
+install_webapp() {
+  local name url icon_ref
+  if (( $# < 2 )); then
+    printf '\e[32mCreate a web app you can start from the app launcher.\e[0m\n\n'
+    read -rp "Name> " name; require_plain_name "$name" || exit 1
+    read -rp "URL>  " url; url=$(normalize_url "$url"); require_url "$url" || exit 1
+    icon_ref=""
+  else
+    name="$1"; url=$(normalize_url "$2"); icon_ref="${3:-}"; require_plain_name "$name" || exit 1; require_url "$url" || exit 1
+  fi
+  mkdir -p "$ICON_DIR" "$DESKTOP_DIR"
+  local icon_value; icon_value=$(safe_name "$name")
+  if [[ -z $icon_ref ]]; then
+    echo "Fetching the site icon..."
+    if ! fetch_site_icon "$url" "$ICON_DIR/$icon_value.png"; then
+      if (( $# < 2 )); then read -rp "Could not fetch the icon. Icon URL, file, or icon name> " icon_ref; else echo "Could not fetch the icon; pass one as the third argument." >&2; exit 1; fi
+    fi
+  fi
+  if [[ -n $icon_ref ]]; then
+    if [[ $icon_ref =~ ^https?:// ]]; then download_icon "$icon_ref" "$ICON_DIR/$icon_value.png" || { echo "Failed to download the icon." >&2; exit 1; }
+    elif [[ -f $icon_ref ]]; then local ext="${icon_ref##*.}"; [[ $ext == "$icon_ref" ]] && ext=png; cp "$icon_ref" "$ICON_DIR/$icon_value.$ext"
+    else icon_value="$icon_ref"; fi                      # nama ikon dari tema
+  fi
+  update_icon_cache
+  local desktop="$DESKTOP_DIR/$name.desktop"
+  cat >"$desktop" <<DESKTOP
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=$(desktop_escape "$name")
+Comment=$(desktop_escape "$name") (web app)
+Exec=$(desktop_escape "$MARK $(desktop_exec_arg "$url")")
+Icon=$(desktop_escape "$icon_value")
+Terminal=false
+StartupNotify=true
+Categories=Network;
+DESKTOP
+  echo; echo "Created $desktop"; echo "Find \"$name\" in the app launcher (Super+Alt+Space)."
+}
+
+remove_webapp() {
+  local -a names
+  if (( $# )); then names=("$@"); else
+    mapfile -t names < <(list_webapps | fzf --multi --layout=reverse --info=inline --color=16 --color='pointer:red,marker:red' \
+      --prompt='  Remove web app : ' --header='tab: multi-select, enter: remove' 2>/dev/null)
+  fi
+  (( ${#names[@]} )) || { echo "No web apps selected."; exit 0; }
+  hypr-tui --confirm "Remove ${names[*]}?" || { echo "Cancelled."; exit 1; }
+  local n; for n in "${names[@]}"; do
+    rm -f "$DESKTOP_DIR/$n.desktop" "$ICON_DIR/$(safe_name "$n")".{png,svg,jpg} 2>/dev/null; echo "Removed $n"
+  done
+  update_icon_cache
+}
+
+case "${1:-}" in
+  install) shift; install_webapp "$@" ;;
+  remove)  shift; remove_webapp "$@" ;;
+  launch)  [[ -n ${2:-} ]] || { echo "usage: hypr-webapp launch <url>" >&2; exit 2; }
+           exe=$(browser_exec); [[ -n $exe ]] || { echo "No Chromium-based default browser found." >&2; exit 1; }
+           exec setsid -f "$exe" --app="$2" "${@:3}" >/dev/null 2>&1 ;;
+  list)    list_webapps ;;
+  *) echo "usage: hypr-webapp install [name url [icon]] | remove [name...] | launch <url> | list" >&2; exit 2 ;;
+esac

@@ -180,6 +180,13 @@ Hyprland's window borders, and the login screen.
   runs `hypr-updates check` at the end so the button disappears, and now also offers to remove
   orphans (`pacman -Qtdq`, default No, only reported with `-y`) and prunes the cache with
   `paccache -rk2`, mirroring omarchy-update-orphan-pkgs / omarchy-update-pkg-prune.
+- **Web apps** (`bin/hypr-webapp`) port omarchy-webapp-install / omarchy-launch-webapp /
+  omarchy-webapp-remove: a `.desktop` in `~/.local/share/applications` whose Exec is
+  `hypr-webapp launch "URL"`, which resolves the default browser's Exec from its desktop file and
+  runs it with `--app=URL` (Chromium family only; falls back to Brave). Icons come from the site's
+  apple-touch-icon, then `/apple-touch-icon.png`, then Google's favicon service, saved as 256px PNG
+  under hicolor. gum prompts became plain `read` inside hypr-tui; the picker for removal is fzf.
+  Launchers are recognised by that Exec marker, which is also how Remove > Web App decides to show.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one
