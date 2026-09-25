@@ -19,7 +19,7 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
 | `qconsole.lua` | scratchpad ala Quake console (disalin dari Omarchy), Super+` |
 | `autostart.lua` | import env ke systemd/dbus, `noctalia`, `udiskie` |
 | `bindings/tiling.lua` | fokus/swap/workspace/resize/group, semua `hl.dsp.*` |
-| `bindings/apps.lua` | alacritty, brave, thunar, nvim, btop, web app brave `--app=`, Super+Alt+Space = `rofi -show drun` (Apps) |
+| `bindings/apps.lua` | alacritty, brave, thunar, nvim, btop, web app brave `--app=`, Super+Alt+Space = `rofi -show drun` (Apps); Super+Shift+D = `alacritty --class TUI.large -e hypr-containers` (podman-tui; rule `TUI.large` 1100x760 di windows.lua) |
 | `bindings/noctalia.lua` | semua yang lewat `noctalia msg ...` (control center, session, clipboard, lock, notifikasi, toggle), Super+Shift+Ctrl+Space = `hypr-theme-carousel --toggle` (carousel GTK4, class `hypr-theme-carousel` dengan rule float/center/pin/dim_around di windows.lua; palet/mode lewat `hypr-theme` di menu Style), Super+Ctrl+Alt+Space = panel Wallhaven. Super+Space = `hypr-menu` (menu ala Omarchy via rofi; launcher Noctalia tidak diikat tombol, ada di ikon bar) |
 | `bindings/media.lua` | tombol XF86 volume/brightness/media lewat `noctalia msg` |
 | `bindings/clipboard.lua` | Super+C/V/X/A universal (disalin dari Omarchy, butuh tag `terminal`) |

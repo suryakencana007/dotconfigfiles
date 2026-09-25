@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# TUI container (podman-tui) ala Docker TUI di Omarchy (Super+Shift+D, lazydocker). Kita memakai Podman rootless,
+# jadi podman-tui (AUR) dipakai; ditawarkan saat pertama dipakai. Dibuka di alacritty class TUI.large (rule windows.lua).
+set -uo pipefail
+
+if ! command -v podman >/dev/null; then
+  hypr-tui --box "Podman is not installed." "" "Install it from the menu: Install > Development > Docker DB (it sets up Podman first)."; echo
+  hypr-tui --done 1; exit 1
+fi
+if ! command -v podman-tui >/dev/null; then
+  hypr-tui --box "podman-tui is not installed." "" "A terminal UI for containers, images, pods and volumes (AUR package podman-tui)."; echo
+  hypr-tui --confirm "Install podman-tui now?" || { echo "Cancelled."; exit 1; }
+  command -v yay >/dev/null || { echo "yay (AUR helper) is required" >&2; exit 1; }
+  yay -S --needed --noconfirm podman-tui || { hypr-tui --done $?; exit 1; }
+  echo
+fi
+exec podman-tui

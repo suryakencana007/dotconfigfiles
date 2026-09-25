@@ -28,6 +28,12 @@ o.window("^hypr-keybindings$", { center = true })
 o.window("^hypr-keybindings$", { size = { 900, 860 } })
 o.window("^hypr-keybindings$", { tag = "+terminal" })
 
+-- TUI besar (podman-tui, dll): mengambang di tengah, lebih lega dari TUI.float.
+o.window("^TUI.large$", { float = true })
+o.window("^TUI.large$", { center = true })
+o.window("^TUI.large$", { size = { 1100, 760 } })
+o.window("^TUI.large$", { tag = "+terminal" })
+
 -- Pemasang paket (menu Install > Package / AUR): daftar + pratinjau info paket butuh jendela lebih tinggi.
 o.window("^hypr-pkg-install$", { float = true })
 o.window("^hypr-pkg-install$", { center = true })

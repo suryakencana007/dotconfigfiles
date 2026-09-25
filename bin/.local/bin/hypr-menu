@@ -123,6 +123,7 @@ setup_items() { cat <<'ITEMS'
 󰍹  Display	noctalia msg settings-open display
 󰍺  Monitors (nwg-displays)	~/.local/bin/hypr-monitors
 󰹺  Power profile	menu:power_profile
+󰡨  Containers (podman-tui)	alacritty --class TUI.large -e ~/.local/bin/hypr-containers
 󰈮  Hyprland config	alacritty -e nvim ~/.config/hypr/hyprland.lua
 󰈙  Noctalia config	alacritty -e nvim ~/.config/noctalia/
 󰊢  Dotfiles	alacritty -e sh -c 'cd ~/dotconfigfiles && exec lazygit'

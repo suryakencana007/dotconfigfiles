@@ -202,6 +202,11 @@ Hyprland's window borders, and the login screen.
   apple-touch-icon, then `/apple-touch-icon.png`, then Google's favicon service, saved as 256px PNG
   under hicolor. gum prompts became plain `read` inside hypr-tui; the picker for removal is fzf.
   Launchers are recognised by that Exec marker, which is also how Remove > Web App decides to show.
+- **Containers TUI** = `podman-tui` (AUR) via `bin/hypr-containers`, Super+Shift+D and Setup >
+  Containers, in place of Omarchy's lazydocker: we run rootless Podman, so the native TUI needs no
+  DOCKER_HOST bridge and sees pods too. Window class `TUI.large` (1100x760) is a generic rule for
+  big terminal UIs. `resi-shell doctor` now checks that the hypr-power and hypr-updates watchers
+  are alive when run inside a Hyprland session.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one

@@ -253,6 +253,12 @@ doctor() {
   have noctalia && { noctalia config validate >/dev/null 2>&1 && ok "noctalia config valid" || { warn "noctalia config invalid"; bad=1; }; }
   have rofi && { rofi -dump-theme >/dev/null 2>&1 && ok "rofi theme valid" || { warn "rofi theme broken"; bad=1; }; }
   [ -x "$HOME/.local/bin/hypr-menu" ] && { HYPR_MENU_CHECK=1 "$HOME/.local/bin/hypr-menu" >/dev/null 2>&1 && ok "hypr-menu: all submenu targets resolve" || { warn "hypr-menu: a submenu points to a missing function (HYPR_MENU_CHECK=1 hypr-menu)"; bad=1; }; }
+  if have hyprctl && hyprctl version >/dev/null 2>&1; then   # pemantau latar yang dijalankan autostart.lua (hanya berarti di dalam sesi Hyprland)
+    for w in hypr-power hypr-updates; do
+      [ -x "$HOME/.local/bin/$w" ] || continue
+      pgrep -f "^bash $HOME/.local/bin/$w watch" >/dev/null && ok "$w watcher running" || { warn "$w watcher not running (start: resi-shell update, or log in again)"; bad=1; }
+    done
+  fi
   have zsh && { zsh -ic 'exit' >/dev/null 2>&1 && ok "zsh loads its config" || { warn "zsh error"; bad=1; }; }
   have tmux && { [ -f "$HOME/.config/tmux/tmux.conf" ] && tmux -L residoc -f "$HOME/.config/tmux/tmux.conf" new -d -s x 2>/dev/null && tmux -L residoc kill-server && ok "tmux config OK" || { warn "tmux config error/missing"; bad=1; }; }
   [ "$(getent passwd "$USER" | cut -d: -f7)" = "/usr/bin/zsh" ] && ok "login shell is zsh" || warn "login shell is not zsh"
