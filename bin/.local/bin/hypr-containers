@@ -14,4 +14,6 @@ if ! command -v podman-tui >/dev/null; then
   yay -S --needed --noconfirm podman-tui || { hypr-tui --done $?; exit 1; }
   echo
 fi
+# API persisten + koneksi "local" (fungsi bersama di hypr-docker-db); tanpa ini podman-tui DISCONNECTED / tersendat.
+"$HOME/.local/bin/hypr-docker-db" api-setup
 exec podman-tui

@@ -204,7 +204,14 @@ Hyprland's window borders, and the login screen.
   Launchers are recognised by that Exec marker, which is also how Remove > Web App decides to show.
 - **Containers TUI** = `podman-tui` (AUR) via `bin/hypr-containers`, Super+Shift+D and Setup >
   Containers, in place of Omarchy's lazydocker: we run rootless Podman, so the native TUI needs no
-  DOCKER_HOST bridge and sees pods too. Window class `TUI.large` (1100x760) is a generic rule for
+  DOCKER_HOST bridge and sees pods too. podman-tui talks to `podman system connection` entries, and
+  a rootless install has none, so it showed DISCONNECTED until `hypr-containers` / `hypr-docker-db`
+  register `local` -> `unix://$XDG_RUNTIME_DIR/podman/podman.sock` as the default connection.
+  It also lagged: the stock user `podman.service` runs `podman system service` with the default
+  5-second idle timeout and info-level request logging, so a client polling every second kept
+  reactivating it (journal showed "Received shutdown" every few seconds). `podman_api_setup`
+  (in hypr-docker-db, called by hypr-containers) writes a user drop-in with `--time=0` and
+  `--log-level=warning`, enables podman.service persistently, and restarts it. Window class `TUI.large` (1100x760) is a generic rule for
   big terminal UIs. `resi-shell doctor` now checks that the hypr-power and hypr-updates watchers
   are alive when run inside a Hyprland session.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
