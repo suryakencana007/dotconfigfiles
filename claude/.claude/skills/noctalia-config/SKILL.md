@@ -94,8 +94,21 @@ untuk uji tampilan. File runtime ini di luar repo. Catatan: pgrep -x gagal untuk
 
 `hypr-theme-carousel` (Python GTK4/libadwaita, Super+Shift+Ctrl+Space): carousel wallpaper geser ala omarchy-shell,
 kartu tengah = pilihan, Enter -> `wallpaper-set`. `hypr-theme` (rofi, menu Style): galeri wallpaper (thumbnail vipsthumbnail di
-`~/.cache/hypr-theme/thumbs`, `wallpaper-set`), daftar palet (`color-scheme-set`), toggle mode. Plugin Wallhaven: widget
-`wallhaven` di bar + `panel-toggle noctalia/wallhaven:browser` (Super+Ctrl+Alt+Space); API key hanya via GUI (state).
+`~/.cache/hypr-theme/thumbs`, `wallpaper-set`), daftar palet (`color-scheme-set`), toggle mode. Plugin Wallhaven:
+`panel-toggle noctalia/wallhaven:browser` (Super+Ctrl+Alt+Space); widget bar-nya sengaja dilepas (2026-09-27), panel
+plugin tetap bisa dibuka tanpa widget. API key hanya via GUI (state).
+
+## Bar (bar.toml)
+
+Island, sudut kotak (`capsule_radius`/grup `radius` = 4), kaca: kapsul `opacity 0.78` harus di atas `ignore_alpha 0.5`
+layer rule Hyprland (looknfeel.lua), kalau pekat blur tidak terlihat. Geometri grid 10 px = gaps_out Hyprland:
+`thickness 30`, `capsule_thickness 1.0`, `margin_edge 10`, `margin_ends 0`, `padding 10`. `[[capsule_group]]` TIDAK
+mewarisi `capsule_*` dari `[bar.default]`: opacity/border/radius/padding ditulis per grup. Array `capsule_group` di file
+yang dimuat belakangan menggantikan seluruh array (bukan digabung per id), jadi override uji (`zz-*.toml`) harus memuat
+semua grup. Kunci widget yang dipakai: media `hide_when_no_media`, network/volume/brightness `show_label = false`,
+workspaces `labels_only_when_occupied`, clock `format`/`tooltip_format`. Role warna `outline_variant` DITOLAK validator
+5.1 untuk `capsule_border`; `outline` diterima. Referensi kunci: repo noctalia-dev/noctalia `docs/user/bar/` (URL
+docs.noctalia.dev untuk bar/widgets 404). Cek hasil: `grim -g "0,0 1920x64" bar.png`.
 
 ## Greeter
 

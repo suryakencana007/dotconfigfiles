@@ -1,43 +1,88 @@
 # Bar gaya "island" (pulau): bar sendiri transparan dan melayang, yang terlihat hanya beberapa kapsul
-# terpisah. margin_edge (jarak dari tepi layar), ketebalan, padding, dan bentuk kapsul diatur lewat GUI
-# Settings > Bar; nilai GUI disimpan di ~/.local/state/noctalia/settings.toml dan MENANG atas file ini.
+# terpisah. Gaya: sudut kotak (radius 4, satu bahasa dengan jendela Hyprland rounding 0 dan
+# corner_radius_scale 0), kaca buram (kapsul tembus 0.78 + blur layer rule Hyprland), dan semua jarak
+# mengikuti grid 10 px yang sama dengan gaps_out Hyprland.
+# Nilai GUI Settings > Bar disimpan di ~/.local/state/noctalia/settings.toml dan MENANG atas file ini;
+# kalau tampilan beda antar mesin, cek dulu `grep -n 'bar' ~/.local/state/noctalia/settings.toml`.
 # Toggle bar: Super+Shift+Space (= `noctalia msg bar-toggle`).
 [bar.default]
 background_opacity = 0.0     # latar bar hilang, hanya kapsul widget yang terlihat
 shadow             = false   # bayangan bar ikut hilang
 border_width       = 0.0
-margin_ends        = 12      # pulau kiri/kanan mendekat ke tepi layar (default 100)
-capsule            = true    # widget tunggal (jam di tengah) juga dibungkus kapsul; capsule_group selalu berkapsul.
-                             # Bawaan false: di legionarch ini dinyalakan lewat GUI (state), dynarch tampil tanpa kapsul jam.
+
+# Geometri: grid 10 px. Kapsul setinggi bar (30), bar 10 px dari atas, tepi kapsul 10 px dari kiri/kanan
+# (= tepi jendela, gaps_out 10), jarak kapsul ke jendela di bawahnya juga 10 px.
+thickness          = 30
+capsule_thickness  = 1.0     # kapsul mengisi seluruh tinggi bar (bawaan 0.76 menyisakan celah 4 px)
+margin_edge        = 10      # bar melayang 10 px dari tepi atas layar
+margin_ends        = 0       # tanpa inset tambahan; jarak ke tepi diatur padding
+padding            = 10      # tepi kapsul pertama/terakhir sejajar tepi jendela
+
+# Kapsul: widget tunggal (jam) juga berkapsul; nilai ini untuk kapsul widget, capsule_group punya kunci sendiri.
+capsule            = true
+capsule_opacity    = 0.78    # harus > ignore_alpha 0.5 di layer rule Hyprland (looknfeel.lua) supaya blur muncul
+capsule_border     = "outline"
+capsule_radius     = 4.0     # sudut kotak; hapus baris ini (dan radius di grup) untuk pil bulat
 
 # Isi tiap lajur. Token "group:<id>" merujuk ke capsule_group di bawah.
 start  = [ "group:island_left" ]
 center = [ "clock" ]
 end    = [ "group:island_info", "group:island_system", "group:island_power" ]
 
-# Pulau kiri: launcher, wallpaper, wallhaven, workspaces dalam satu kapsul.
+# Tiap grup mengulang opacity/border/radius: capsule_group TIDAK mewarisi capsule_* dari [bar.default].
+# Pulau kiri: launcher dan workspaces. Wallpaper (Super+Ctrl+Space) dan Wallhaven (Super+Ctrl+Alt+Space)
+# sengaja tidak di bar; keduanya tetap ada lewat shortcut dan menu Style.
 [[bar.default.capsule_group]]
 id      = "island_left"
-members = [ "launcher", "wallpaper", "wallhaven", "workspaces" ]
+members = [ "launcher", "workspaces" ]
+opacity = 0.78
+border  = "outline"
+padding = 8.0
+radius  = 4.0
 
-# Pulau info: media, tray, notifikasi, clipboard.
+# Pulau info: media (hilang saat tidak ada pemutar), tray, notifikasi, clipboard.
 [[bar.default.capsule_group]]
 id      = "island_info"
 members = [ "media", "tray", "notifications", "clipboard" ]
+opacity = 0.78
+border  = "outline"
+padding = 8.0
+radius  = 4.0
 
 # Pulau sistem: jaringan, bluetooth, audio, kecerahan, baterai.
 [[bar.default.capsule_group]]
 id      = "island_system"
 members = [ "network", "bluetooth", "volume", "brightness", "battery" ]
+opacity = 0.78
+border  = "outline"
+padding = 8.0
+radius  = 4.0
 
 # Pulau power: control center dan sesi.
 [[bar.default.capsule_group]]
 id      = "island_power"
 members = [ "control-center", "session" ]
+opacity = 0.78
+border  = "outline"
+padding = 8.0
+radius  = 4.0
 
-# Widget plugin Wallhaven (plugin "noctalia/wallhaven" diaktifkan lewat Settings > Plugins, state).
-# Klik = buka panel browser wallpaper (= `noctalia msg panel-toggle noctalia/wallhaven:browser`).
-# API key (opsional, untuk NSFW/rate limit) diisi di Settings > Plugins > Wallhaven, tersimpan di state, bukan di sini.
-[widget.wallhaven]
-type  = "noctalia/wallhaven:wallhaven"
-glyph = "photo"
+# Widget: ikon saja untuk nilai yang sudah terlihat di OSD saat diubah; persentase baterai tetap tampil.
+[widget.media]
+hide_when_no_media = true    # tanpa teks "Nothing Playing" saat idle
+
+[widget.network]
+show_label = false           # tanpa nama SSID/interface (mis. "eno2"); detail ada di tooltip dan control center
+
+[widget.volume]
+show_label = false
+
+[widget.brightness]
+show_label = false
+
+[widget.workspaces]
+labels_only_when_occupied = true   # workspace kosong tampil sebagai kotak polos tanpa nomor
+
+[widget.clock]
+format         = "{:%a %d · %H:%M}"
+tooltip_format = "{:%A, %d %B %Y}"

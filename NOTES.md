@@ -143,6 +143,16 @@ Hyprland's window borders, and the login screen.
   `hypr-lid-close` additionally locks right away when no external monitor is connected, so the
   lock is already up before logind suspends. Not ported: Omarchy's manual internal-display
   toggle/mirror binds and its scale bookkeeping.
+- **Bar look (2026-09-27): square frosted islands on the window grid.** The capsules were fully opaque, so
+  the Hyprland layer blur on `noctalia-bar-*` (`ignore_alpha = 0.5`) never showed; they are now 0.78 opaque
+  with an `outline` border. They were rounded pills over square windows (Hyprland `rounding = 0`, Noctalia
+  `corner_radius_scale = 0`); radius 4 makes the bar one shape language with the rest. Geometry follows
+  Hyprland's `gaps_out = 10`: bar 30 px, capsules fill it, 10 px from the top edge, first/last capsule edge
+  at 10 px like the window borders, 10 px down to the windows (before: 26 px inset, 4 px above, 14 px below).
+  Capsule groups do not inherit `capsule_*` from `[bar.default]`, so each group repeats opacity, border,
+  padding and radius. Wallpaper and Wallhaven icons left the bar; both panels still open from their
+  shortcuts and the Style menu (plugin panels do not need their bar widget). A rounded-pill variant was
+  previewed and rejected for the shape mismatch; it is the same config without the radius keys.
 - **Battery mode** (`bin/hypr-power`, started by `autostart.lua` as `hypr-power watch`). Findings on
   legionarch (2026-09-24): ~18 W idle on battery with panel at 100% / 144 Hz, profile `balanced`,
   and the GTX 1660 Ti held in D0 by Hyprland because the HDMI/DP ports are wired to it (Hyprland
