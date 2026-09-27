@@ -143,6 +143,14 @@ Hyprland's window borders, and the login screen.
   `hypr-lid-close` additionally locks right away when no external monitor is connected, so the
   lock is already up before logind suspends. Not ported: Omarchy's manual internal-display
   toggle/mirror binds and its scale bookkeeping.
+- **Notifications and OSD (2026-09-27)** (`noctalia/notifications.toml`). Toasts and the OSD were 97% opaque and
+  sat 8 px below the bar with the toast edge about 12 px inside the islands' edge. They now use
+  `background_opacity = 0.78` (blurred by the existing `noctalia-notification`/`noctalia-osd` layer rule, same
+  as the bar capsules) and `offset_x = offset_y = 10` for the window grid; Noctalia measures offsets from the
+  screen edge but still starts toasts below the bar's reserved area. `max_visible = 3` (0 filled half the screen
+  with four toasts); when a fourth arrives the oldest leaves the screen and stays in history. A
+  `[notification.filter.spotify]` hides Spotify's track-change toasts and keeps them out of history, since the
+  track is already in the bar's media widget and the control center.
 - **Panels float (2026-09-27): glass + attached = see-through.** After `transparency_mode = "glass"` went in
   for the launcher, the attached panels (control center `Super+S`, session `Super+Esc`, wallpaper) turned
   see-through without blur: terminal text behind them was sharp and readable, over the wallpaper file names

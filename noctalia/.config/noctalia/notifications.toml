@@ -1,0 +1,27 @@
+# Notifikasi (toast) dan OSD Noctalia, disamakan dengan bar dan panel: kaca + grid 10 px.
+# Di GUI: Settings > Notifications dan Settings > OSD. Kunci di ~/.local/state/noctalia/settings.toml menang.
+# Uji tampilan: notify-send -a Test "Judul" "Isi"   (critical: -u critical, aksi: -A id=Label)
+
+[notification]
+position           = "top_right"   # di bawah pulau status (ikon lonceng) di bar
+# offset_x/offset_y = jarak dari tepi layar di sisi posisi; toast otomatis mulai di bawah area bar.
+# 10/10 membuat tepi kanan toast sejajar pulau bar dan tepi jendela (gaps_out 10), 10 px di bawah bar.
+offset_x           = 10
+offset_y           = 10
+# < 1.0 memperlihatkan blur layer rule Hyprland (namespace noctalia-notification); 0.78 = kapsul bar.
+# Harus tetap > ignore_alpha 0.5 di looknfeel.lua, kalau tidak toast tembus tanpa blur.
+background_opacity = 0.78
+max_visible        = 3             # bawaan 0 = isi layar; sisanya tetap masuk riwayat di control center
+
+# Spotify mengirim toast tiap ganti lagu, padahal lagu sudah tampil di bar (widget media) dan control center.
+# Toast dan riwayatnya dimatikan; notifikasi app lain tidak terpengaruh.
+[notification.filter.spotify]
+enabled      = true
+match        = "spotify"   # dicocokkan (tanpa beda huruf besar/kecil) ke nama app, desktop-entry, atau kategori
+show_toast   = false
+save_history = false
+
+[osd]
+# OSD volume/kecerahan/dll di tengah atas: kaca dan 10 px di bawah bar, sama dengan toast.
+background_opacity = 0.78
+offset_y           = 10

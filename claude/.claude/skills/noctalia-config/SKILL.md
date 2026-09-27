@@ -16,6 +16,10 @@ Python, atau path repo; `sed -i` biasa mengganti symlink dengan file biasa (peru
   Yang ada: `bar.toml` (bar transparan), `shell.toml` (`corner_radius_scale = 0`, `polkit_agent = true`),
   `greeter.toml` (auto-sync greeter), `nvim.toml` (template user untuk Neovim), `control-center.toml` (control center
   lebar 760, kartu event kalender mati, dan `[shell.panel]` control center/session/wallpaper `floating`, offset 10),
+  `notifications.toml` (`[notification]` kaca 0.78, offset 10/10, `max_visible = 3`, filter `spotify` tanpa toast/riwayat;
+  `[osd]` kaca 0.78, offset_y 10; offset = jarak dari tepi layar, toast otomatis mulai di bawah area bar; max_visible
+  menyingkirkan toast TERLAMA dari layar, bukan menahan yang baru; riwayat: `~/.local/state/noctalia/notification_history.json`,
+  bersihkan notifikasi uji dengan `noctalia msg notification-clear-history` setelah memastikan isinya hanya uji),
   `shell.toml` juga memuat `date_format` dan `[location] address = "Jakarta"` (cuaca + jadwal night light).
   Tabel yang sama di beberapa file (mis. `[shell.panel]` di launcher.toml dan control-center.toml) DIGABUNG per kunci;
   array tabel (`[[bar.default.capsule_group]]`) justru DIGANTI utuh oleh file yang dimuat belakangan.
