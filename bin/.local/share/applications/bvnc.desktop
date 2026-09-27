@@ -1,0 +1,6 @@
+[Desktop Entry]
+# Disembunyikan dari launcher (Noctalia + rofi drun): menimpa /usr/share/applications/bvnc.desktop (paket avahi)
+# dengan ID desktop yang sama. Hapus file ini untuk memunculkannya lagi.
+Type=Application
+Name=Avahi VNC Server Browser
+NoDisplay=true

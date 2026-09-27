@@ -1,0 +1,6 @@
+[Desktop Entry]
+# Disembunyikan dari launcher (Noctalia + rofi drun): menimpa /usr/share/applications/lstopo.desktop (paket hwloc)
+# dengan ID desktop yang sama. Hapus file ini untuk memunculkannya lagi.
+Type=Application
+Name=Hardware Locality lstopo
+NoDisplay=true

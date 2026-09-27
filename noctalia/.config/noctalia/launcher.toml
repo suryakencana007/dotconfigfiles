@@ -1,18 +1,28 @@
-# Launcher (Super+Space, `noctalia msg panel-toggle launcher`) bergaya menu Omarchy:
-# satu kolom, kompak tanpa deskripsi, ikon di depan label, baris terpilih ditandai jelas.
+# Launcher Noctalia (ikon launcher di bar, `noctalia msg panel-toggle launcher`) bergaya menu Omarchy:
+# satu kolom, kompak tanpa deskripsi, ikon di depan label, hanya baris terpilih yang disorot,
+# app favorit di-pin paling atas, panel kaca senada dengan bar. Super+Space = hypr-menu dan
+# Super+Alt+Space = rofi drun (keduanya rofi, lihat NOTES.md "rofi over walker").
+# Entri .desktop sampah (Avahi, lstopo, Qt V4L2, About Xfce, Rofi) disembunyikan lewat override NoDisplay
+# di paket bin (~/.local/share/applications), jadi hilang dari launcher ini dan dari rofi drun.
 # Di GUI: Settings > Launcher (kunci [shell.launcher]) dan Settings > Panels (kunci [shell.panel]).
 # Catatan: kunci di ~/.local/state/noctalia/settings.toml (ditulis GUI) menang atas file ini.
 [shell.launcher]
 fetch_exchange_rates = false   # matikan kurs mata uang (/calc) supaya tidak ada request ke Coinbase
-categories = true                 # tombol filter kategori (Internet, Development, ...); Tab untuk toggle saat launcher terbuka
+categories = false                # tanpa baris tab kategori (ikon tanpa label); pin + pencarian lebih cepat
 compact = true                    # ikon lebih kecil, baris lebih rapat, subtitle/deskripsi app disembunyikan
 app_grid = false                  # tetap daftar satu kolom, bukan grid ikon
 show_icons = true                 # ikon di depan label
 show_app_origin_indicator = false # tanpa badge Flatpak/Snap/AppImage agar baris bersih
 show_app_actions = false          # aksi .desktop tidak ikut dicari (tetap ada via klik kanan)
-sort_by_usage = true              # app sering dipakai naik ke atas + filter "Recently Used"
+sort_by_usage = true              # app sering dipakai naik ke atas
+# Tampil paling atas dengan ikon pin saat launcher dibuka. ID desktop TANPA akhiran ".desktop"
+# (dengan akhiran, pin diam-diam tidak berefek; diuji di Noctalia 5.1). App yang tidak terpasang dilewati.
+pinned = [ "Alacritty", "brave-browser", "thunar", "dev.zed.Zed", "spotify" ]
 
 [shell.panel]
 launcher_placement = "floating"   # kartu melayang di tengah layar (default, ditulis eksplisit)
 launcher_position = "center"
-list_item_background = true       # latar isi di baris launcher/clipboard: baris terpilih terlihat jelas
+list_item_background = false      # tanpa blok latar per baris; hanya baris terpilih yang disorot (seperti rofi)
+# solid | soft | glass. glass = panel melayang (launcher, clipboard, polkit) dan kartu tembus sedikit, diblur
+# layer rule Hyprland; efeknya halus di atas jendela gelap, lebih terlihat di atas wallpaper.
+transparency_mode = "glass"

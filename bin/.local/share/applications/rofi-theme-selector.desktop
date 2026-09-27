@@ -1,0 +1,6 @@
+[Desktop Entry]
+# Disembunyikan dari launcher (Noctalia + rofi drun): menimpa /usr/share/applications/rofi-theme-selector.desktop (paket rofi)
+# dengan ID desktop yang sama. Hapus file ini untuk memunculkannya lagi.
+Type=Application
+Name=Rofi Theme Selector
+NoDisplay=true

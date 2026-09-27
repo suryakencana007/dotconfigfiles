@@ -143,6 +143,16 @@ Hyprland's window borders, and the login screen.
   `hypr-lid-close` additionally locks right away when no external monitor is connected, so the
   lock is already up before logind suspends. Not ported: Omarchy's manual internal-display
   toggle/mirror binds and its scale bookkeeping.
+- **Launcher look (2026-09-27).** The Noctalia launcher (bar icon only; Super+Space and Super+Alt+Space
+  stay rofi) had a filled block behind every row, an unlabeled icon-only category row, no favourites on
+  top, and junk entries (three Avahi browsers, lstopo, two Qt V4L2 tools, About Xfce, Rofi, Rofi Theme
+  Selector). Now: `list_item_background = false`, `categories = false`, `pinned` favourites, and
+  `transparency_mode = "glass"` to match the bar (subtle over dark windows: measured `#2d2227` to
+  `#362b32`; it applies to every floating panel). `pinned` takes desktop IDs without `.desktop`; with the
+  suffix nothing is pinned and nothing is logged. The junk entries are hidden with `NoDisplay=true`
+  overrides in `bin/.local/share/applications/` (same desktop ID as the system file, like Omarchy does),
+  which hides them in rofi drun too and travels to every machine. Noctalia's app index missed one of the
+  newly created overrides until the shell was restarted (`hypr-restart-shell`).
 - **Bar look (2026-09-27): square frosted islands on the window grid.** The capsules were fully opaque, so
   the Hyprland layer blur on `noctalia-bar-*` (`ignore_alpha = 0.5`) never showed; they are now 0.78 opaque
   with an `outline` border. They were rounded pills over square windows (Hyprland `rounding = 0`, Noctalia

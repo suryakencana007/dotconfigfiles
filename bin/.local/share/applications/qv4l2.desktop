@@ -1,0 +1,6 @@
+[Desktop Entry]
+# Disembunyikan dari launcher (Noctalia + rofi drun): menimpa /usr/share/applications/qv4l2.desktop (paket v4l-utils)
+# dengan ID desktop yang sama. Hapus file ini untuk memunculkannya lagi.
+Type=Application
+Name=Qt V4L2 test Utility
+NoDisplay=true

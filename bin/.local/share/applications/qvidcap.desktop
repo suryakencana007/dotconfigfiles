@@ -1,0 +1,6 @@
+[Desktop Entry]
+# Disembunyikan dari launcher (Noctalia + rofi drun): menimpa /usr/share/applications/qvidcap.desktop (paket v4l-utils)
+# dengan ID desktop yang sama. Hapus file ini untuk memunculkannya lagi.
+Type=Application
+Name=Qt V4L2 video capture utility
+NoDisplay=true
