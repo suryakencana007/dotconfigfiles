@@ -143,6 +143,17 @@ Hyprland's window borders, and the login screen.
   `hypr-lid-close` additionally locks right away when no external monitor is connected, so the
   lock is already up before logind suspends. Not ported: Omarchy's manual internal-display
   toggle/mirror binds and its scale bookkeeping.
+- **Panels float (2026-09-27): glass + attached = see-through.** After `transparency_mode = "glass"` went in
+  for the launcher, the attached panels (control center `Super+S`, session `Super+Esc`, wallpaper) turned
+  see-through without blur: terminal text behind them was sharp and readable, over the wallpaper file names
+  too. Floating panels in the same mode are blurred by Hyprland's layer rule and stay legible, so those three
+  now float (`noctalia/control-center.toml`): control center and session top right under the status/power
+  islands, wallpaper top center, `floating_offset = 10` for the bar's 10 px grid. With an island bar whose
+  background is transparent there is no bar surface to attach to anyway. Lowering Hyprland's `ignore_alpha`
+  to 0.05 was tested as an alternative and was not needed. Same pass: control center `width = 760` (700
+  truncated the shortcut labels), `date_format = "%A, %d %B %Y"` instead of the en_US `%x`, weather location
+  `[location] address = "Jakarta"` (was empty: "No location set"; `auto_locate` stays off to avoid an IP
+  lookup), and the calendar events card hidden because calendar integration is off.
 - **Launcher look (2026-09-27).** The Noctalia launcher (bar icon only; Super+Space and Super+Alt+Space
   stay rofi) had a filled block behind every row, an unlabeled icon-only category row, no favourites on
   top, and junk entries (three Avahi browsers, lstopo, two Qt V4L2 tools, About Xfce, Rofi, Rofi Theme

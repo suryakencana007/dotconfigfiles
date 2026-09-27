@@ -1,0 +1,24 @@
+# Control center (Super+S, `noctalia msg panel-toggle control-center`) dan panel yang dulu "attached".
+# Di GUI: Settings > Control Center dan Settings > Panels. Kunci di ~/.local/state/noctalia/settings.toml menang.
+
+# Panel melayang, bukan menempel ke bar. Alasannya:
+#  - bar gaya island (bar.toml) latarnya transparan, jadi tidak ada permukaan bar yang bisa "ditempeli";
+#  - dengan transparency_mode = "glass" (launcher.toml), panel attached tampil tembus TANPA blur: teks jendela di
+#    belakangnya terbaca menembus panel (terlihat 2026-09-27 di control center, session, dan wallpaper).
+#    Panel melayang diblur layer rule Hyprland dan tetap terbaca.
+# Posisi: control center dan session di kanan atas (di bawah pulau status/power), wallpaper di tengah atas.
+# floating_offset 10 = jarak panel ke bar, grid 10 px yang sama dengan bar dan gaps_out Hyprland.
+[shell.panel]
+control_center_placement = "floating"
+control_center_position  = "top_right"
+session_placement        = "floating"
+session_position         = "top_right"
+wallpaper_placement      = "floating"
+wallpaper_position       = "top_center"
+floating_offset          = 10
+
+[control_center]
+width = 760   # bawaan 700 memotong label pintasan ("Night Li…", "Power Sa…")
+
+[control_center.calendar]
+show_events_card = false   # integrasi kalender ([calendar] enabled) mati, kartu event selalu kosong

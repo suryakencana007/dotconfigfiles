@@ -14,7 +14,13 @@ Python, atau path repo; `sed -i` biasa mengganti symlink dengan file biasa (peru
 
 - Tulisan tangan: `~/.config/noctalia/*.toml` (semua file .toml di folder itu digabung; symlink ke repo dotfiles).
   Yang ada: `bar.toml` (bar transparan), `shell.toml` (`corner_radius_scale = 0`, `polkit_agent = true`),
-  `greeter.toml` (auto-sync greeter), `nvim.toml` (template user untuk Neovim).
+  `greeter.toml` (auto-sync greeter), `nvim.toml` (template user untuk Neovim), `control-center.toml` (control center
+  lebar 760, kartu event kalender mati, dan `[shell.panel]` control center/session/wallpaper `floating`, offset 10),
+  `shell.toml` juga memuat `date_format` dan `[location] address = "Jakarta"` (cuaca + jadwal night light).
+  Tabel yang sama di beberapa file (mis. `[shell.panel]` di launcher.toml dan control-center.toml) DIGABUNG per kunci;
+  array tabel (`[[bar.default.capsule_group]]`) justru DIGANTI utuh oleh file yang dimuat belakangan.
+  JANGAN kembalikan panel ke `attached` selama `transparency_mode = "glass"`: panel attached tampil tembus tanpa blur
+  (teks jendela di belakang terbaca), panel floating diblur layer rule Hyprland.
 - GUI/state: `~/.local/state/noctalia/settings.toml`. Ditulis Settings dan wizard. **Menang** atas file tulisan
   tangan untuk kunci yang sama. Kalau perubahan file "tidak berpengaruh", cek dulu file state ini.
 - Terapkan perubahan file: `noctalia msg config-reload` (biasanya auto-reload juga).

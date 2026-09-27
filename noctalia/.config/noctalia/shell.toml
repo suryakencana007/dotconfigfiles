@@ -6,3 +6,11 @@ polkit_agent = true    # agen polkit bawaan: dialog password untuk pkexec (greet
 # Font UI global (bar, panel, launcher, notifikasi). Family Pango; fallback via Fontconfig.
 # Paket ttf-meslo-nerd (sistem-wide, jadi juga tersedia untuk greeter). Di GUI: Settings > Appearance > Font.
 font_family = "MesloLGS Nerd Font"
+# Format tanggal panjang di shell (kartu jam control center, dll): "Sunday, 27 September 2026".
+# Bawaan "%A, %x" memakai format lokal en_US = 09/27/2026.
+date_format = "%A, %d %B %Y"
+
+# Lokasi untuk cuaca (control center, widget cuaca) dan jadwal matahari terbit/terbenam night light.
+# Nama kota di-geocode oleh Noctalia; auto_locate tetap mati supaya tidak ada lookup lokasi dari IP.
+[location]
+address = "Jakarta"
