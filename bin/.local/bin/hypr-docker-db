@@ -24,16 +24,23 @@ info_of() { case $1 in
 # API Podman untuk podman-tui/compose: unit bawaan `podman system service` mati 5 detik setelah permintaan terakhir dan
 # mencatat tiap request (log-level info), jadi klien yang polling tiap detik terasa tersendat. Drop-in user: --time=0
 # (tetap hidup) dan log warning; lalu koneksi "local" ke socket user, karena rootless bawaan tidak punya koneksi.
+# Restart=on-failure: saat login podman.service (di-enable) dan podman-restart.service sama-sama menjalankan podman
+# pertama setelah boot; kalau balapan menyiapkan user namespace, podman.service keluar 125 dengan "unexpected fd
+# received from systemd: cannot listen on it" dan tetap failed sampai ada klien. Dicoba ulang 2 detik kemudian
+# (diuji 2026-09-28 dengan balapan buatan: tanpa ini gagal 1/6, dengan ini 0/10 gagal akhir). Batas 5 start per 2 menit cegah loop tak berujung.
+# Isi drop-in dibandingkan, bukan hanya dicek ada: mesin lama ikut dapat versi terbaru.
 podman_api_setup() {
-  local d="$HOME/.config/systemd/user/podman.service.d" changed=0
-  if [[ ! -f $d/override.conf ]]; then
-    mkdir -p "$d"
-    printf '[Service]\nEnvironment=LOGGING=--log-level=warning\nExecStart=\nExecStart=/usr/bin/podman $LOGGING system service --time=0\n' >"$d/override.conf"
-    changed=1
+  local d="$HOME/.config/systemd/user/podman.service.d" changed=0 want
+  want=$(printf '%s\n' '[Unit]' 'StartLimitIntervalSec=120' 'StartLimitBurst=5' '' '[Service]' \
+    'Environment=LOGGING=--log-level=warning' 'ExecStart=' 'ExecStart=/usr/bin/podman $LOGGING system service --time=0' \
+    'Restart=on-failure' 'RestartSec=2')
+  if [[ ! -f $d/override.conf || $(<"$d/override.conf") != "$want" ]]; then
+    mkdir -p "$d"; printf '%s\n' "$want" >"$d/override.conf"; changed=1
   fi
   systemctl --user daemon-reload >/dev/null 2>&1 || true
   systemctl --user enable --now podman.socket podman.service podman-restart.service >/dev/null 2>&1 || true
   (( changed )) && systemctl --user restart podman.service >/dev/null 2>&1 || true
+  systemctl --user is-failed --quiet podman.service && systemctl --user restart podman.service >/dev/null 2>&1 || true
   [[ -z $(podman system connection list -q 2>/dev/null) ]] && podman system connection add --default local "unix://${XDG_RUNTIME_DIR:-/run/user/$UID}/podman/podman.sock" >/dev/null 2>&1 || true
 }
 engine() { if command -v podman >/dev/null; then echo podman; elif command -v docker >/dev/null; then echo docker; fi; }

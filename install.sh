@@ -259,6 +259,9 @@ doctor() {
       pgrep -f "^bash $HOME/.local/bin/$w watch" >/dev/null && ok "$w watcher running" || { warn "$w watcher not running (start: resi-shell update, or log in again)"; bad=1; }
     done
   fi
+  if have podman && systemctl --user is-enabled --quiet podman.service 2>/dev/null; then
+    systemctl --user is-failed --quiet podman.service && { warn "podman.service failed (fix: hypr-docker-db api-setup)"; bad=1; } || ok "podman API service not failed"
+  fi
   have zsh && { zsh -ic 'exit' >/dev/null 2>&1 && ok "zsh loads its config" || { warn "zsh error"; bad=1; }; }
   have tmux && { [ -f "$HOME/.config/tmux/tmux.conf" ] && tmux -L residoc -f "$HOME/.config/tmux/tmux.conf" new -d -s x 2>/dev/null && tmux -L residoc kill-server && ok "tmux config OK" || { warn "tmux config error/missing"; bad=1; }; }
   [ "$(getent passwd "$USER" | cut -d: -f7)" = "/usr/bin/zsh" ] && ok "login shell is zsh" || warn "login shell is not zsh"
@@ -361,6 +364,10 @@ update() {
   if have mise; then step "Update mise tools"; if MISE_MINIMUM_RELEASE_AGE=0 run mise up; then ok "mise tools up to date"; else warn "mise up failed; continuing"; fi; fi
   stow_all; tmux_plugins; nvim_plugins
   have hyprctl && run hyprctl reload >/dev/null; have noctalia && run noctalia msg config-reload >/dev/null 2>&1 || true
+  # Podman API: drop-in podman.service terbaru (restart saat balapan login, API persisten) untuk mesin yang sudah punya Podman.
+  if have podman && [ -x "$HOME/.local/bin/hypr-docker-db" ]; then
+    run "$HOME/.local/bin/hypr-docker-db" api-setup && ok "podman API service configured" || warn "podman API setup failed"
+  fi
   # autostart.lua only runs at Hyprland start: (re)launch the battery watcher now. hypr-power is single-instance
   # (flock), so this is a no-op when it is already running. Spawned through Hyprland like autostart does.
   if have hyprctl && hyprctl version >/dev/null 2>&1 && [ -x "$HOME/.local/bin/hypr-power" ]; then

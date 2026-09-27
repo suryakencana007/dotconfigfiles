@@ -257,7 +257,14 @@ Hyprland's window borders, and the login screen.
   5-second idle timeout and info-level request logging, so a client polling every second kept
   reactivating it (journal showed "Received shutdown" every few seconds). `podman_api_setup`
   (in hypr-docker-db, called by hypr-containers) writes a user drop-in with `--time=0` and
-  `--log-level=warning`, enables podman.service persistently, and restarts it. Window class `TUI.large` (1100x760) is a generic rule for
+  `--log-level=warning`, enables podman.service persistently, and restarts it. Enabling it at login raced with
+  `podman-restart.service`: both are the first podman run after boot, and when they collide on setting up the
+  rootless user namespace podman.service exits 125 with "unexpected fd received from systemd: cannot listen on
+  it" and stays failed until a client hits the socket (seen on dynarch 2026-09-28; reproduced with isolated
+  test units, 1 failure in 6 races). The drop-in now adds `Restart=on-failure`, `RestartSec=2` and a start
+  limit of 5 per 2 minutes (0 of 10 races left it failed), and is rewritten when its content differs so
+  existing machines pick it up; `resi-shell update` runs `hypr-docker-db api-setup` when Podman is installed,
+  and `resi-shell doctor` warns when podman.service is failed. Window class `TUI.large` (1100x760) is a generic rule for
   big terminal UIs. `resi-shell doctor` now checks that the hypr-power and hypr-updates watchers
   are alive when run inside a Hyprland session.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
