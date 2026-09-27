@@ -143,6 +143,13 @@ Hyprland's window borders, and the login screen.
   `hypr-lid-close` additionally locks right away when no external monitor is connected, so the
   lock is already up before logind suspends. Not ported: Omarchy's manual internal-display
   toggle/mirror binds and its scale bookkeeping.
+- **Font: JetBrains Mono Nerd Font everywhere (2026-09-28)**, replacing MesloLGS. Chosen for code
+  legibility (tall x-height, clearly different `0O`, `1lI`, `rn`/`m`), a repo package
+  (`ttf-jetbrains-mono-nerd`, extra) instead of AUR, and full Nerd Font v3 icons for Powerlevel10k, eza,
+  rofi menus and mpv. It is also Omarchy's default font. Variants: `JetBrainsMono Nerd Font Mono` in
+  alacritty (icons one cell wide, the prompt stays aligned), `JetBrainsMono Nerd Font` for UI text
+  (Noctalia `shell.toml`, rofi, mpv OSD/subtitles, Hyprland groupbar, which used the fontconfig
+  `monospace` alias before). The greeter follows the shell font through auto-sync.
 - **Notifications and OSD (2026-09-27)** (`noctalia/notifications.toml`). Toasts and the OSD were 97% opaque and
   sat 8 px below the bar with the toast edge about 12 px inside the islands' edge. They now use
   `background_opacity = 0.78` (blurred by the existing `noctalia-notification`/`noctalia-osd` layer rule, same

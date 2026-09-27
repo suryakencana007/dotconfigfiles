@@ -17,7 +17,7 @@ Semua file di bawah adalah symlink ke `~/dotconfigfiles` (skill dotfiles-stow).
 - Uji tanpa mengganggu: `script -qec "zsh -ic 'alias ls; exit'" /dev/null`. Startup normal ~80 ms.
 
 ## alacritty
-`~/.config/alacritty/alacritty.toml`: baris pertama `[general] import` tema Noctalia; font MesloLGS Nerd Font Mono;
+`~/.config/alacritty/alacritty.toml`: baris pertama `[general] import` tema Noctalia; font JetBrainsMono Nerd Font Mono (paket ttf-jetbrains-mono-nerd; keluarga yang sama dipakai Noctalia `shell.toml`, rofi, mpv, groupbar Hyprland; varian Mono = ikon satu sel untuk p10k);
 `[terminal] shell = /usr/bin/zsh` (sesi lama masih SHELL=bash); `[window] opacity 0.8, padding 12/10`.
 Live reload saat file disimpan. Validasi: `python3 -c "import tomllib; tomllib.load(open(f,'rb'))"`.
 

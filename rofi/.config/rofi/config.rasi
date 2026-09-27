@@ -8,7 +8,7 @@ configuration {
   display-run: "";
   drun-display-format: "{name}";
   drun-match-fields: "name,generic,exec,keywords";
-  font: "MesloLGS Nerd Font 11";
+  font: "JetBrainsMono Nerd Font 11";
   terminal: "alacritty";
   matching: "fuzzy";
   sort: true;

@@ -27,7 +27,7 @@ inputbar {
 }
 prompt {
   text-color:  @accent;
-  font:        "MesloLGS Nerd Font Bold 11";
+  font:        "JetBrainsMono Nerd Font Bold 11";
 }
 entry {
   text-color:        @fg;

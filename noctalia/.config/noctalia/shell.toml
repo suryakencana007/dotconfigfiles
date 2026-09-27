@@ -4,8 +4,9 @@
 corner_radius_scale = 0.0
 polkit_agent = true    # agen polkit bawaan: dialog password untuk pkexec (greeter sync, GParted, dll)
 # Font UI global (bar, panel, launcher, notifikasi). Family Pango; fallback via Fontconfig.
-# Paket ttf-meslo-nerd (sistem-wide, jadi juga tersedia untuk greeter). Di GUI: Settings > Appearance > Font.
-font_family = "MesloLGS Nerd Font"
+# Paket ttf-jetbrains-mono-nerd (sistem-wide, jadi juga tersedia untuk greeter; auto-sync greeter ikut saat font berubah).
+# Satu keluarga font dengan terminal, rofi, dan mpv. Di GUI: Settings > Appearance > Font.
+font_family = "JetBrainsMono Nerd Font"
 # Format tanggal panjang di shell (kartu jam control center, dll): "Sunday, 27 September 2026".
 # Bawaan "%A, %x" memakai format lokal en_US = 09/27/2026.
 date_format = "%A, %d %B %Y"

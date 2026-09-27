@@ -24,7 +24,7 @@ hl.config({
   group = {
     col = { border_active = active_border_color, border_inactive = inactive_border_color },
     groupbar = {
-      font_size = 12, font_family = "monospace",
+      font_size = 12, font_family = "JetBrainsMono Nerd Font",
       font_weight_active = "ultraheavy", font_weight_inactive = "normal",
       indicator_height = 1, indicator_gap = 5, height = 22, gaps_in = 5, gaps_out = 0,
       text_color = "rgb(ffffff)", text_color_inactive = "rgba(ffffff90)",

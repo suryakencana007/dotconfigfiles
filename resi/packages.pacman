@@ -41,7 +41,7 @@ gtk4
 libadwaita
 libvips
 # --- font ---
-ttf-meslo-nerd
+ttf-jetbrains-mono-nerd   # font utama: terminal, Noctalia, rofi, mpv, groupbar Hyprland, greeter
 ttf-dejavu
 ttf-liberation
 noto-fonts
