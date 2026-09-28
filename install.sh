@@ -267,7 +267,9 @@ doctor() {
   [ "$(getent passwd "$USER" | cut -d: -f7)" = "/usr/bin/zsh" ] && ok "login shell is zsh" || warn "login shell is not zsh"
   if have noctalia-greeter; then
     # /var/lib/noctalia-greeter root-only dan staging /run hilang tiap boot; log Noctalia permanen, pakai itu.
-    last=$(grep 'synced shell appearance to greeter' "$HOME/.cache/noctalia/noctalia.log" 2>/dev/null | tail -1 | cut -c1-19)
+    # Noctalia memutar log di 1 MB (noctalia.log -> noctalia.log.1): cari di keduanya, lama dulu. `|| true` wajib:
+    # tanpa baris cocok, grep gagal dan dengan `set -euo pipefail` doctor berhenti diam-diam di sini (2026-09-28).
+    last=$(cat "$HOME/.cache/noctalia/noctalia.log.1" "$HOME/.cache/noctalia/noctalia.log" 2>/dev/null | grep 'synced shell appearance to greeter' | tail -1 | cut -c1-19 || true)
     if [ -n "$last" ]; then ok "greeter last synced $last"
     else warn "greeter never synced (login screen still default): noctalia msg greeter-sync"; fi
   fi

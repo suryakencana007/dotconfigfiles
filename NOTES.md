@@ -334,6 +334,11 @@ through the GUI instead, or removed from `settings.toml` by hand. `resi-shell do
   truncated at 15 chars in `/proc`). `gpu-screen-recorder` (19 chars) is the concrete case in
   `bin/hypr-record`: its PID is captured via `$!` right after backgrounding it, not via
   `pgrep -x gpu-screen-recorder`, which would silently match nothing.
+- **`install.sh` runs with `set -euo pipefail`, so `x=$(grep ... | ...)` aborts the whole script when grep
+  finds nothing** (outside an `if` condition). `resi-shell doctor` stopped silently after "login shell is zsh"
+  with exit 1 on 2026-09-28 because Noctalia had rotated its log (`noctalia.log` -> `noctalia.log.1` at 1 MB)
+  and the greeter-sync line was only in the old file. Append `|| true` to such substitutions, and read both
+  Noctalia log files when looking for past events.
 - **A machine without `linux-headers` installed *before* `nvidia-open-dkms`** will have DKMS fail
   to build the kernel module, and the system silently falls back to `simpledrm`/software rendering
   — Hyprland still starts, just fully unaccelerated, with no error dialog pointing at the cause.
