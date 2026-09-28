@@ -275,6 +275,20 @@ Hyprland's window borders, and the login screen.
   Backspace dead after a typo. Free-text Enter is rejected by the script instead (it reopens the
   same level with the filter kept). Verified with `wtype` key injection on 2026-09-24.
 
+- **Demo video** (`bin/hypr-demo`, 2026-09-28). Records a ~3 minute tour with gpu-screen-recorder on the
+  focused monitor while it drives every feature through IPC only (`noctalia msg`, `hyprctl dispatch`, the
+  bin scripts): there is no key injection on these machines (no wtype/ydotool), so anything that needs a
+  keypress is not in the tour. Captions are Noctalia toasts, cleared before each panel so they never cover it.
+  It runs on empty workspaces 6/7 so the user's windows stay out of the video, and restores wallpaper, light/
+  dark mode, volume, brightness, bar, scratchpad and workspace on exit (also on Ctrl+C or SIGTERM, tested). Left out on purpose
+  because demo videos get shared: clipboard history, the Network tab and btop's net box (local IP),
+  fastfetch's host module (laptop product code), and the lock screen (would stop the tour at the password).
+  tmux runs on its own socket with the user's config minus the resurrect/continuum plugins, so no saved
+  private session is restored into the video; btop gets a temporary config and a smaller font (it needs
+  80x24 and a quarter screen is 22 rows). It refuses to start when the notification history is not empty,
+  because it clears the history at the end. Scenes whose tool is missing (podman-tui, carousel, updates)
+  are skipped instead of prompting.
+
 ## Noctalia's two config layers (read this before debugging "my change didn't work")
 
 Noctalia merges two layers, and the second always wins for any key it defines:

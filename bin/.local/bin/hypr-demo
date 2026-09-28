@@ -1,0 +1,240 @@
+#!/usr/bin/env bash
+# Video demo resi-shell otomatis: menjalankan fitur satu per satu lewat IPC (noctalia msg, hyprctl, skrip bin) sambil
+# merekam layar dengan gpu-screen-recorder. Keterangan tiap bagian tampil sebagai notifikasi Noctalia (bahasa Inggris).
+# Tanpa injeksi tombol (wtype/ydotool tidak dipakai): semua yang tampil harus bisa dibuka lewat IPC atau perintah.
+# Berjalan di workspace kosong (6 dan 7) supaya jendela user tidak ikut terekam, dan memulihkan semua keadaan di akhir
+# (wallpaper, mode terang/gelap, volume, kecerahan, bar, jendela, scratchpad, notifikasi, workspace).
+# Sengaja TIDAK ditampilkan karena video demo biasanya dibagikan: riwayat clipboard, tab Network dan kotak net btop
+# (IP lokal), modul host fastfetch (kode produk laptop), lock screen (demo berhenti menunggu password).
+#   hypr-demo [-o FILE] [--no-record] [--shots DIR]      lihat --help
+set -uo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: hypr-demo [options]
+Record an automatic ~3 minute tour of resi-shell (bar, tiling, theming, launcher, menu, panels,
+notifications, OSD, keybindings, scratchpad, indicators, containers) to a video file.
+The screen is taken over while it runs: do not touch the keyboard or mouse.
+
+  -o, --output FILE   video file (default: ~/Videos/resi-shell-demo.mp4)
+      --no-record     run the tour without recording (dry run)
+      --shots DIR     also save a screenshot of every scene to DIR
+  -h, --help          show this help
+
+Environment: HYPR_DEMO_WALLS="a.jpg b.png" picks the two wallpapers used for the theme scene
+(default: two random images from ~/Pictures/Wallpapers other than the current one).
+EOF
+}
+
+OUT="$HOME/Videos/resi-shell-demo.mp4"; RECORD=1; SHOTS=""
+while (( $# )); do
+  case "$1" in
+    -o|--output) OUT="${2:?missing file}"; shift 2 ;;
+    --no-record) RECORD=0; shift ;;
+    --shots) SHOTS="${2:?missing dir}"; mkdir -p "$SHOTS"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+BIN="$HOME/.local/bin"
+REPO="${RESI_REPO:-$HOME/dotconfigfiles}"
+WALL_DIR="${HYPR_THEME_WALL_DIR:-$HOME/Pictures/Wallpapers}"
+WS_DEMO=6; WS_ALT=7
+log() { printf '[%s] %s\n' "$(date +%T)" "$*"; }
+need() { command -v "$1" >/dev/null || { echo "$1 is required" >&2; exit 1; }; }
+for c in hyprctl noctalia jq alacritty; do need "$c"; done
+(( RECORD )) && { command -v gpu-screen-recorder >/dev/null || { echo "gpu-screen-recorder is required to record (or use --no-record)" >&2; exit 1; }; }
+hyprctl version >/dev/null 2>&1 || { echo "Hyprland is not running" >&2; exit 1; }
+[[ $(noctalia msg status 2>/dev/null | jq -r '.locked // false') == true ]] && { echo "Session is locked" >&2; exit 1; }
+
+TMP="$(mktemp -d)"
+MON="$(hyprctl monitors -j | jq -r '.[] | select(.focused) | .name' | head -1)"
+
+# Dua wallpaper untuk adegan tema: dari env, atau acak dari folder wallpaper (selain yang aktif).
+ORIG_WALL="$(noctalia msg wallpaper-get 2>/dev/null)"
+if [[ -n ${HYPR_DEMO_WALLS:-} ]]; then read -r -a WALLS <<<"$HYPR_DEMO_WALLS"
+else mapfile -t WALLS < <(find "$WALL_DIR" -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) ! -path "$ORIG_WALL" 2>/dev/null | shuf -n 2); fi
+
+# ---------- keadaan awal (dipulihkan di akhir) ----------
+ORIG_MODE="$(noctalia msg theme-mode-get 2>/dev/null | tr -d '[:space:]')"
+ORIG_VOL="$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | grep -oE '[0-9]+%' | head -1)"
+ORIG_BRI="$(brightnessctl -m 2>/dev/null | cut -d, -f4)"
+ORIG_WS="$(hyprctl activeworkspace -j | jq -r .id)"
+SCRATCH_BEFORE="$(hyprctl clients -j | jq -r '[.[] | select(.workspace.name == "special:scratchpad") | .pid] | join(" ")')"
+
+# ---------- helper ----------
+hx()    { hyprctl dispatch "$1" >/dev/null 2>&1; }
+ws()    { hx "hl.dsp.focus({ workspace = \"$1\" })"; }
+nm()    { noctalia msg "$@" >/dev/null 2>&1; }
+shot()  { [[ -n $SHOTS ]] && grim -s 0.5 "$SHOTS/$(date +%H%M%S)-$1.png" 2>/dev/null; return 0; }
+toast() { # $1 judul, $2 isi: notify-send (libnotify) bila ada, kalau tidak lewat IPC Noctalia
+  if command -v notify-send >/dev/null; then notify-send -a "resi-shell" -i preferences-desktop-theme -t 6000 "$1" "$2"
+  else nm notification-show "$1" "$2"; fi; }
+cap()   { # $1 judul, $2 isi, $3 detik tampil (default 2.6). Satu keterangan di layar, tidak menutupi panel sesudahnya.
+  nm notification-clear-active; toast "$1" "$2"; sleep "${3:-2.6}"; nm notification-clear-active; }
+spawn() { # $1 class, sisanya perintah; tunggu jendelanya muncul. Opsi alacritty tambahan lewat ALAC_OPTS.
+  local cls="$1"; shift
+  # shellcheck disable=SC2086  # ALAC_OPTS sengaja dipecah per kata (mis. "-o font.size=8.5")
+  setsid -f alacritty ${ALAC_OPTS:-} --class "$cls" -e "$@" >/dev/null 2>&1
+  for _ in $(seq 1 40); do hyprctl clients -j | jq -e --arg c "$cls" 'any(.[]; .class == $c)' >/dev/null && return 0; sleep 0.1; done
+  log "window $cls did not appear"; }
+close_class() { local p; for p in $(hyprctl clients -j | jq -r --arg c "$1" '.[] | select(.class == $c) | .pid'); do kill "$p" 2>/dev/null; done; }
+
+REC_PID=""
+cleanup() {
+  [[ -n $REC_PID ]] && kill -0 "$REC_PID" 2>/dev/null && kill -INT "$REC_PID" 2>/dev/null   # dihentikan di tengah jalan
+  log "restoring the desktop"
+  nm panel-close; pkill -x rofi 2>/dev/null
+  pgrep -f "^python3 $BIN/hypr-theme-carousel" >/dev/null && "$BIN/hypr-theme-carousel" --toggle >/dev/null 2>&1
+  for c in demo-fetch demo-btop demo-nvim demo-tmux hypr-keybindings TUI.large; do close_class "$c"; done
+  tmux -L residemo kill-server 2>/dev/null
+  # scratchpad: tutup kalau terbuka, matikan jendela yang dibuat demo di sana (seed alacritty)
+  hyprctl monitors -j | jq -e 'any(.[]; .specialWorkspace.name == "special:scratchpad")' >/dev/null && hx 'hl.dsp.workspace.toggle_special("scratchpad")'
+  for p in $(hyprctl clients -j | jq -r '.[] | select(.workspace.name == "special:scratchpad") | .pid'); do
+    [[ " $SCRATCH_BEFORE " == *" $p "* ]] || kill "$p" 2>/dev/null; done
+  "$BIN/hypr-record" indicator off >/dev/null 2>&1
+  [[ -x $BIN/hypr-updates ]] && { "$BIN/hypr-updates" check >/dev/null 2>&1 & }   # indikator update kembali ke keadaan nyata
+  [[ -n $ORIG_WALL ]] && nm wallpaper-set "$ORIG_WALL"
+  [[ -n $ORIG_MODE ]] && nm theme-mode-set "$ORIG_MODE"
+  [[ -n $ORIG_VOL ]] && pactl set-sink-volume @DEFAULT_SINK@ "$ORIG_VOL"
+  [[ -n $ORIG_BRI ]] && brightnessctl -q set "$ORIG_BRI"
+  nm bar-show
+  sleep 1; nm notification-clear-active; nm notification-clear-history   # riwayat berisi keterangan demo saja
+  ws "$ORIG_WS"; rm -rf "$TMP"
+  [[ -n $REC_PID && -f $OUT ]] && log "video: $OUT"
+}
+trap cleanup EXIT
+trap 'exit 130' INT TERM
+
+# Riwayat notifikasi dikosongkan di akhir; jangan jalan kalau ada notifikasi nyata yang belum dibaca.
+HIST="$HOME/.local/state/noctalia/notification_history.json"
+if [[ -f $HIST ]] && [[ $(jq '[.. | objects | select(has("notification"))] | length' "$HIST" 2>/dev/null || echo 0) -gt 0 ]]; then
+  echo "Notification history is not empty; the demo clears it at the end. Clear it first (control center > Notifications)." >&2
+  trap - EXIT; rm -rf "$TMP"; exit 1
+fi
+
+# tmux demo: config user tanpa plugin (resurrect/continuum tidak boleh memulihkan sesi pribadi ke video)
+grep -vE '@plugin|@resurrect|@continuum|tpm/tpm' "$HOME/.config/tmux/tmux.conf" >"$TMP/tmux.conf" 2>/dev/null
+# btop demo: config user (tema Noctalia) tanpa kotak net, karena kotak itu menampilkan IP lokal
+if [[ -f $HOME/.config/btop/btop.conf ]]; then
+  sed -E 's/^shown_boxes *=.*/shown_boxes = "cpu mem proc"/' "$HOME/.config/btop/btop.conf" >"$TMP/btop.conf"
+  grep -q '^shown_boxes' "$TMP/btop.conf" || echo 'shown_boxes = "cpu mem proc"' >>"$TMP/btop.conf"
+else echo 'shown_boxes = "cpu mem proc"' >"$TMP/btop.conf"; fi
+# fastfetch tanpa modul IP, lokasi, dan host (kode produk)
+FETCH="fastfetch -s title:separator:os:kernel:uptime:packages:shell:display:wm:theme:icons:font:terminal:terminalfont:cpu:gpu:memory:battery:break:colors"
+
+# ---------- mulai ----------
+log "starting the tour on workspace $WS_DEMO (monitor $MON); do not touch the keyboard or mouse"
+ws "$WS_DEMO"; nm notification-clear-active; nm panel-close; sleep 1
+if (( RECORD )); then
+  mkdir -p "$(dirname "$OUT")"; rm -f "$OUT"
+  gpu-screen-recorder -w "$MON" -f 60 -k h264 -q very_high -cursor no -o "$OUT" >"$TMP/gsr.log" 2>&1 &
+  REC_PID=$!; sleep 2
+  kill -0 "$REC_PID" 2>/dev/null || { echo "gpu-screen-recorder failed:" >&2; cat "$TMP/gsr.log" >&2; REC_PID=""; exit 1; }
+  log "recording -> $OUT"
+fi
+
+# 1. Pembuka
+cap "resi-shell" "Hyprland + Noctalia on Arch Linux, installed by one script. Every color follows the wallpaper." 4
+shot intro
+
+# 2. Bar island
+cap "Island bar" "Square frosted-glass islands on the same 10 px grid as the windows: launcher, workspaces, clock, status, power." 3.5
+nm bar-hide; sleep 1.2; nm bar-show; sleep 1.2; shot bar
+
+# 3. Tiling + stack terminal
+cap "Tiling + terminal stack" "alacritty with JetBrains Mono Nerd Font, fastfetch, btop and Neovim (LazyVim) tiled by Hyprland." 3
+spawn demo-fetch bash -c "$FETCH; exec sleep infinity"; sleep 1.2
+# btop butuh >= 80x24; seperempat layar pada font normal hanya 22 baris, jadi font diperkecil
+ALAC_OPTS="-o font.size=8.5" spawn demo-btop btop -c "$TMP/btop.conf"; sleep 1.2
+spawn demo-nvim nvim -R "$REPO/README.md"; sleep 3; shot tiling
+
+# 4. Workspace + tmux
+cap "Workspaces" "Super+1..0 to switch. Persistent workspaces keep the bar indicator stable." 2.5
+ws "$WS_ALT"; sleep 1.3
+spawn demo-tmux tmux -L residemo -f "$TMP/tmux.conf" new-session -s demo \; split-window -h \; split-window -v \; select-pane -t 1
+sleep 1.5
+tmux -L residemo send-keys -t demo:1.1 'clear; echo "tmux: Ctrl+Space prefix, Alt+Enter split, status bar on top"' Enter 2>/dev/null
+tmux -L residemo send-keys -t demo:1.2 "clear; eza --icons=always -1 $REPO | head -14" Enter 2>/dev/null
+tmux -L residemo send-keys -t demo:1.3 "clear; git -C $REPO log --oneline -8 | cat" Enter 2>/dev/null
+cap "tmux" "Omarchy's tmux config: Ctrl+Space prefix, Alt+Enter split, themed status bar." 3.5; shot tmux
+ws "$WS_DEMO"; sleep 1.5
+
+# 5. Tema dari wallpaper
+if (( ${#WALLS[@]} >= 2 )); then
+  cap "Theme follows the wallpaper" "Noctalia builds a Material 3 palette and re-renders borders, bar, terminal, Neovim, GTK and rofi." 3
+  nm wallpaper-set "${WALLS[0]}"; sleep 4.5; shot theme-a
+  nm wallpaper-set "${WALLS[1]}"; sleep 4.5; shot theme-b
+fi
+cap "Light and dark" "One command flips the whole desktop between light and dark." 2.2
+nm theme-mode-set light; sleep 3; shot light; nm theme-mode-set dark; sleep 2.5
+
+# 6. Theme carousel
+if [[ -x $BIN/hypr-theme-carousel ]]; then
+  cap "Theme carousel" "Super+Shift+Ctrl+Space: slide through wallpapers, the centered card is the pick." 2.5
+  setsid -f "$BIN/hypr-theme-carousel" --toggle >/dev/null 2>&1; sleep 4; shot carousel
+  "$BIN/hypr-theme-carousel" --toggle >/dev/null 2>&1; sleep 1.2
+fi
+
+# 7. Launcher & menu
+cap "App launcher" "Noctalia launcher: glass panel, pinned favourites, fuzzy search." 2.3
+nm panel-open launcher; sleep 2.5; shot launcher; nm panel-close; sleep 0.4
+nm panel-open launcher "neo"; sleep 2.5; nm panel-close; sleep 0.6
+cap "Omarchy-style menu" "Super+Space: Apps, Learn, Trigger, Toggle, Style, Setup, Install, Update, Remove, System." 2.5
+setsid -f "$BIN/hypr-menu" >/dev/null 2>&1; sleep 3.5; shot menu; pkill -x rofi; sleep 0.8
+cap "rofi app launcher" "Super+Alt+Space: every app, themed by the same palette." 2
+setsid -f rofi -show drun >/dev/null 2>&1; sleep 3; pkill -x rofi; sleep 0.8
+
+# 8. Control center & panel (tab Network sengaja dilewati: menampilkan IP lokal)
+cap "Control center" "Super+S: media, shortcuts, audio, weather, calendar and notification history." 2.5
+nm panel-open control-center; sleep 3; shot control-center
+nm panel-open control-center audio; sleep 2.2
+nm panel-open control-center weather; sleep 2.8; shot weather
+nm panel-open control-center calendar; sleep 2.2; nm panel-close; sleep 0.6
+cap "Session menu" "Super+Esc: lock, log out, suspend, reboot, shut down." 2
+nm panel-open session; sleep 2.5; nm panel-close; sleep 0.5
+cap "Wallpapers" "Super+Ctrl+Space for local wallpapers, Super+Ctrl+Alt+Space to browse Wallhaven." 2.5
+nm panel-open wallpaper; sleep 3; shot wallpaper; nm panel-close; sleep 0.5
+nm panel-open noctalia/wallhaven:browser; sleep 3.5; nm panel-close; sleep 0.6   # tanpa plugin: tidak terjadi apa-apa
+
+# 9. Notifikasi & OSD
+nm notification-clear-active
+toast "Download complete" "archlinux-2026.09.01-x86_64.iso saved to ~/Downloads"; sleep 1
+if command -v notify-send >/dev/null; then notify-send -u critical -a "Battery" -i battery-caution -t 5000 "Battery low" "10% remaining. Plug in the charger."; fi
+sleep 2.5; shot notifications; nm notification-clear-active; sleep 0.5
+cap "On-screen display" "Volume and brightness keys show a glass OSD under the bar." 2
+nm volume-up; sleep 0.6; nm volume-up; sleep 1.2; nm volume-down; sleep 0.6; nm volume-down; sleep 1.2
+nm brightness-up; sleep 0.6; nm brightness-up; sleep 1.2; nm brightness-down; sleep 0.6; nm brightness-down; sleep 1.5
+
+# 10. Keybinding & scratchpad
+cap "Keybindings" "Super+K: every binding, searchable, formatted like Omarchy's." 2
+setsid -f "$BIN/hypr-keybindings" --toggle >/dev/null 2>&1; sleep 4.5; shot keybindings; close_class hypr-keybindings; sleep 0.8
+cap "Quake console" "Super+backtick drops a scratchpad terminal over any workspace." 2
+hx 'hl.dsp.workspace.toggle_special("scratchpad")'; sleep 2.8; shot scratchpad; hx 'hl.dsp.workspace.toggle_special("scratchpad")'; sleep 1
+
+# 11. Toggle & indikator
+cap "Night light" "One toggle for a warm screen in the evening." 2
+nm nightlight-force-toggle; sleep 2.5; nm nightlight-force-toggle; sleep 1
+cap "Screen recording" "Alt+Print records with gpu-screen-recorder; a red REC button in the bar stops it." 2.3
+"$BIN/hypr-record" indicator on >/dev/null 2>&1; sleep 2.8; shot rec; "$BIN/hypr-record" indicator off >/dev/null 2>&1; sleep 0.8
+if [[ -x $BIN/hypr-updates ]]; then
+  cap "Update indicator" "Repos and AUR are checked every 6 hours; a button with the count appears in the bar." 2.3
+  HYPR_UPDATES_FAKE=7 "$BIN/hypr-updates" check >/dev/null 2>&1; sleep 3.5; shot updates; "$BIN/hypr-updates" clear >/dev/null 2>&1; sleep 0.8
+fi
+
+# 12. Container (hanya bila podman-tui sudah terpasang: hypr-containers menawarkan instalasi dan akan menunggu jawaban)
+if command -v podman-tui >/dev/null; then
+  cap "Containers" "Super+Shift+D: podman-tui for rootless Podman; dev databases from the Install menu." 2.3
+  setsid -f alacritty --class TUI.large -e "$BIN/hypr-containers" >/dev/null 2>&1; sleep 5; shot containers; close_class TUI.large; sleep 1
+fi
+
+# 13. Penutup
+for c in demo-fetch demo-btop demo-nvim; do close_class "$c"; done; sleep 0.8
+cap "resi-shell" "git clone github.com/suryakencana007/dotconfigfiles && ./install.sh" 4.5
+shot outro
+
+if [[ -n $REC_PID ]]; then
+  kill -INT "$REC_PID"; for _ in $(seq 1 100); do kill -0 "$REC_PID" 2>/dev/null || break; sleep 0.1; done
+  log "recording finished"
+fi
