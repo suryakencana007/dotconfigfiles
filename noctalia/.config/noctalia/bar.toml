@@ -40,13 +40,16 @@ border  = "outline"
 padding = 8.0
 radius  = 4.0
 
-# Pulau info: media (hilang saat tidak ada pemutar), tray, notifikasi, clipboard, caffeine.
+# Pulau info: media (hilang saat tidak ada pemutar), tray, notifikasi, clipboard, caffeine, night light, mode tema.
 # caffeine = widget bawaan (ikon gelas kopi): klik menahan idle lewat protokol Wayland idle-inhibit, jadi lock
 # 10 menit dan layar mati 11 menit (idle.toml) tidak terpicu. Sama dengan `noctalia msg caffeine-toggle`,
 # menu Toggle > Caffeine, dan pintasan Caffeine di control center.
+# nightlight = bulan dicoret (mati) / bulan (otomatis ikut jadwal matahari [location]) / bulan+bintang (dipaksa nyala);
+# klik kiri nyala/mati (juga Super+Ctrl+N), klik kanan paksa nyala terus.
+# theme_mode = bulan (gelap) / matahari (terang); klik = ganti mode tema seluruh desktop (theme-mode-toggle).
 [[bar.default.capsule_group]]
 id      = "island_info"
-members = [ "media", "tray", "notifications", "clipboard", "caffeine" ]
+members = [ "media", "tray", "notifications", "clipboard", "caffeine", "nightlight", "theme_mode" ]
 opacity = 0.78
 border  = "outline"
 padding = 8.0

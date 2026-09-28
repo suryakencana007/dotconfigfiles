@@ -112,6 +112,8 @@ Template user `folder_color` (`folder-color.toml`): render `{{colors.primary.def
 (symlink ikon folder ke varian warna itu, mewarisi Papirus-Dark), lalu gsettings icon-theme. Diuji: wallpaper merah
 -> pink dalam 5 dtk. `templates-apply` merender tanpa hook: jalankan `hypr-folder-color apply` manual setelahnya.
 Night light: `[nightlight] enabled = true` di shell.toml, jadwal dari `[location]` (log `[gamma] target ...K`).
+Widget bar di pulau info: `nightlight` (klik kiri nyala/mati, kanan paksa; ikon bulan/dicoret/bintang) dan `theme_mode`
+(tipe pakai GARIS BAWAH, bukan "theme-mode" seperti nama halaman docs; ikon lingkaran setengah di 5.2).
 
 ## Theme switcher
 
