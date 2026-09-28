@@ -6,6 +6,10 @@
 #   hypr-power watch         jalan terus (autostart.lua): terapkan saat mulai, lalu tiap event upower
 #   hypr-power profile [P]   pilih profil (performance|balanced|power-saver) untuk sumber daya SAAT INI dan ingat
 #                            (ala omarchy-powerprofiles-set: preferensi per ac/battery); tanpa P = cetak yang aktif
+#   hypr-power charge-limit [on|off] batas pengisian baterai lewat UPower (EnableChargeThreshold; ambang UPower,
+#                            mis. berhenti di 80%, mulai lagi di 75%). Tanpa argumen = cetak keadaan. UPower menyimpannya
+#                            di /var/lib/upower dan menerapkannya sendiri (juga setelah reboot); polkit mengizinkan sesi
+#                            aktif tanpa password. JANGAN menulis sysfs langsung: UPower mengembalikannya ke 100.
 # Uji: HYPR_POWER_FORCE=ac|battery memaksa sumber daya. Tidak butuh root: ppd lewat D-Bus, sisanya user.
 set -uo pipefail
 
@@ -33,6 +37,12 @@ set_profile() { command -v powerprofilesctl >/dev/null || return 0; profile_avai
 preferred_profile() { # $1 ac|battery -> profil yang diingat untuk sumber itu, default balanced / power-saver
   local def=balanced; [[ $1 == battery ]] && def=power-saver
   local f="$STATE_DIR/profile-$1"; [[ -f $f ]] && cat "$f" || echo "$def"; }
+upower_battery() { upower -e 2>/dev/null | grep -m1 '/battery_'; }
+charge_prop() { busctl get-property org.freedesktop.UPower "$1" org.freedesktop.UPower.Device "$2" 2>/dev/null | awk '{print $2}'; }
+charge_limit_state() { # cetak "on 80" / "off" / kosong bila tidak didukung
+  local b; b=$(upower_battery) || return 1
+  [[ $(charge_prop "$b" ChargeThresholdSupported) == true ]] || return 1
+  if [[ $(charge_prop "$b" ChargeThresholdEnabled) == true ]]; then echo "on $(charge_prop "$b" ChargeEndThreshold)"; else echo off; fi; }
 internal_monitor() { hyprctl monitors all -j 2>/dev/null | jq -r '.[] | select(.name | test("^(eDP|LVDS|DSI)-")).name' | head -1; }
 notify() { command -v noctalia >/dev/null && noctalia msg notification-show "$1" "$2" >/dev/null 2>&1 || true; }
 
@@ -76,7 +86,17 @@ case "${1:-status}" in
     printf 'source=%s applied=%s profile=%s (preferred ac=%s battery=%s) brightness=%s%% refresh_flag=%s\n' "$(source_now)" \
       "$(cat "$STATE_DIR/applied" 2>/dev/null || echo none)" "$(powerprofilesctl get 2>/dev/null || echo n/a)" \
       "$(preferred_profile ac)" "$(preferred_profile battery)" \
-      "$(brightness_pct 2>/dev/null || echo n/a)" "$([[ -f $REFRESH_FLAG ]] && echo present || echo absent)" ;;
+      "$(brightness_pct 2>/dev/null || echo n/a)" "$([[ -f $REFRESH_FLAG ]] && echo present || echo absent)"
+    st=$(charge_limit_state) && printf 'charge_limit=%s firmware_end=%s%%\n' "$st" "$(cat /sys/class/power_supply/BAT*/charge_control_end_threshold 2>/dev/null | head -1)" ;;
+  charge-limit)
+    st=$(charge_limit_state) || { echo "this battery has no charge limit (UPower: not supported)" >&2; exit 1; }
+    [[ -z ${2:-} ]] && { echo "$st"; exit 0; }
+    case "$2" in on|true|80) want=true ;; off|false|100) want=false ;; *) echo "usage: hypr-power charge-limit [on|off]" >&2; exit 2 ;; esac
+    b=$(upower_battery)
+    busctl call org.freedesktop.UPower "$b" org.freedesktop.UPower.Device EnableChargeThreshold b "$want" || { echo "UPower refused (polkit?)" >&2; exit 1; }
+    st=$(charge_limit_state)
+    if [[ $st == on* ]]; then notify "Battery charge limit" "on: stops charging at ${st#on }% to preserve the battery"; else notify "Battery charge limit" "off: charges to 100%"; fi
+    echo "charge limit $st" ;;
   profile)
     command -v powerprofilesctl >/dev/null || { echo "power-profiles-daemon is required" >&2; exit 1; }
     if [[ -z ${2:-} ]]; then powerprofilesctl get; exit 0; fi
@@ -90,5 +110,5 @@ case "${1:-status}" in
     apply
     command -v upower >/dev/null || { echo "upower is required for watch mode" >&2; exit 1; }
     upower --monitor 2>/dev/null | while read -r _; do apply; done ;;
-  *) echo "usage: hypr-power status|apply|watch|profile [P]" >&2; exit 2 ;;
+  *) echo "usage: hypr-power status|apply|watch|profile [P]|charge-limit [on|off]" >&2; exit 2 ;;
 esac

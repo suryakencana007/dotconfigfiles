@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# Warna ikon folder Papirus mengikuti palet Noctalia (cara kerja ala papirus-folders, tanpa root dan tanpa AUR).
+# Membangun tema ikon user ~/.local/share/icons/Papirus-Dark-Resi yang mewarisi Papirus-Dark dan hanya menimpa
+# ikon folder/user di places/: setiap symlink bawaan yang menunjuk varian "blue" dibuat ulang ke varian warna
+# terpilih (folder-teal-documents.svg, user-teal-home.svg, ...). Warna dipilih yang paling dekat dengan warna
+# primary tema (rona diutamakan, bobot terang kecil, supaya pastel Material 3 cocok ke hue yang sama).
+#   hypr-folder-color apply [#hex]   hex dari render template Noctalia bila tanpa argumen (noctalia/folder-color.toml)
+#   hypr-folder-color set <warna>    pasang varian tertentu (lihat: list)
+#   hypr-folder-color pick #hex     cetak varian terdekat saja (diagnosis)
+#   hypr-folder-color list | status
+# Dipanggil otomatis oleh post_hook template Noctalia setiap tema berubah; hanya membangun ulang bila warna berganti.
+set -uo pipefail
+
+SRC_THEME="${HYPR_FOLDER_SRC:-/usr/share/icons/Papirus-Dark}"
+NAME="Papirus-Dark-Resi"
+DEST="$HOME/.local/share/icons/$NAME"
+STATE="$HOME/.local/state/resi/folder-color"
+HEXFILE="$HOME/.cache/resi/folder-color-primary.txt"      # output template Noctalia
+
+# Warna badan folder tiap varian, diambil dari SVG Papirus 48x48/places/folder-<warna>.svg (2026-09-28).
+COLORS="adwaita:93c0ea black:4f4f4f blue:5294e2 bluegrey:607d8b breeze:57b8ec brown:ae8e6c carmine:a30002
+cyan:00bcd4 darkcyan:45abb7 deeporange:eb6637 green:87b158 grey:8e8e8e indigo:5c6bc0 magenta:ca71df
+nordic:81a1c1 orange:ee923a palebrown:d1bfae paleorange:eeca8f pink:f06292 red:e25252 teal:16a085
+violet:7e57c2 white:cccccc yellow:f9bd30"
+
+nearest() { # $1 hex -> nama varian terdekat, dihitung di ruang LCh. Primary Material 3 tema gelap berupa pastel
+  # (L~80, C 5..47), jadi skor = selisih rona (derajat) + 0.5*selisih chroma + 0.3*selisih terang; diuji 2026-09-28:
+  # #f8bb73 paleorange, #bdc7da nordic, #d7c0d3 magenta, #ffb4ab red, #9ecaff adwaita, #a2cfdc cyan.
+  # Varian netral (white/grey/black, C=0) hanya bila primary nyaris tanpa warna (C<6); dipilih menurut terang.
+  python3 - "$1" "$COLORS" <<'PY'
+import sys, math
+def lch(h):
+    h = h.lstrip('#'); r, g, b = (int(h[i:i+2], 16) / 255 for i in (0, 2, 4))
+    lin = lambda c: c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = lin(r), lin(g), lin(b)
+    x = (0.4124*r + 0.3576*g + 0.1805*b) / 0.95047; y = 0.2126*r + 0.7152*g + 0.0722*b; z = (0.0193*r + 0.1192*g + 0.9505*b) / 1.08883
+    f = lambda t: t ** (1/3) if t > 0.008856 else 7.787 * t + 16/116
+    L, a, bb = 116*f(y) - 16, 500*(f(x) - f(y)), 200*(f(y) - f(z))
+    return L, math.hypot(a, bb), math.degrees(math.atan2(bb, a)) % 360
+L1, C1, H1 = lch(sys.argv[1])
+NEUTRAL = {"white", "grey", "black"}
+cands = [c.split(':') for c in sys.argv[2].split()]
+if C1 < 6:                                                  # abu-abu: pilih netral dengan terang terdekat
+    print(min((c for c in cands if c[0] in NEUTRAL), key=lambda c: abs(L1 - lch(c[1])[0]))[0]); sys.exit()
+def score(c):
+    L2, C2, H2 = lch(c[1])
+    dh = abs(H1 - H2); dh = min(dh, 360 - dh)
+    return dh + 0.5 * abs(C1 - C2) + 0.3 * abs(L1 - L2)
+print(min((c for c in cands if c[0] not in NEUTRAL), key=score)[0])
+PY
+}
+
+build() { # $1 warna varian
+  local color="$1" tmp size real srcp link tgt newt n=0
+  [[ -d $SRC_THEME ]] || { echo "$SRC_THEME not found (papirus-icon-theme)" >&2; return 1; }
+  [[ -e $(readlink -f "$SRC_THEME/48x48/places")/folder-$color.svg ]] || { echo "unknown Papirus folder color: $color" >&2; return 1; }
+  mkdir -p "$HOME/.local/share/icons"; tmp="$(mktemp -d "$HOME/.local/share/icons/.$NAME.XXXXXX")"
+  sed -E "s/^Name=.*/Name=$NAME/; s/^Comment=.*/Comment=Papirus-Dark with $color folders (hypr-folder-color)/; s/^Inherits=.*/Inherits=Papirus-Dark,breeze-dark,hicolor/" \
+    "$SRC_THEME/index.theme" >"$tmp/index.theme"
+  for size in "$SRC_THEME"/*/; do
+    size=$(basename "$size")
+    if [[ -L $SRC_THEME/$size ]]; then                       # mis. 16x16@2x -> 16x16: tiru symlink-nya
+      real=$(readlink "$SRC_THEME/$size"); [[ $real == */* ]] || ln -s "$real" "$tmp/$size"
+      [[ $real == */* ]] && srcp="$(readlink -f "$SRC_THEME/$size")/places" || continue
+    else srcp="$(readlink -f "$SRC_THEME/$size/places" 2>/dev/null)"; fi
+    [[ -d $srcp ]] || continue
+    for link in "$srcp"/folder*.svg "$srcp"/user*.svg; do
+      [[ -L $link ]] || continue
+      tgt=$(readlink "$link")
+      [[ $tgt =~ ^(folder|user)-blue(-[a-z0-9-]+)?\.svg$ ]] || continue
+      newt="${tgt/-blue/-$color}"
+      [[ -e $srcp/$newt ]] || continue
+      mkdir -p "$tmp/$size/places"; ln -sf "$srcp/$newt" "$tmp/$size/places/$(basename "$link")"; n=$((n + 1))
+    done
+  done
+  find "$tmp" -maxdepth 1 -xtype l -delete     # mis. 16x16@2x -> 16x16 bila 16x16 tidak punya varian warna
+  gtk-update-icon-cache -q -f -t "$tmp" 2>/dev/null || true
+  rm -rf "$DEST"; mv "$tmp" "$DEST"
+  mkdir -p "$(dirname "$STATE")"; echo "$color" >"$STATE"
+  echo "$NAME: $color folders ($n icons)"
+}
+
+activate() { # pakai tema ini; bila sudah aktif, ganti sebentar supaya aplikasi GTK memuat ulang ikon
+  command -v gsettings >/dev/null || return 0
+  local cur; cur=$(gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null | tr -d "'")
+  [[ $cur == "$NAME" ]] && { gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark'; sleep 0.3; }
+  gsettings set org.gnome.desktop.interface icon-theme "$NAME"
+}
+
+case "${1:-status}" in
+  apply)
+    hex="${2:-}"; [[ -z $hex && -f $HEXFILE ]] && hex=$(tr -d '[:space:]' <"$HEXFILE")
+    [[ $hex =~ ^#?[0-9a-fA-F]{6}$ ]] || { echo "no primary color (render the Noctalia template or pass #rrggbb); using blue" >&2; hex="#5294e2"; }
+    color=$(nearest "$hex") || exit 1
+    if [[ -f $STATE && $(<"$STATE") == "$color" && -d $DEST ]]; then echo "$NAME: already $color (primary $hex)"
+    else build "$color" || exit 1; activate; fi ;;
+  set)  [[ -n ${2:-} ]] || { echo "usage: hypr-folder-color set <color>" >&2; exit 2; }
+        build "$2" && activate ;;
+  pick) [[ ${2:-} =~ ^#?[0-9a-fA-F]{6}$ ]] || { echo "usage: hypr-folder-color pick #rrggbb" >&2; exit 2; }; nearest "$2" ;;
+  list) tr -s ' \n' '\n' <<<"$COLORS" | cut -d: -f1 ;;
+  status) printf 'theme=%s color=%s primary=%s icon-theme=%s\n' "$NAME" "$(cat "$STATE" 2>/dev/null || echo none)" \
+            "$(cat "$HEXFILE" 2>/dev/null | tr -d '[:space:]' || echo none)" \
+            "$(gsettings get org.gnome.desktop.interface icon-theme 2>/dev/null | tr -d "'")" ;;
+  *) echo "usage: hypr-folder-color apply [#hex] | set <color> | pick #hex | list | status" >&2; exit 2 ;;
+esac

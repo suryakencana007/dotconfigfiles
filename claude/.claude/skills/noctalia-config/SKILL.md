@@ -106,6 +106,13 @@ Indikator bar: saat merekam skrip menulis `~/.config/noctalia/zz-recording.toml`
 `rec` custom_button merah, klik = berhenti) lalu config-reload; dihapus saat selesai. `hypr-record indicator on|off`. Indikator update paket: `hypr-updates` menulis `~/.config/noctalia/zy-updates.toml` (custom_button "updates", glyph package, label = jumlah) dengan pola lane `end` yang sama; nama `zy-` sengaja sebelum `zz-recording` supaya REC yang sementara menang saat keduanya ada
 untuk uji tampilan. File runtime ini di luar repo. Catatan: pgrep -x gagal untuk nama proses >15 huruf.
 
+Template user `folder_color` (`folder-color.toml`): render `{{colors.primary.default.hex}}` ke
+`~/.cache/resi/folder-color-primary.txt`, post_hook `hypr-folder-color apply` memilih varian folder Papirus terdekat
+(rona diutamakan; `hypr-folder-color pick #hex` untuk cek) dan membangun `~/.local/share/icons/Papirus-Dark-Resi`
+(symlink ikon folder ke varian warna itu, mewarisi Papirus-Dark), lalu gsettings icon-theme. Diuji: wallpaper merah
+-> pink dalam 5 dtk. `templates-apply` merender tanpa hook: jalankan `hypr-folder-color apply` manual setelahnya.
+Night light: `[nightlight] enabled = true` di shell.toml, jadwal dari `[location]` (log `[gamma] target ...K`).
+
 ## Theme switcher
 
 `hypr-theme-carousel` (Python GTK4/libadwaita, Super+Shift+Ctrl+Space): carousel wallpaper geser ala omarchy-shell,

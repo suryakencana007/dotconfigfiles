@@ -21,7 +21,8 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 | claude | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` (per file, karena `~/.claude` punya isi lain) |
 | rofi | `.config/rofi/config.rasi`, `layout.rasi` (noctalia.rasi = render, ignored) | folder |
 | gtk | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (render noctalia.css/gtk.css tinggal di ~/.config, di luar repo) | `--no-folding` |
-| bin | `.local/share/applications/nwg-displays.desktop` (override entri launcher -> hypr-monitors), `.local/share/applications/{bssh,bvnc,avahi-discover,lstopo,qv4l2,qvidcap,xfce4-about,rofi,rofi-theme-selector}.desktop` (override `NoDisplay=true`: ID sama dengan entri /usr/share/applications, menyembunyikannya dari launcher Noctalia dan rofi drun; tambah entri lain dengan pola yang sama) + `.local/bin/*` skrip (hypr-keybindings, hypr-menu, hypr-theme, hypr-theme-carousel, hypr-record, hypr-pkg-install, hypr-tui, hypr-update-firmware, hypr-restart-shell, hypr-monitors, hypr-clamshell, hypr-lid-close, hypr-power, hypr-dev-env, hypr-updates, hypr-webapp, hypr-demo, hypr-docker-db, hypr-containers, rofi-toggle, resi-shell) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
+| brave | `.config/brave-flags.conf` (`--password-store=gnome-libsecret`) | file (masuk PKGS_FOLD) |
+| bin | `.local/share/applications/nwg-displays.desktop` (override entri launcher -> hypr-monitors), `.local/share/applications/{bssh,bvnc,avahi-discover,lstopo,qv4l2,qvidcap,xfce4-about,rofi,rofi-theme-selector}.desktop` (override `NoDisplay=true`: ID sama dengan entri /usr/share/applications, menyembunyikannya dari launcher Noctalia dan rofi drun; tambah entri lain dengan pola yang sama) + `.local/bin/*` skrip (hypr-keybindings, hypr-menu, hypr-theme, hypr-theme-carousel, hypr-record, hypr-pkg-install, hypr-tui, hypr-update-firmware, hypr-restart-shell, hypr-monitors, hypr-clamshell, hypr-lid-close, hypr-power, hypr-dev-env, hypr-updates, hypr-webapp, hypr-demo, hypr-folder-color, hypr-docker-db, hypr-containers, rofi-toggle, resi-shell) | `--no-folding` (supaya `~/.local/bin` tetap folder nyata untuk pipx dll) |
 
 ## Installer: resi-shell
 
@@ -57,3 +58,5 @@ sistem baru = tambah barisnya di daftar itu. `resi-shell doctor` = audit cepat (
    2026-09-24 installer lama memindahkan `tmux.conf` dan `alacritty.toml` ke `.pre-resi` di dalam repo saat dijalankan
    ulang (tmux jalan tanpa config, alacritty ditulis ulang Noctalia). Installer sekarang punya guard `in_repo`, dan
    `resi-shell doctor` memeriksa file kunci ada dan mengarah ke repo, serta baris `require("noctalia")` di hyprland.lua.
+9. Sistem (bukan stow): `resi/setup-keyring-pam.sh` menambah pam_gnome_keyring ke /etc/pam.d/greetd dan passwd
+   (idempotent, cadangan *.pre-resi), dijalankan installer lewat fungsi `system_extras` di install DAN update.

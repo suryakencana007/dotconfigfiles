@@ -1,0 +1,7 @@
+# Template user: warna ikon folder Papirus (Thunar, dialog file) ikut tema. Dirender ke ~/.cache/resi setiap tema
+# berubah, lalu hypr-folder-color memilih varian Papirus terdekat dan membangun tema ikon Papirus-Dark-Resi di home
+# (tanpa root). Hanya membangun ulang bila warna terpilih berganti.
+[theme.templates.user.folder_color]
+input_path  = "~/.config/noctalia/templates/folder-color.txt"
+output_path = "~/.cache/resi/folder-color-primary.txt"
+post_hook   = "~/.local/bin/hypr-folder-color apply"

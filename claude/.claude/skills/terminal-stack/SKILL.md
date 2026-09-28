@@ -46,6 +46,11 @@ untuk video/* dan audio/*. Uji decode: `mpv --length=2 --really-quiet --msg-leve
 - Sesi desktop login sebelum `chsh`, jadi `$SHELL` masih bash sampai re-login; alacritty dipaksa zsh.
 - `man` (man-db) terpasang; `hostname` tidak (paket inetutils), tidak masalah.
 
+## Keyring & SSH
+gnome-keyring dibuka PAM greetd saat login (keyring "login" = password login). Agen SSH = `gcr-ssh-agent.socket`
+(gcr-4, user unit), `SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/gcr/ssh` diset di hypr/envs.lua; cek `ssh-add -l`. Brave memakai
+keyring lewat `~/.config/brave-flags.conf`. Kunci ~/.ssh/id_ed25519 belum ber-passphrase: `ssh-keygen -p` bila ingin.
+
 ## Podman (container engine untuk Docker DB)
 `.zshrc` mengekspor `DOCKER_HOST` ke socket Podman user bila podman ada dan dockerd tidak, supaya docker-compose dan
 lazydocker memakai Podman. `podman-docker` memberi CLI `docker`. Service user: `podman.socket`, `podman-restart.service`.

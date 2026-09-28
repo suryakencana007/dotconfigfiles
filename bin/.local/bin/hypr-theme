@@ -18,7 +18,7 @@ thumb() { # $1 gambar -> path thumbnail (dibuat kalau belum ada / gambar lebih b
   local src="$1" name; name="$(basename "${src%.*}")"; local out="$CACHE/$name.jpg"
   mkdir -p "$CACHE"
   if [[ ! -f $out || $src -nt $out ]]; then
-    vipsthumbnail "$src" --size 400x250 --smartcrop attention -o "$out[Q=85]" 2>/dev/null || cp "$src" "$out"
+    vipsthumbnail "$src" --size 400x250 --smartcrop attention -o "${out}[Q=85]" 2>/dev/null || cp "$src" "$out"
   fi
   printf '%s' "$out"
 }

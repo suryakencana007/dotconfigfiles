@@ -49,3 +49,7 @@ do
     hl.env("NVD_BACKEND", "")
   end
 end
+
+-- Agen SSH dari gcr-4 (gcr-ssh-agent.socket, dinyalakan installer): kunci ber-passphrase cukup dibuka sekali per
+-- sesi dan bisa disimpan di keyring. Diset di sesi Hyprland supaya terminal, editor, dan git GUI memakainya.
+hl.env("SSH_AUTH_SOCK", (os.getenv("XDG_RUNTIME_DIR") or "") .. "/gcr/ssh")

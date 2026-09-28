@@ -9,6 +9,8 @@ sudo
 man-db
 man-pages
 zram-generator
+# linter skrip shell (resi-shell doctor memeriksa bin/ dan install.sh)
+shellcheck
 # --- shell & terminal ---
 zsh
 zsh-autosuggestions
@@ -49,6 +51,8 @@ noto-fonts
 noto-fonts-cjk
 noto-fonts-emoji
 # --- desktop: Hyprland + Noctalia + rofi ---
+# keyring (Secret Service): password Brave, Noctalia secret-store; dibuka otomatis saat login lewat PAM greetd
+gnome-keyring
 hyprland
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk

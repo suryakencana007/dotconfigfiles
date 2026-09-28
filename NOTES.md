@@ -185,6 +185,26 @@ Hyprland's window borders, and the login screen.
   played nothing. The package is now in `resi/packages.pacman`. Noctalia resolves the theme once at startup,
   so after installing it the shell must be restarted (Update > Process > Shell, or `hypr-restart-shell`);
   verified afterwards by a `noctalia-sound` output stream appearing in PipeWire when a notification fires.
+- **Battery charge limit goes through UPower, not sysfs** (2026-09-28). The first version wrote
+  `charge_control_end_threshold` directly (with a udev rule giving wheel write access). UPower 1.91 owns that file:
+  with its own limit disabled it rewrote 100 within seconds. `hypr-power charge-limit on|off` now calls
+  `EnableChargeThreshold` on the UPower battery over D-Bus (polkit `allow_active=yes`, no password); UPower
+  persists it in `/var/lib/upower/charging-threshold-status` and applies its thresholds (end 80, start 75). The
+  udev rule was removed. Open question on dynarch: the Toshiba firmware (`toshiba_acpi`, only 80/100 modes)
+  accepted 80 once and then kept reading 100 while on battery; check with the charger plugged in
+  (`hypr-power status` shows `firmware_end`).
+- **Keyring** (2026-09-28): gnome-keyring + `resi/setup-keyring-pam.sh` (auth/session lines in
+  /etc/pam.d/greetd, session after pam_systemd because auto_start needs XDG_RUNTIME_DIR; password line in
+  /etc/pam.d/passwd so a password change re-encrypts the keyring). Brave on Hyprland defaulted to the "basic"
+  store (static key), hence `brave-flags.conf`; Chromium still decrypts old v10 cookies. SSH agent from gcr-4
+  (`gcr-ssh-agent.socket`) with `SSH_AUTH_SOCK` from envs.lua.
+- **Folder colors** (2026-09-28): papirus-folders is AUR-only and needs root on every change, so
+  `hypr-folder-color` builds a user icon theme instead (symlinks to the chosen Papirus variant, inherits
+  Papirus-Dark; 567 links, ~2 MB). Plain Lab distance picked white/brown for Material 3 pastels, so the
+  score is hue difference first (+0.5 chroma, +0.3 lightness), neutrals only when the primary is nearly grey.
+- **Doctor lints scripts** (2026-09-28): `bash -n` and `shellcheck -S error` on bin/, install.sh and resi/*.sh,
+  plus Python parse and `luac -p`. Warnings are not failures: the remaining ones are deliberate (tilde in
+  menu actions run by sh later, word-split package lists, trap capturing `$!`).
 - **Caffeine in the bar (2026-09-28).** Noctalia's built-in `caffeine` widget (no options; outline cup when
   off, filled cup in the primary color when on) sits in the info island after clipboard. It takes a Wayland
   idle inhibitor plus a logind idle inhibit (`[logind] logind idle inhibit acquired` in the log). Verified that

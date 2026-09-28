@@ -116,13 +116,18 @@ style_items() { cat <<'ITEMS'
 󰒓  Noctalia settings	noctalia msg settings-toggle
 ITEMS
 }
-setup_items() { cat <<'ITEMS'
+setup_items() {
+  cat <<'ITEMS'
 󰕾  Audio	noctalia msg panel-toggle control-center audio
 󰛳  Network	noctalia msg panel-toggle control-center network
 󰂯  Bluetooth	noctalia msg panel-toggle control-center bluetooth
 󰍹  Display	noctalia msg settings-open display
 󰍺  Monitors (nwg-displays)	~/.local/bin/hypr-monitors
 󰹺  Power profile	menu:power_profile
+ITEMS
+  # Battery limit hanya bila UPower mendukung batas pengisian untuk baterai ini (ala "when" di Omarchy)
+  ~/.local/bin/hypr-power charge-limit >/dev/null 2>&1 && printf '%s\t%s\n' "󰂄  Battery limit" "menu:battery_limit"
+  cat <<'ITEMS'
 󰡨  Containers (podman-tui)	alacritty --class TUI.large -e ~/.local/bin/hypr-containers
 󰈮  Hyprland config	alacritty -e nvim ~/.config/hypr/hyprland.lua
 󰈙  Noctalia config	alacritty -e nvim ~/.config/noctalia/
@@ -205,6 +210,12 @@ ITEMS
 # Hibernate butuh swap non-zram sebesar image + hook resume + parameter resume= di kernel; lihat NOTES.md.
 can_power() { [[ $(busctl call org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager "Can$1" 2>/dev/null) == 's "yes"' ]]; }
 # Profil daya (power-profiles-daemon): ✓ pada yang aktif; pilihan diingat per sumber daya oleh hypr-power.
+# Batas pengisian baterai lewat UPower (hypr-power charge-limit); ✓ pada keadaan aktif.
+battery_limit_items() {
+  local st; st=$(~/.local/bin/hypr-power charge-limit 2>/dev/null)
+  printf '%s  %s%s\t%s\n' "󰂃" "On: stop at ${st#on }% (battery care)" "$([[ $st == on* ]] && echo "  ✓")" "~/.local/bin/hypr-power charge-limit on"
+  printf '%s  %s%s\t%s\n' "󰁹" "Off: charge to 100%" "$([[ $st == off ]] && echo "  ✓")" "~/.local/bin/hypr-power charge-limit off"
+}
 power_profile_items() {
   local active; active=$(powerprofilesctl get 2>/dev/null)
   local p glyph; for p in performance balanced power-saver; do
@@ -229,6 +240,7 @@ trigger() { run_menu "Trigger" trigger_items root; }
 toggle()  { run_menu "Toggle"  toggle_items  root; }
 style()   { run_menu "Style"   style_items   root; }
 setup()   { run_menu "Setup"   setup_items   root; }
+battery_limit() { run_menu "Battery limit" battery_limit_items setup; }
 power_profile() { run_menu "Power profile ($(~/.local/bin/hypr-power status 2>/dev/null | sed -n 's/^source=\([a-z]*\).*/\1/p'))" power_profile_items setup; }
 install() { run_menu "Install" install_items root; }
 development()        { run_menu "Development" development_items install; }

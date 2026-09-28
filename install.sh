@@ -12,7 +12,7 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CMD="install"; DRY=0; YES=0
 for a in "$@"; do case "$a" in install|update|doctor|packages) CMD="$a" ;; --dry-run|-n) DRY=1 ;; -y|--yes) YES=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "unknown argument: $a" >&2; exit 2 ;; esac; done
 
-PKGS_FOLD=(zsh git alacritty tmux nvim rofi mpv)            # stow biasa (folder boleh dilipat)
+PKGS_FOLD=(zsh git alacritty tmux nvim rofi mpv brave)            # stow biasa (folder boleh dilipat)
 PKGS_NOFOLD=(hypr noctalia claude bin gtk)                 # --no-folding: folder tetap nyata (overlay host & file render bisa masuk)
 HOST="$(cat /etc/hostname 2>/dev/null || hostname)"
 
@@ -182,6 +182,17 @@ services() {
   ok "greetd + services enabled"
 }
 
+# Keyring dan agen SSH. Idempotent; dipakai install dan update (mesin lama ikut dapat).
+system_extras() {
+  step "Keyring and SSH agent"
+  if [ -f /usr/lib/security/pam_gnome_keyring.so ]; then
+    run sudo bash "$REPO/resi/setup-keyring-pam.sh" && ok "gnome-keyring unlocks at login (PAM greetd)" || warn "keyring PAM setup failed"
+  else warn "gnome-keyring not installed; keyring PAM skipped"; fi
+  if [ -f /usr/lib/systemd/user/gcr-ssh-agent.socket ]; then
+    run systemctl --user enable --now gcr-ssh-agent.socket >/dev/null 2>&1 && ok "SSH agent (gcr-ssh-agent.socket)" || warn "could not enable gcr-ssh-agent.socket"
+  fi
+}
+
 gtk_theme() {
   step "GTK theme (adw-gtk3 + Papirus, dark mode)"
   # Warna GTK dirender template builtin Noctalia gtk3/gtk4 (aktifkan di Settings > Templates; tersimpan di state).
@@ -189,8 +200,13 @@ gtk_theme() {
   have gsettings || { warn "gsettings not found"; return; }
   run gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
   [ -d /usr/share/themes/adw-gtk3-dark ] && run gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
-  [ -d /usr/share/icons/Papirus-Dark ] && run gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark'
-  ok "GTK dark + Papirus"
+  # Ikon: Papirus-Dark-Resi (Papirus-Dark dengan warna folder mengikuti tema, dibangun hypr-folder-color di home);
+  # jatuh ke Papirus-Dark bila skripnya belum ada. Template Noctalia folder-color memperbaruinya tiap tema berubah.
+  if [ -d /usr/share/icons/Papirus-Dark ]; then
+    if [ -x "$HOME/.local/bin/hypr-folder-color" ]; then run "$HOME/.local/bin/hypr-folder-color" apply >/dev/null 2>&1 || true
+    else run gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark'; fi
+  fi
+  ok "GTK dark + Papirus (folder color follows the theme)"
   if have mpv; then
     for m in video/mp4 video/x-matroska video/webm video/quicktime video/x-msvideo audio/mpeg audio/flac audio/ogg audio/x-wav audio/mp4; do run xdg-mime default mpv.desktop "$m"; done
     ok "mpv set as default video/audio player"
@@ -263,6 +279,22 @@ doctor() {
   fi
   if have podman && systemctl --user is-enabled --quiet podman.service 2>/dev/null; then
     systemctl --user is-failed --quiet podman.service && { warn "podman.service failed (fix: hypr-docker-db api-setup)"; bad=1; } || ok "podman API service not failed"
+  fi
+  # Lint: syntax semua skrip bash di bin/ + installer (bash -n), error shellcheck bila terpasang, Python dan Lua.
+  local lint_bad="" f
+  for f in "$REPO"/bin/.local/bin/* "$REPO/install.sh" "$REPO"/resi/*.sh; do
+    [ -f "$f" ] || continue
+    case "$(head -1 "$f")" in
+      *bash*) bash -n "$f" 2>/dev/null || lint_bad+=" $(basename "$f")(syntax)"
+              if have shellcheck; then shellcheck -S error "$f" >/dev/null 2>&1 || lint_bad+=" $(basename "$f")(shellcheck)"; fi ;;
+      *python*) python3 -c "import ast,sys; ast.parse(open(sys.argv[1]).read())" "$f" 2>/dev/null || lint_bad+=" $(basename "$f")(python)" ;;
+    esac
+  done
+  if have luac5.4; then for f in "$REPO"/hypr/.config/hypr/*.lua "$REPO"/hypr/.config/hypr/bindings/*.lua; do luac5.4 -p "$f" 2>/dev/null || lint_bad+=" $(basename "$f")(lua)"; done; fi
+  [ -z "$lint_bad" ] && ok "scripts lint clean (bash -n$(have shellcheck && echo ', shellcheck'), python, lua)" || { warn "lint:$lint_bad"; bad=1; }
+  have shellcheck || warn "shellcheck not installed (resi-shell update installs it)"
+  if [ -f /usr/lib/security/pam_gnome_keyring.so ]; then
+    grep -q pam_gnome_keyring /etc/pam.d/greetd 2>/dev/null && ok "keyring unlocks at login (PAM greetd)" || { warn "keyring not in /etc/pam.d/greetd (run: resi-shell update)"; bad=1; }
   fi
   have zsh && { zsh -ic 'exit' >/dev/null 2>&1 && ok "zsh loads its config" || { warn "zsh error"; bad=1; }; }
   have tmux && { [ -f "$HOME/.config/tmux/tmux.conf" ] && tmux -L residoc -f "$HOME/.config/tmux/tmux.conf" new -d -s x 2>/dev/null && tmux -L residoc kill-server && ok "tmux config OK" || { warn "tmux config error/missing"; bad=1; }; }
@@ -366,7 +398,7 @@ update() {
   step "Upgrade AUR packages"; if run yay -Sua --noconfirm; then ok "AUR up to date"; else warn "AUR upgrade failed; continuing with the rest of the update"; fi
   update_cleanup
   if have mise; then step "Update mise tools"; if MISE_MINIMUM_RELEASE_AGE=0 run mise up; then ok "mise tools up to date"; else warn "mise up failed; continuing"; fi; fi
-  stow_all; tmux_plugins; nvim_plugins
+  stow_all; system_extras; tmux_plugins; nvim_plugins
   have hyprctl && run hyprctl reload >/dev/null; have noctalia && run noctalia msg config-reload >/dev/null 2>&1 || true
   # Podman API: drop-in podman.service terbaru (restart saat balapan login, API persisten) untuk mesin yang sudah punya Podman.
   if have podman && [ -x "$HOME/.local/bin/hypr-docker-db" ]; then
@@ -386,7 +418,7 @@ update() {
 install_all() {
   require_arch; sudo_keepalive
   pacman_packages; aur_helper; aur_packages; gpu_drivers
-  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; gtk_theme; greeter; finish
+  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; system_extras; gtk_theme; greeter; finish
 }
 
 case "$CMD" in

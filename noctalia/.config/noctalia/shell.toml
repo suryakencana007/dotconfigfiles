@@ -15,3 +15,9 @@ date_format = "%A, %d %B %Y"
 # Nama kota di-geocode oleh Noctalia; auto_locate tetap mati supaya tidak ada lookup lokasi dari IP.
 [location]
 address = "Jakarta"
+
+# Night light otomatis: layar menghangat mengikuti jadwal matahari [location] (fade 1 jam di sekitar terbenam/terbit).
+# Toggle manual tetap ada: menu Toggle > Nightlight, pintasan control center, `noctalia msg nightlight-toggle`.
+[nightlight]
+enabled = true
+temperature_night = 4000   # K; siang 6500 (bawaan)
