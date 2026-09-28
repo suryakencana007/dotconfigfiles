@@ -179,6 +179,12 @@ Hyprland's window borders, and the login screen.
   overrides in `bin/.local/share/applications/` (same desktop ID as the system file, like Omarchy does),
   which hides them in rofi drun too and travels to every machine. Noctalia's app index missed one of the
   newly created overrides until the shell was restarted (`hypr-restart-shell`).
+- **Noctalia 5.2 event sounds need `sound-theme-freedesktop`** (2026-09-28). 5.2 turned on `enable_sounds` with
+  `sound_theme = "freedesktop"`; without the theme package it logged "sound theme 'freedesktop' is missing
+  sound" for message-new-instant, audio-volume-change, power-plug, power-unplug and screen-capture, and
+  played nothing. The package is now in `resi/packages.pacman`. Noctalia resolves the theme once at startup,
+  so after installing it the shell must be restarted (Update > Process > Shell, or `hypr-restart-shell`);
+  verified afterwards by a `noctalia-sound` output stream appearing in PipeWire when a notification fires.
 - **Caffeine in the bar (2026-09-28).** Noctalia's built-in `caffeine` widget (no options; outline cup when
   off, filled cup in the primary color when on) sits in the info island after clipboard. It takes a Wayland
   idle inhibitor plus a logind idle inhibit (`[logind] logind idle inhibit acquired` in the log). Verified that

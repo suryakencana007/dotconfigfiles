@@ -80,6 +80,9 @@ pipewire-alsa
 pipewire-pulse
 pipewire-jack
 wireplumber
+# tema suara untuk efek suara Noctalia 5.2+ (notifikasi, volume, colok/cabut charger, screenshot);
+# tanpa ini log mencatat "sound theme 'freedesktop' is missing sound" dan tidak ada yang berbunyi
+sound-theme-freedesktop
 gst-plugin-pipewire
 networkmanager
 bluez
