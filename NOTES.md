@@ -179,6 +179,13 @@ Hyprland's window borders, and the login screen.
   overrides in `bin/.local/share/applications/` (same desktop ID as the system file, like Omarchy does),
   which hides them in rofi drun too and travels to every machine. Noctalia's app index missed one of the
   newly created overrides until the shell was restarted (`hypr-restart-shell`).
+- **Caffeine in the bar (2026-09-28).** Noctalia's built-in `caffeine` widget (no options; outline cup when
+  off, filled cup in the primary color when on) sits in the info island after clipboard. It takes a Wayland
+  idle inhibitor plus a logind idle inhibit (`[logind] logind idle inhibit acquired` in the log). Verified that
+  it really stops our idle behaviors: a temporary 8-second `action = "command"` behavior did not fire in
+  16 s with caffeine on and fired after 8 s with it off, so the 10 min lock and 11 min screen-off in
+  `idle.toml` are held off while it is on. Same toggle: menu Toggle > Caffeine, control-center shortcut,
+  `noctalia msg caffeine-toggle`.
 - **Bar look (2026-09-27): square frosted islands on the window grid.** The capsules were fully opaque, so
   the Hyprland layer blur on `noctalia-bar-*` (`ignore_alpha = 0.5`) never showed; they are now 0.78 opaque
   with an `outline` border. They were rounded pills over square windows (Hyprland `rounding = 0`, Noctalia
