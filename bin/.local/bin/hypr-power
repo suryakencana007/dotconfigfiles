@@ -7,7 +7,7 @@
 #   hypr-power profile [P]   pilih profil (performance|balanced|power-saver) untuk sumber daya SAAT INI dan ingat
 #                            (ala omarchy-powerprofiles-set: preferensi per ac/battery); tanpa P = cetak yang aktif
 #   hypr-power charge-limit [on|off] batas pengisian baterai lewat UPower (EnableChargeThreshold; ambang UPower,
-#                            mis. berhenti di 80%, mulai lagi di 75%). Tanpa argumen = cetak keadaan. UPower menyimpannya
+#                            mis. berhenti di 80%, mulai lagi di 75%). Tanpa argumen = cetak "on 80" / "off 80". UPower menyimpannya
 #                            di /var/lib/upower dan menerapkannya sendiri (juga setelah reboot); polkit mengizinkan sesi
 #                            aktif tanpa password. JANGAN menulis sysfs langsung: UPower mengembalikannya ke 100.
 # Uji: HYPR_POWER_FORCE=ac|battery memaksa sumber daya. Tidak butuh root: ppd lewat D-Bus, sisanya user.
@@ -42,7 +42,8 @@ charge_prop() { busctl get-property org.freedesktop.UPower "$1" org.freedesktop.
 charge_limit_state() { # cetak "on 80" / "off" / kosong bila tidak didukung
   local b; b=$(upower_battery) || return 1
   [[ $(charge_prop "$b" ChargeThresholdSupported) == true ]] || return 1
-  if [[ $(charge_prop "$b" ChargeThresholdEnabled) == true ]]; then echo "on $(charge_prop "$b" ChargeEndThreshold)"; else echo off; fi; }
+  local end; end=$(charge_prop "$b" ChargeEndThreshold)
+  if [[ $(charge_prop "$b" ChargeThresholdEnabled) == true ]]; then echo "on $end"; else echo "off $end"; fi; }
 internal_monitor() { hyprctl monitors all -j 2>/dev/null | jq -r '.[] | select(.name | test("^(eDP|LVDS|DSI)-")).name' | head -1; }
 notify() { command -v noctalia >/dev/null && noctalia msg notification-show "$1" "$2" >/dev/null 2>&1 || true; }
 
@@ -96,7 +97,13 @@ case "${1:-status}" in
     busctl call org.freedesktop.UPower "$b" org.freedesktop.UPower.Device EnableChargeThreshold b "$want" || { echo "UPower refused (polkit?)" >&2; exit 1; }
     st=$(charge_limit_state)
     if [[ $st == on* ]]; then notify "Battery charge limit" "on: stops charging at ${st#on }% to preserve the battery"; else notify "Battery charge limit" "off: charges to 100%"; fi
-    echo "charge limit $st" ;;
+    echo "charge limit $st"
+    # Beberapa firmware menerima tulisan tapi tetap di 100 (Dynabook G83/HS, 2026-09-28): beri tahu, jangan diam-diam
+    sleep 2; fw=$(cat /sys/class/power_supply/BAT*/charge_control_end_threshold 2>/dev/null | head -1)
+    if [[ $st == on* && -n $fw && $fw != "${st#on }" ]]; then
+      echo "warning: the battery firmware still reports ${fw}%; this laptop ignores the charge limit" >&2
+      notify "Battery charge limit" "the firmware ignores it on this laptop (still ${fw}%)"
+    fi ;;
   profile)
     command -v powerprofilesctl >/dev/null || { echo "power-profiles-daemon is required" >&2; exit 1; }
     if [[ -z ${2:-} ]]; then powerprofilesctl get; exit 0; fi

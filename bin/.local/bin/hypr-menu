@@ -212,9 +212,13 @@ can_power() { [[ $(busctl call org.freedesktop.login1 /org/freedesktop/login1 or
 # Profil daya (power-profiles-daemon): ✓ pada yang aktif; pilihan diingat per sumber daya oleh hypr-power.
 # Batas pengisian baterai lewat UPower (hypr-power charge-limit); ✓ pada keadaan aktif.
 battery_limit_items() {
-  local st; st=$(~/.local/bin/hypr-power charge-limit 2>/dev/null)
-  printf '%s  %s%s\t%s\n' "󰂃" "On: stop at ${st#on }% (battery care)" "$([[ $st == on* ]] && echo "  ✓")" "~/.local/bin/hypr-power charge-limit on"
-  printf '%s  %s%s\t%s\n' "󰁹" "Off: charge to 100%" "$([[ $st == off ]] && echo "  ✓")" "~/.local/bin/hypr-power charge-limit off"
+  local st fw note=""; st=$(~/.local/bin/hypr-power charge-limit 2>/dev/null)
+  fw=$(cat /sys/class/power_supply/BAT*/charge_control_end_threshold 2>/dev/null | head -1)
+  # Firmware yang mengabaikan batas (mis. Dynabook G83/HS: tetap 100 walau UPower/root menulis 80) diberi tahu di menu
+  local end="${st#* }"                                   # "on 80" / "off 80" -> 80
+  [[ $st == on* && -n $fw && $fw != "$end" ]] && note=" - firmware ignores it (${fw}%)"
+  printf '%s  %s%s\t%s\n' "󰂃" "On: stop at ${end}% (battery care)$note" "$([[ $st == on* ]] && echo "  ✓")" "~/.local/bin/hypr-power charge-limit on"
+  printf '%s  %s%s\t%s\n' "󰁹" "Off: charge to 100%" "$([[ $st == off* ]] && echo "  ✓")" "~/.local/bin/hypr-power charge-limit off"
 }
 power_profile_items() {
   local active; active=$(powerprofilesctl get 2>/dev/null)

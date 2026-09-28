@@ -190,9 +190,11 @@ Hyprland's window borders, and the login screen.
   with its own limit disabled it rewrote 100 within seconds. `hypr-power charge-limit on|off` now calls
   `EnableChargeThreshold` on the UPower battery over D-Bus (polkit `allow_active=yes`, no password); UPower
   persists it in `/var/lib/upower/charging-threshold-status` and applies its thresholds (end 80, start 75). The
-  udev rule was removed. Open question on dynarch: the Toshiba firmware (`toshiba_acpi`, only 80/100 modes)
-  accepted 80 once and then kept reading 100 while on battery; check with the charger plugged in
-  (`hypr-power status` shows `firmware_end`).
+  udev rule was removed. **dynarch's firmware ignores it**: with the charger connected, UPower's limit on, and
+  even `echo 80 > charge_control_end_threshold` as root (rc 0), the Dynabook G83/HS reads back 100 at once and
+  stays there, although `toshiba_acpi` advertises battery-charge-mode. The limit is left off there; menu and
+  `hypr-power charge-limit on` now warn when the firmware value does not follow. Use the BIOS or Dynabook's
+  Windows utility if the 80% mode is wanted on this laptop.
 - **Keyring** (2026-09-28): gnome-keyring + `resi/setup-keyring-pam.sh` (auth/session lines in
   /etc/pam.d/greetd, session after pam_systemd because auto_start needs XDG_RUNTIME_DIR; password line in
   /etc/pam.d/passwd so a password change re-encrypts the keyring). Brave on Hyprland defaulted to the "basic"
