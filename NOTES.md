@@ -339,6 +339,11 @@ through the GUI instead, or removed from `settings.toml` by hand. `resi-shell do
   with exit 1 on 2026-09-28 because Noctalia had rotated its log (`noctalia.log` -> `noctalia.log.1` at 1 MB)
   and the greeter-sync line was only in the old file. Append `|| true` to such substitutions, and read both
   Noctalia log files when looking for past events.
+- **Package lists: comments used to be allowed only on their own line.** A trailing comment
+  (`ttf-jetbrains-mono-nerd   # font utama: ...`, added 2026-09-28) was passed to pacman word by word
+  ("target not found: #, font, utama:..."); pacman aborted the whole transaction, so the system upgrade did
+  not happen and `set -e` stopped `resi-shell update` before AUR, restow and reloads. `pkglist` now strips
+  anything after `#` and surrounding whitespace, so both comment styles are safe in `resi/packages.*`.
 - **A machine without `linux-headers` installed *before* `nvidia-open-dkms`** will have DKMS fail
   to build the kernel module, and the system silently falls back to `simpledrm`/software rendering
   — Hyprland still starts, just fully unaccelerated, with no error dialog pointing at the cause.

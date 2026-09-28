@@ -22,7 +22,9 @@ ok()   { printf '%s  ✓ %s%s\n' "$c_ok" "$*" "$c_off"; }
 warn() { printf '%s  ! %s%s\n' "$c_warn" "$*" "$c_off"; }
 run()  { if (( DRY )); then printf '  [dry] %s\n' "$*"; else "$@"; fi; }
 have() { command -v "$1" >/dev/null 2>&1; }
-pkglist() { grep -vE '^\s*#|^\s*$' "$1"; }
+# Satu paket per baris; komentar boleh di baris sendiri atau di belakang nama paket ("pkg  # alasan").
+# Komentar di belakang dulu ikut terkirim ke pacman sebagai nama paket dan membatalkan update (2026-09-28).
+pkglist() { sed -E 's/#.*//; s/^[[:space:]]+//; s/[[:space:]]+$//' "$1" | grep -v '^$' || true; }
 in_repo() { case "$(realpath -m "$1" 2>/dev/null)" in "$REPO"/*) return 0 ;; *) return 1 ;; esac; }   # path (setelah symlink) ada di dalam repo?
 
 # Kotak pesan + pertanyaan Yes/No (ala gum di Omarchy, tapi memakai fzf yang sudah ada; fallback y/N).
