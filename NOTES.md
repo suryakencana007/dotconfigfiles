@@ -198,6 +198,12 @@ Hyprland's window borders, and the login screen.
   /etc/pam.d/passwd so a password change re-encrypts the keyring). Brave on Hyprland defaulted to the "basic"
   store (static key), hence `brave-flags.conf`; Chromium still decrypts old v10 cookies. SSH agent from gcr-4
   (`gcr-ssh-agent.socket`) with `SSH_AUTH_SOCK` from envs.lua.
+  First login after installing it is special: the socket-activated daemon starts a few ms before PAM creates
+  `login.keyring`, so the `login` collection never registers on D-Bus (only `session`), every store asks to
+  create a keyring, and the gcr prompt window may not appear. From the next login on the file exists and PAM
+  just unlocks it (seen 2026-09-28: "gkr-pam: unlocked login keyring"; restarting the daemon showed the
+  collection). The greeter screen also goes through `/etc/pam.d/greetd` as user `greeter` (home `/`), which
+  started a useless keyring daemon; `pam_succeed_if ... user = greeter` now skips the keyring lines for it.
 - **Folder colors** (2026-09-28): papirus-folders is AUR-only and needs root on every change, so
   `hypr-folder-color` builds a user icon theme instead (symlinks to the chosen Papirus variant, inherits
   Papirus-Dark; 567 links, ~2 MB). Plain Lab distance picked white/brown for Material 3 pastels, so the

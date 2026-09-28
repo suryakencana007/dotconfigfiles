@@ -19,7 +19,22 @@ insert_after() { # $1 file, $2 regex baris jangkar, $3 baris baru. Tanpa jangkar
   echo "  $f: + $line"
 }
 
+insert_before() { # $1 file, $2 regex baris sasaran, $3 baris baru yang harus tepat di atasnya
+  local f="$1" pat="$2" line="$3" tmp
+  [[ -f $f ]] || return 0
+  grep -qF -- "$line" "$f" && return 0
+  [[ -f $f.pre-resi ]] || cp -p "$f" "$f.pre-resi"
+  tmp=$(mktemp)
+  awk -v pat="$pat" -v line="$line" '$0 ~ pat && !done { print line; done = 1 } { print }' "$f" >"$tmp"
+  cat "$tmp" >"$f"; rm -f "$tmp"
+  echo "  $f: + $line"
+}
+
 insert_after /etc/pam.d/greetd '^auth[[:space:]]+include'    'auth       optional     pam_gnome_keyring.so'
 # session setelah pam_systemd: auto_start butuh XDG_RUNTIME_DIR yang disiapkan pam_systemd
 insert_after /etc/pam.d/greetd '^session[[:space:]]+required[[:space:]]+pam_systemd' 'session    optional     pam_gnome_keyring.so auto_start'
+# Layar greeter juga lewat PAM greetd sebagai user "greeter" (tanpa home): tanpa ini daemon keyring ikut jalan untuknya
+# dan gagal ("unable to create keyring dir: /.local/share/keyrings"). success=1 = lewati satu baris berikutnya.
+insert_before /etc/pam.d/greetd 'pam_gnome_keyring[.]so$'           'auth       [success=1 default=ignore] pam_succeed_if.so quiet user = greeter'
+insert_before /etc/pam.d/greetd 'pam_gnome_keyring[.]so auto_start' 'session    [success=1 default=ignore] pam_succeed_if.so quiet user = greeter'
 insert_after /etc/pam.d/passwd '^password[[:space:]]+include' 'password   optional     pam_gnome_keyring.so'
