@@ -22,6 +22,10 @@ pinned = [ "Alacritty", "brave-browser", "thunar", "dev.zed.Zed", "spotify" ]
 [shell.panel]
 launcher_placement = "floating"   # kartu melayang di tengah layar (default, ditulis eksplisit)
 launcher_position = "center"
+# Control center (ikon di pulau power, Super+S): melayang di pojok kanan atas, dekat ikonnya di bar.
+# Disamakan dengan dynarch (dulu hanya ada di state GUI dynarch, tidak tersinkron).
+control_center_placement = "floating"
+control_center_position  = "top_right"
 list_item_background = false      # tanpa blok latar per baris; hanya baris terpilih yang disorot (seperti rofi)
 # solid | soft | glass. glass = panel melayang (launcher, clipboard, polkit) dan kartu tembus sedikit, diblur
 # layer rule Hyprland; efeknya halus di atas jendela gelap, lebih terlihat di atas wallpaper.
