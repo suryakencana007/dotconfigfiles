@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Deteksi "drift" Noctalia: kunci di state GUI (~/.local/state/noctalia/settings.toml, selalu menang) yang juga
+# didefinisikan di config repo (~/.config/noctalia/*.toml) dengan NILAI BERBEDA. Kunci seperti itu membuat mesin berbeda satu sama lain
+# walau repo sama (kasus kapsul jam dan posisi control center). Kunci state yang TIDAK ada di repo dibiarkan: itu
+# memang per mesin (tema, wallpaper, plugin, dsb.).
+#   noctalia-drift          daftar kunci yang menimpa repo; exit 1 bila ada
+#   noctalia-drift --fix    hapus kunci itu dari state (backup dulu), lalu noctalia msg config-reload
+set -uo pipefail
+
+STATE="$HOME/.local/state/noctalia/settings.toml"
+CONF_DIR="$HOME/.config/noctalia"
+[[ -f $STATE ]] || { echo "no Noctalia GUI state"; exit 0; }
+
+# "section<TAB>key<TAB>value" untuk kunci skalar di tabel biasa [x.y] (array table [[...]] dilewati), komentar dibuang.
+entries() { awk '/^\[\[/{sec=""; next} /^\[/{sec=$0; next}
+  sec!="" && /^[A-Za-z0-9_]+[ \t]*=/ { k=$0; sub(/[ \t]*=.*/,"",k); v=$0; sub(/^[^=]*=[ \t]*/,"",v)
+    if (v !~ /^"/) sub(/[ \t]*#.*/,"",v); sub(/[ \t]+$/,"",v); print sec "\t" k "\t" v }' "$@"; }
+
+# Drift = kunci ada di keduanya DAN nilainya berbeda (angka dibandingkan dengan toleransi 1e-4: GUI menyimpan
+# 0.99999998 untuk 1.0). Kunci bernilai sama hanya duplikat, tidak membuat mesin berbeda.
+mapfile -t drift < <(awk -F'\t' '
+  function num(x) { return x ~ /^-?[0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)?$/ }
+  NR==FNR { repo[$1 FS $2] = $3; next }
+  ($1 FS $2) in repo { r = repo[$1 FS $2]; v = $3
+    same = (num(r) && num(v)) ? ((r - v) ^ 2 < 1e-8) : (r == v)
+    if (!same) print $1 "\t" $2 "\t" v "\t" r }' <(entries "$CONF_DIR"/*.toml 2>/dev/null) <(entries "$STATE"))
+
+if [[ ${1:-} != --fix ]]; then
+  (( ${#drift[@]} )) || { echo "no drift: GUI state overrides nothing defined in the repo"; exit 0; }
+  echo "GUI state overrides ${#drift[@]} repo key(s) with a different value (state -> repo):"
+  printf '%s\n' "${drift[@]}" | awk -F'\t' '{ printf "  %s %s = %s  (repo: %s)\n", $1, $2, $3, $4 }'
+  echo "Fix with: noctalia-drift --fix   (removes them from $STATE, backup kept)"
+  exit 1
+fi
+
+(( ${#drift[@]} )) || { echo "no drift to fix"; exit 0; }
+backup="$STATE.bak-$(date +%Y%m%d-%H%M%S)"; cp "$STATE" "$backup"
+tmp=$(mktemp)
+awk -v list="$(printf '%s\n' "${drift[@]}")" '
+  BEGIN { n = split(list, L, "\n"); for (i = 1; i <= n; i++) if (L[i] != "") { split(L[i], f, "\t"); drop[f[1] "\t" f[2]] = 1 } }
+  /^\[\[/ { sec = ""; print; next }
+  /^\[/   { sec = $0; print; next }
+  sec != "" && /^[A-Za-z0-9_]+[ \t]*=/ { k = $0; sub(/[ \t]*=.*/, "", k); if ((sec "\t" k) in drop) next }
+  { print }' "$STATE" >"$tmp" && mv "$tmp" "$STATE"
+printf '%s\n' "${drift[@]}" | awk -F'\t' '{ printf "Removed from GUI state: %s %s (was %s, repo %s)\n", $1, $2, $3, $4 }'
+echo "Backup: $backup"
+command -v noctalia >/dev/null && noctalia msg config-reload >/dev/null 2>&1 && echo "Noctalia config reloaded."

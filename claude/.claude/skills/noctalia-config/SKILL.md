@@ -152,3 +152,10 @@ layout/scale monitor -> `/var/lib/noctalia-greeter/sync.toml` (root-only). `gree
 
 Log: `~/.cache/noctalia/noctalia.log` (`grep -vE '\[DBG\]'`). Status: `noctalia msg status`.
 Layer di Hyprland: `hyprctl layers | grep noctalia`. Restart: `pkill noctalia; setsid -f noctalia`.
+
+## Drift antar mesin (state GUI vs repo)
+Kunci di `~/.local/state/noctalia/settings.toml` selalu menang atas repo. Bila nilainya berbeda dari repo, mesin
+berbeda walau repo sama (pernah: kapsul jam, posisi control center, bentuk bar). `noctalia-drift` mendaftar kunci
+state yang menimpa kunci repo dengan nilai lain (angka dengan toleransi 1e-4); `noctalia-drift --fix` menghapusnya
+dari state (backup `settings.toml.bak-<waktu>`) lalu config-reload. `resi-shell doctor` menjalankannya.
+Setelah mengubah sesuatu lewat GUI yang seharusnya berlaku di semua mesin: salin nilainya ke toml repo, lalu `--fix`.

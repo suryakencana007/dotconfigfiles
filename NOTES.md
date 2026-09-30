@@ -308,6 +308,16 @@ Hyprland's window borders, and the login screen.
   and `resi-shell doctor` warns when podman.service is failed. Window class `TUI.large` (1100x760) is a generic rule for
   big terminal UIs. `resi-shell doctor` now checks that the hypr-power and hypr-updates watchers
   are alive when run inside a Hyprland session.
+- **Noctalia drift** (2026-09-30). Settings changed in Noctalia's GUI land in
+  `~/.local/state/noctalia/settings.toml`, which always wins over the repo TOML and is not synced,
+  so the two laptops drifted three times (clock capsule, control-center position, bar shape).
+  `bin/noctalia-drift` compares state against `~/.config/noctalia/*.toml` and reports keys present
+  in both with different values (numbers compared with 1e-4 tolerance, since the GUI stores
+  0.99999998 for 1.0); `--fix` removes them from state with a timestamped backup and reloads.
+  `resi-shell doctor` warns on drift. On legionarch the fix dropped four bar keys (thickness 27,
+  margin_edge 8, padding 8, capsule_opacity 0.81) in favour of the repo's dynarch-made values, plus
+  capsule_padding/radius which the repo leaves at defaults, and a lock-screen widget order that still
+  listed the temporary `resi-test` headless output from the clamshell test.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one
