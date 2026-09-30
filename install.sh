@@ -310,7 +310,9 @@ doctor() {
   for f in tmux/.config/tmux/tmux.conf alacritty/.config/alacritty/alacritty.toml; do
     [ -e "$REPO/$f.pre-resi" ] && { warn "leftover $f.pre-resi in the repo (old installer bug; compare, then delete)"; bad=1; }
   done
-  have hyprctl && { e=$(hyprctl configerrors 2>/dev/null); [ -z "$e" ] && ok "hyprland configerrors empty" || { warn "hyprland: $e"; bad=1; }; }
+  if have hyprctl && hyprctl version >/dev/null 2>&1; then   # configerrors hanya bisa ditanya ke sesi yang hidup; via SSH/TTY dilewati, bukan problem
+    e=$(hyprctl configerrors 2>/dev/null); [ -z "$e" ] && ok "hyprland configerrors empty" || { warn "hyprland: $e"; bad=1; }
+  elif have hyprctl; then printf "  - hyprland not running in this session; configerrors check skipped\n"; fi
   have noctalia && { noctalia config validate >/dev/null 2>&1 && ok "noctalia config valid" || { warn "noctalia config invalid"; bad=1; }; }
   have rofi && { rofi -dump-theme >/dev/null 2>&1 && ok "rofi theme valid" || { warn "rofi theme broken"; bad=1; }; }
   [ -x "$HOME/.local/bin/hypr-menu" ] && { HYPR_MENU_CHECK=1 "$HOME/.local/bin/hypr-menu" >/dev/null 2>&1 && ok "hypr-menu: all submenu targets resolve" || { warn "hypr-menu: a submenu points to a missing function (HYPR_MENU_CHECK=1 hypr-menu)"; bad=1; }; }
