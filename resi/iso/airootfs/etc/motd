@@ -1,0 +1,7 @@
+
+  resi-shell installer (Arch Linux live)
+  --------------------------------------
+  The guided installer starts automatically on tty1: resi-iso-install
+  Wi-Fi first? Run: iwctl   (station wlan0 connect "SSID"), then: resi-iso-install
+  Log: /root/resi-install.log
+

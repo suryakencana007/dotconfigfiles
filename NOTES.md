@@ -318,6 +318,19 @@ Hyprland's window borders, and the login screen.
   margin_edge 8, padding 8, capsule_opacity 0.81) in favour of the repo's dynarch-made values, plus
   capsule_padding/radius which the repo leaves at defaults, and a lock-screen widget order that still
   listed the temporary `resi-test` headless output from the clamshell test.
+- **Installer ISO** (`resi/iso/`, 2026-09-30, user asked for it "like Ryoku/Omarchy"). Studied both:
+  Ryoku = mkarchiso + its own Go TUI + signed `[ryoku]` repo + full offline closure (too much to
+  maintain for one person); Omarchy = archiso + archinstall + a configurator that emits archinstall
+  JSON, then its installer runs in the chroot. We follow Omarchy: the JSON template (GPT, EFI 1 GiB,
+  Btrfs `@ @home @log @pkg` with compress=zstd, Limine, optional LUKS, zram) is copied from their
+  configurator; the wizard is bash + fzf; the repo's committed HEAD is baked into the ISO and
+  `resi-shell install --chroot` runs as the user with a temporary NOPASSWD sudoers drop-in.
+  `install.sh` grew `--chroot` (implies -y; chsh via sudo; git identity from RESI_GIT_NAME/EMAIL or
+  skipped; gtk_theme deferred) and `first-login` (autostart.lua runs it every start, no-op without
+  the marker `~/.local/state/resi/first-login-pending`). Online only for now; an offline mirror
+  (AUR built at build time, vendored oh-my-zsh/p10k/TPM) is the next step if the ISO is shared.
+  Not yet tested end to end: `mkarchiso` needs root and the VM run needs qemu, so the first real
+  build and install are the user's to run; the wizard and JSON were verified in dry-run mode.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one

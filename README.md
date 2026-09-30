@@ -65,6 +65,10 @@ things that were tried and rejected.
 
 ## Installation
 
+Two ways: the **installer ISO** (fresh machine, Btrfs + Limine like Omarchy; see
+[`resi/iso/README.md`](resi/iso/README.md)) or the **script on an existing Arch install** below.
+
+
 ### Walkthrough for a fresh machine
 
 Every step below is a command you can paste. Lines starting with `#` are comments.
@@ -153,6 +157,8 @@ Once installed, the same script is available as `resi-shell`:
 |---|---|
 | `resi-shell install [--dry-run]` | full setup, safe to repeat |
 | `resi-shell update [-y]` | asks for confirmation (skip with `-y`), then `git pull` (uncommitted local changes are stashed and re-applied after asking; a diverged branch or a conflict stops with instructions), full pacman + AUR upgrade, `mise up` when mise is installed, orphan removal (asked first) and package-cache pruning (`paccache -rk2`), new packages, restow, plugin updates, reload Hyprland and Noctalia; offers a reboot when the kernel or Hyprland was replaced. Output is logged to `~/.cache/resi-shell-update.log` |
+| `resi-shell install --chroot` | used by the ISO: runs inside `arch-chroot` as the new user (temporary passwordless sudo); steps that need a live session are deferred |
+| `resi-shell first-login` | run by Hyprland at every start, does the deferred steps once (GTK theme, greeter sync) when the marker from a chroot install exists |
 | `resi-shell doctor` | health check: script lint (`bash -n`, shellcheck errors, Python, Lua), keyring in PAM, stow packages, broken links, background watchers (battery mode, update indicator), key files present and pointing into the repo, Noctalia include in `hyprland.lua`, Hyprland/Noctalia/rofi/tmux/zsh configs, repo state, Noctalia GUI settings that override the repo config (`noctalia-drift`) |
 | `resi-shell packages` | print the package lists |
 

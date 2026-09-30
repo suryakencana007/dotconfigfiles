@@ -6,11 +6,15 @@
 #   ./install.sh update [-y]                git pull + paket + stow + plugin (-y: tanpa konfirmasi)
 #   ./install.sh doctor                     cek kondisi tanpa mengubah apa pun
 #   ./install.sh packages                   daftar paket
+#   ./install.sh install --chroot           dari installer ISO: di dalam arch-chroot sebagai user target (sudo tanpa
+#                                           password lewat drop-in sementara); langkah yang butuh sesi desktop ditunda
+#   ./install.sh first-login                dijalankan autostart.lua: selesaikan langkah yang ditunda, sekali saja
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CMD="install"; DRY=0; YES=0
-for a in "$@"; do case "$a" in install|update|doctor|packages) CMD="$a" ;; --dry-run|-n) DRY=1 ;; -y|--yes) YES=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "unknown argument: $a" >&2; exit 2 ;; esac; done
+CMD="install"; DRY=0; YES=0; CHROOT=0
+FIRST_LOGIN_MARKER="$HOME/.local/state/resi/first-login-pending"
+for a in "$@"; do case "$a" in install|update|doctor|packages|first-login) CMD="$a" ;; --dry-run|-n) DRY=1 ;; -y|--yes) YES=1 ;; --chroot) CHROOT=1; YES=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "unknown argument: $a" >&2; exit 2 ;; esac; done
 
 PKGS_FOLD=(zsh git alacritty tmux nvim rofi mpv brave)            # stow biasa (folder boleh dilipat)
 PKGS_NOFOLD=(hypr noctalia claude bin gtk)                 # --no-folding: folder tetap nyata (overlay host & file render bisa masuk)
@@ -119,7 +123,9 @@ shell_setup() {
   run ln -sfn /usr/share/zsh/plugins/zsh-syntax-highlighting "$omz/custom/plugins/zsh-syntax-highlighting"
   # .zshrc bawaan oh-my-zsh akan digantikan symlink stow; singkirkan kalau bukan symlink
   [ -f "$HOME/.zshrc" ] && [ ! -L "$HOME/.zshrc" ] && ! in_repo "$HOME/.zshrc" && run mv "$HOME/.zshrc" "$HOME/.zshrc.pre-resi"
-  if [ "$(getent passwd "$USER" | cut -d: -f7)" != "/usr/bin/zsh" ]; then run chsh -s /usr/bin/zsh; fi
+  if [ "$(getent passwd "$USER" | cut -d: -f7)" != "/usr/bin/zsh" ]; then
+    if (( CHROOT )); then run sudo chsh -s /usr/bin/zsh "$USER"; else run chsh -s /usr/bin/zsh; fi
+  fi
   ok "shell ready"
 }
 
@@ -167,7 +173,11 @@ dirs_and_git() {
   step "Folders & git identity"
   run mkdir -p "$HOME/Pictures/Screenshots" "$HOME/Pictures/Wallpapers"
   if [ -z "$(git config --global user.name 2>/dev/null)" ] && [ -z "$(git -C "$REPO" config user.name 2>/dev/null)" ]; then
-    if (( DRY )); then echo "  [dry] would ask for git name & email"; else
+    if (( DRY )); then echo "  [dry] would ask for git name & email"
+    elif [ -n "${RESI_GIT_NAME:-}" ] && [ -n "${RESI_GIT_EMAIL:-}" ]; then
+      git -C "$REPO" config user.name "$RESI_GIT_NAME"; git -C "$REPO" config user.email "$RESI_GIT_EMAIL"
+    elif (( CHROOT )) || [ ! -t 0 ]; then echo "  git identity skipped (set it later: git config user.name/user.email in $REPO)"
+    else
       read -rp "  git user.name : " gname; read -rp "  git user.email: " gmail
       git -C "$REPO" config user.name "$gname"; git -C "$REPO" config user.email "$gmail"
     fi
@@ -195,6 +205,7 @@ system_extras() {
 
 gtk_theme() {
   step "GTK theme (adw-gtk3 + Papirus, dark mode)"
+  if (( CHROOT )); then run mkdir -p "$(dirname "$FIRST_LOGIN_MARKER")"; run touch "$FIRST_LOGIN_MARKER"; warn "deferred to first login (needs a session D-Bus for gsettings)"; return; fi
   # Warna GTK dirender template builtin Noctalia gtk3/gtk4 (aktifkan di Settings > Templates; tersimpan di state).
   # Hook Noctalia yang menyetel gtk-theme adw-gtk3-dark saat tema berganti; ikon dan mode gelap diset di sini.
   have gsettings || { warn "gsettings not found"; return; }
@@ -231,6 +242,7 @@ greeter() {
 
 finish() {
   step "Done"
+  (( CHROOT )) && echo "  Installed from the ISO: GTK theme and greeter sync finish automatically at first login (resi-shell first-login)."
   cat <<MSG
   Manual steps that cannot be automated:
    - Reboot (GPU drivers, greetd, login shell).
@@ -420,6 +432,18 @@ update() {
   update_restart
 }
 
+# Dari autostart.lua tiap start Hyprland; hanya bekerja bila penanda ada (ditulis install --chroot).
+first_login() {
+  [ -f "$FIRST_LOGIN_MARKER" ] || exit 0
+  CHROOT=0
+  gtk_theme
+  if have noctalia; then for _ in $(seq 1 30); do noctalia msg status >/dev/null 2>&1 && break; sleep 1; done; fi
+  greeter
+  rm -f "$FIRST_LOGIN_MARKER"
+  have noctalia && noctalia msg notification-show "resi-shell" "First-login setup finished (GTK theme, greeter sync)." >/dev/null 2>&1 || true
+  ok "first-login setup done"
+}
+
 install_all() {
   require_arch; sudo_keepalive
   pacman_packages; aur_helper; aur_packages; gpu_drivers
@@ -435,4 +459,5 @@ case "$CMD" in
             update ;;
   doctor)   doctor ;;
   packages) echo "# pacman"; pkglist "$REPO/resi/packages.pacman"; echo "# aur"; pkglist "$REPO/resi/packages.aur" ;;
+  first-login) first_login ;;
 esac

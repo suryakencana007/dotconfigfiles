@@ -4,6 +4,7 @@
 #   resi-shell update [-y]           konfirmasi, git pull, stow ulang, paket baru, plugin (-y: tanpa tanya)
 #   resi-shell doctor                cek kondisi (stow, config, program)
 #   resi-shell packages              tampilkan daftar paket
+#   resi-shell first-login           selesaikan langkah pasca-install ISO (otomatis dari autostart.lua)
 REPO="${RESI_REPO:-$HOME/dotconfigfiles}"
 [ -x "$REPO/install.sh" ] || { echo "repo not found at $REPO (set RESI_REPO)" >&2; exit 1; }
 exec "$REPO/install.sh" "$@"

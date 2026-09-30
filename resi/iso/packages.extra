@@ -1,0 +1,11 @@
+# Paket tambahan untuk live ISO installer (ditambahkan ke packages.x86_64 releng)
+archinstall
+git
+btrfs-progs
+limine
+efibootmgr
+dosfstools
+fzf
+jq
+openssl
+terminus-font

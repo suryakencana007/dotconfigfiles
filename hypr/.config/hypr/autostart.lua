@@ -12,6 +12,9 @@ hl.on("hyprland.start", function()
   -- Indikator update paket di bar: cek repo + AUR tiap 6 jam (hypr-updates).
   hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-updates watch")
 
+  -- Instalasi dari ISO: selesaikan langkah yang ditunda (tema GTK, sinkron greeter) sekali; no-op bila tidak ada penanda.
+  hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/resi-shell first-login")
+
   -- Automount USB (Thunar sudah bisa mount manual lewat gvfs).
   if o.cmd_present("udiskie") then
     hl.exec_cmd("udiskie --automount --no-notify --no-tray")

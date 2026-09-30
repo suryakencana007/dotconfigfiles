@@ -60,3 +60,10 @@ sistem baru = tambah barisnya di daftar itu. `resi-shell doctor` = audit cepat (
    `resi-shell doctor` memeriksa file kunci ada dan mengarah ke repo, serta baris `require("noctalia")` di hyprland.lua.
 9. Sistem (bukan stow): `resi/setup-keyring-pam.sh` menambah pam_gnome_keyring ke /etc/pam.d/greetd dan passwd
    (idempotent, cadangan *.pre-resi), dijalankan installer lewat fungsi `system_extras` di install DAN update.
+
+## ISO installer (resi/iso/)
+`resi/iso/build.sh` (root, paket archiso) menyusun profil releng + overlay `airootfs/` + tarball HEAD repo ->
+`resi/iso/out/*.iso`. Installer live `resi-iso-install` (fzf) -> JSON archinstall (Btrfs @/@home/@log/@pkg, Limine,
+LUKS opsional) -> `archinstall --silent` -> `resi-iso-postinstall` (repo ke home user, snapper, `install.sh install
+--chroot`). `install.sh --chroot` menunda gsettings/greeter ke `first-login` (dipanggil autostart.lua). Uji tanpa disk:
+`RESI_ISO_DRY=1`. `work/` dan `out/` di-gitignore. Commit dulu sebelum build: yang dibakar adalah HEAD.

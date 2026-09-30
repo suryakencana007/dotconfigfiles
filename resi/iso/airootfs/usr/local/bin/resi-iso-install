@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# Installer live resi-shell (berjalan sebagai root di ISO). Alur ala Omarchy ISO:
+#   1. tanya disk, hostname, user, password, enkripsi, zona waktu, keyboard (fzf/read)
+#   2. tulis user_configuration.json + user_credentials.json untuk archinstall
+#      (GPT: EFI 1 GiB di /boot, sisanya Btrfs subvolume @ @home @log @pkg, compress=zstd, Limine, LUKS opsional)
+#   3. archinstall --silent memasang Arch + paket resi + user (wheel/sudo) + NetworkManager + zram
+#   4. resi-iso-postinstall: repo dotfiles ke home user, snapper, resi-shell install --chroot
+#   RESI_ISO_DRY=1  hanya menulis JSON ke /root/resi/ dan berhenti (untuk uji tanpa menyentuh disk)
+set -euo pipefail
+
+RESI_SHARE=/usr/share/resi-shell
+STATE=/root/resi; mkdir -p "$STATE"
+LOG=/root/resi-install.log
+exec > >(tee -a "$LOG") 2>&1
+
+c=$'\e[1;34m'; g=$'\e[1;32m'; y=$'\e[1;33m'; r=$'\e[1;31m'; o=$'\e[0m'
+step() { printf '\n%s==> %s%s\n' "$c" "$*" "$o"; }
+die()  { printf '%s%s%s\n' "$r" "$*" "$o" >&2; exit 1; }
+box()  { local w=0 l; for l in "$@"; do (( ${#l} > w )) && w=${#l}; done; local bar; bar="$(printf '─%.0s' $(seq 1 $((w + 4))))"
+         printf '┌%s┐\n' "$bar"; for l in "$@"; do printf '│  %s%*s  │\n' "$l" $((w - ${#l})) ''; done; printf '└%s┘\n' "$bar"; }
+confirm() { local a; read -rp "$1 [y/N] " a; [[ $a =~ ^[Yy] ]]; }
+ask() { local v; read -rp "$1" v; printf '%s' "${v:-$2}"; }
+
+clear; box "resi-shell installer" "" "Arch Linux + Hyprland + Noctalia, Btrfs + Limine, like Omarchy." \
+  "Version: $(sed -n 's/^version=//p' $RESI_SHARE/version 2>/dev/null || echo dev)" "" \
+  "This ERASES the disk you choose. Ctrl+C aborts at any time before the last confirmation."
+echo
+
+# ---- jaringan (installer online: paket diunduh dari mirror Arch) ----
+step "Network"
+if ! curl -fsI --max-time 8 https://archlinux.org >/dev/null 2>&1; then
+  echo "No internet connection. For Wi-Fi run:  iwctl   then:  station wlan0 scan; station wlan0 connect \"SSID\""
+  echo "Then run resi-iso-install again."; exit 1
+fi
+echo "online"
+
+# ---- pilihan ----
+step "Target disk"
+disk=$(lsblk -dpno NAME,SIZE,MODEL,TYPE | awk '$NF=="disk" && $1 !~ /loop|sr[0-9]|zram/' | fzf --prompt='Install to disk > ' --height=12 --layout=reverse | awk '{print $1}')
+[[ -n $disk && -b $disk ]] || die "no disk selected"
+disk_bytes=$(blockdev --getsize64 "$disk")
+(( disk_bytes > 20 * 1024 * 1024 * 1024 )) || die "disk smaller than 20 GiB"
+
+step "System"
+hostname=$(ask "Hostname [resi]: " resi)
+username=$(ask "Username: " ""); [[ $username =~ ^[a-z_][a-z0-9_-]*$ ]] || die "invalid username"
+while true; do read -rsp "Password for $username: " p1; echo; read -rsp "Repeat password: " p2; echo; [[ -n $p1 && $p1 == "$p2" ]] && break; echo "Passwords differ or empty, try again."; done
+encrypt=0; luks_pw=""
+if confirm "Encrypt the disk with LUKS (asks a passphrase at every boot)?"; then
+  encrypt=1; while true; do read -rsp "Disk passphrase: " e1; echo; read -rsp "Repeat passphrase: " e2; echo; [[ -n $e1 && $e1 == "$e2" ]] && { luks_pw=$e1; break; }; echo "Passphrases differ or empty, try again."; done
+fi
+timezone=$(timedatectl list-timezones | fzf --prompt='Timezone > ' --height=15 --layout=reverse --query="${RESI_TZ_DEFAULT:-Asia/Jakarta}" --select-1 || true)
+[[ -n $timezone ]] || timezone="Asia/Jakarta"
+keyboard=$(ask "Keyboard layout [us]: " us)
+git_name=$(ask "Git name (optional, for the dotfiles repo): " ""); git_email=$(ask "Git email (optional): " "")
+
+# ---- tata letak partisi (byte, sejajar 1 MiB) ----
+mib=$((1024 * 1024)); boot_start=$mib; boot_size=$((1024 * mib)); main_start=$((boot_start + boot_size))
+main_size=$(( (disk_bytes - main_start - mib) / mib * mib ))
+enc_pw_hash=$(openssl passwd -6 "$p1")
+
+# ---- JSON archinstall ----
+pkgs=$(sed -E 's/#.*//; s/^[[:space:]]+//; s/[[:space:]]+$//' "$RESI_SHARE/dotconfigfiles.packages" | grep -v '^$' | jq -R . | jq -s .)
+if (( encrypt )); then
+  disk_encryption=$(jq -n '{encryption_type:"luks", lvm_volumes:[], iter_time:2000, partitions:["8c2c2b92-1070-455d-b76a-56263bab24aa"]}')
+else disk_encryption=null; fi
+jq -n --arg disk "$disk" --argjson bstart "$boot_start" --argjson bsize "$boot_size" --argjson mstart "$main_start" --argjson msize "$main_size" \
+      --arg hostname "$hostname" --arg tz "$timezone" --arg kb "$keyboard" --argjson pkgs "$pkgs" --argjson enc "$disk_encryption" '
+{
+  "archinstall-language": "English",
+  "app_config": null, "auth_config": {},
+  "audio_config": { "audio": "pipewire" },
+  "bootloader_config": { "bootloader": "Limine", "uki": false, "removable": false },
+  "custom_commands": [],
+  "disk_config": ({
+    "config_type": "default_layout",
+    "device_modifications": [ { "device": $disk, "wipe": true, "partitions": [
+      { "btrfs": [], "dev_path": null, "flags": ["boot","esp"], "fs_type": "fat32", "mount_options": [], "mountpoint": "/boot",
+        "obj_id": "ea21d3f2-82bb-49cc-ab5d-6f81ae94e18d", "status": "create", "type": "primary",
+        "size":  { "sector_size": {"unit":"B","value":512}, "unit":"B", "value": $bsize },
+        "start": { "sector_size": {"unit":"B","value":512}, "unit":"B", "value": $bstart } },
+      { "btrfs": [ {"mountpoint":"/","name":"@"}, {"mountpoint":"/home","name":"@home"},
+                   {"mountpoint":"/var/log","name":"@log"}, {"mountpoint":"/var/cache/pacman/pkg","name":"@pkg"} ],
+        "dev_path": null, "flags": [], "fs_type": "btrfs", "mount_options": ["compress=zstd"], "mountpoint": null,
+        "obj_id": "8c2c2b92-1070-455d-b76a-56263bab24aa", "status": "create", "type": "primary",
+        "size":  { "sector_size": {"unit":"B","value":512}, "unit":"B", "value": $msize },
+        "start": { "sector_size": {"unit":"B","value":512}, "unit":"B", "value": $mstart } } ] } ]
+  } + (if $enc == null then {} else { "disk_encryption": $enc } end)),
+  "hostname": $hostname,
+  "kernels": ["linux"],
+  "locale_config": { "kb_layout": $kb, "sys_enc": "UTF-8", "sys_lang": "en_US.UTF-8" },
+  "mirror_config": { "custom_repositories": [], "custom_servers": [], "mirror_regions": {}, "optional_repositories": [] },
+  "network_config": { "type": "nm" },
+  "ntp": true, "parallel_downloads": 8, "script": null,
+  "packages": (["base-devel","git","zsh","btrfs-progs","limine","snapper","sudo","networkmanager"] + $pkgs | unique),
+  "services": [],
+  "swap": true,
+  "timezone": $tz
+}' >"$STATE/user_configuration.json"
+jq -n --arg u "$username" --arg h "$enc_pw_hash" --arg e "$luks_pw" '
+  { users: [ { username: $u, enc_password: $h, sudo: true } ] } + (if $e == "" then {} else { encryption_password: $e } end)' >"$STATE/user_credentials.json"
+chmod 600 "$STATE"/*.json
+printf 'disk=%s\nusername=%s\nencrypt=%s\ngit_name=%s\ngit_email=%s\n' "$disk" "$username" "$encrypt" "$git_name" "$git_email" >"$STATE/answers"
+
+echo; box "Summary" "" "Disk:      $disk ($(numfmt --to=iec "$disk_bytes")) - WILL BE ERASED" "Layout:    EFI 1 GiB + Btrfs (@ @home @log @pkg, zstd)$( ((encrypt)) && echo ', LUKS')" \
+  "Boot:      Limine, zram swap" "Hostname:  $hostname" "User:      $username (sudo)" "Timezone:  $timezone   Keyboard: $keyboard"
+echo; [[ ${RESI_ISO_DRY:-} == 1 ]] && { echo "dry run: JSON written to $STATE"; exit 0; }
+confirm "Erase $disk and install now?" || die "aborted"
+
+# ---- archinstall ----
+step "Installing Arch Linux (archinstall)"
+archinstall --config "$STATE/user_configuration.json" --creds "$STATE/user_credentials.json" --silent || die "archinstall failed (see $LOG)"
+
+# ---- pasca-install: resi-shell di dalam chroot ----
+step "Installing resi-shell into the new system"
+resi-iso-postinstall "$STATE" || die "post-install failed (see $LOG)"
+
+step "Finished"
+box "Installation complete." "" "Remove the USB stick and reboot. Log in as $username; the desktop finishes its first-login setup by itself."
+confirm "Reboot now?" && systemctl reboot
