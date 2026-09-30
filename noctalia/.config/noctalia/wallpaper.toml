@@ -1,0 +1,6 @@
+# Direktori wallpaper Noctalia. Dipakai panel wallpaper (Super+Ctrl+Space), carousel hypr-theme, dan plugin Wallhaven
+# (unduhan masuk ke sini bila download_dir plugin kosong). Sebelumnya hanya di state GUI, sehingga mesin baru/ISO
+# memakai bawaan Noctalia dan unduhan Wallhaven tersebar ke folder lain. resi-shell install membuat foldernya.
+# Wallpaper yang sedang dipilih per monitor tetap di state (per mesin).
+[wallpaper]
+directory = "~/Pictures/Wallpapers"

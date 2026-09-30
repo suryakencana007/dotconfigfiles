@@ -276,7 +276,7 @@ doctor() {
   local broken; broken=$(find "$HOME" -maxdepth 6 -xtype l -lname '*dotconfigfiles*' 2>/dev/null); [ -z "$broken" ] && ok "no broken symlinks" || { warn "broken symlinks: $broken"; bad=1; }
   # file kunci harus ada DAN berasal dari repo (stow -n diam saja kalau file sumbernya hilang dari repo)
   for f in .zshrc .p10k.zsh .gitconfig .config/alacritty/alacritty.toml .config/tmux/tmux.conf .config/hypr/hyprland.lua \
-           .config/hypr/monitors.lua .config/noctalia/shell.toml .config/noctalia/theme.toml .config/noctalia/plugins.toml .config/nvim/init.lua .config/rofi/config.rasi .config/mpv/mpv.conf \
+           .config/hypr/monitors.lua .config/noctalia/shell.toml .config/noctalia/theme.toml .config/noctalia/plugins.toml .config/noctalia/wallpaper.toml .config/nvim/init.lua .config/rofi/config.rasi .config/mpv/mpv.conf \
            .local/bin/resi-shell .local/bin/hypr-menu .local/bin/hypr-tui .local/share/applications/nwg-displays.desktop; do
     if [ ! -e "$HOME/$f" ]; then warn "missing: ~/$f"; bad=1
     elif ! in_repo "$HOME/$f"; then warn "not from the repo (plain file replaced the symlink): ~/$f"; bad=1; fi

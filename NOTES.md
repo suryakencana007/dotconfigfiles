@@ -355,6 +355,9 @@ Hyprland's window borders, and the login screen.
   `noctalia-drift` is the check that it stayed there. Same treatment for the Wallhaven plugin:
   `noctalia/plugins.toml` declares it and `noctalia_plugins()` (first-login / install) runs
   `noctalia msg plugins enable noctalia/wallhaven`, which downloads it from the official source.
+  And the wallpaper directory (`noctalia/wallpaper.toml`, `~/Pictures/Wallpapers`): the Wallhaven
+  plugin saves into Noctalia's `wallpaper.directory` when its own `download_dir` is empty, and on a
+  fresh machine that setting was Noctalia's default, so downloads landed elsewhere.
 - **Mouse selection copies to the clipboard** (2026-09-30), like the Claude Code terminal: alacritty
   `selection.save_to_clipboard = true`, and because tmux owns the mouse, tmux.conf pipes selections
   to `wl-copy` on drag end / double-click (word) / triple-click (line) with `copy-pipe-no-clear` so
