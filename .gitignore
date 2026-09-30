@@ -26,3 +26,4 @@ __pycache__/
 nvim/.config/nvim/lazy-lock.json
 resi/iso/work/
 resi/iso/out/
+resi/iso/cache/

@@ -6,6 +6,8 @@
 #   ./install.sh update [-y]                git pull + paket + stow + plugin (-y: tanpa konfirmasi)
 #   ./install.sh doctor                     cek kondisi tanpa mengubah apa pun
 #   ./install.sh packages                   daftar paket
+#   ./install.sh install --offline          paket (termasuk AUR) dari repo "resi-offline" di pacman.conf, clone git dari
+#                                           $RESI_VENDOR (/usr/share/resi-shell/vendor); plugin nvim/tmux menyusul saat update
 #   ./install.sh install --chroot           dari installer ISO: di dalam arch-chroot sebagai user target (sudo tanpa
 #                                           password lewat drop-in sementara); langkah yang butuh sesi desktop ditunda
 #   ./install.sh first-login                dijalankan autostart.lua: selesaikan langkah yang ditunda, sekali saja
@@ -13,9 +15,11 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CMD="install"; DRY=0; YES=0; CHROOT=0; FORCE=0
+CMD="install"; DRY=0; YES=0; CHROOT=0; FORCE=0; OFFLINE=0
 FIRST_LOGIN_MARKER="$HOME/.local/state/resi/first-login-pending"
-for a in "$@"; do case "$a" in install|update|doctor|packages|first-login|lockscreen-layout) CMD="$a" ;; --force) FORCE=1 ;; --dry-run|-n) DRY=1 ;; -y|--yes) YES=1 ;; --chroot) CHROOT=1; YES=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "unknown argument: $a" >&2; exit 2 ;; esac; done
+OFFLINE_MARKER="$HOME/.local/state/resi/offline-install-pending"     # plugin nvim/tmux belum diambil (install offline)
+RESI_VENDOR="${RESI_VENDOR:-/usr/share/resi-shell/vendor}"           # tarball vendor dari ISO offline (bind-mount saat chroot)
+for a in "$@"; do case "$a" in install|update|doctor|packages|first-login|lockscreen-layout) CMD="$a" ;; --force) FORCE=1 ;; --dry-run|-n) DRY=1 ;; -y|--yes) YES=1 ;; --chroot) CHROOT=1; YES=1 ;; --offline) OFFLINE=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "unknown argument: $a" >&2; exit 2 ;; esac; done
 
 PKGS_FOLD=(zsh git alacritty tmux nvim rofi mpv brave)            # stow biasa (folder boleh dilipat)
 PKGS_NOFOLD=(hypr noctalia claude bin gtk)                 # --no-folding: folder tetap nyata (overlay host & file render bisa masuk)
@@ -66,15 +70,19 @@ sudo_keepalive() {
 }
 
 # ---------- tahap ----------
+# --offline (installer ISO): semua paket, termasuk AUR yang sudah dibangun, datang dari repo pacman "resi-offline"
+# yang dipasang installer di pacman.conf target; jadi tanpa -Sy/-Syu, tanpa makepkg, tanpa jaringan.
 pacman_packages() {
   step "Official repo packages ($(pkglist "$REPO/resi/packages.pacman" | wc -l))"
-  run sudo pacman -Syu --needed --noconfirm $(pkglist "$REPO/resi/packages.pacman")
+  if (( OFFLINE )); then run sudo pacman -S --needed --noconfirm $(pkglist "$REPO/resi/packages.pacman")
+  else run sudo pacman -Syu --needed --noconfirm $(pkglist "$REPO/resi/packages.pacman"); fi
   ok "pacman done"
 }
 
 aur_helper() {
   step "AUR helper (yay)"
   if have yay; then ok "yay already installed"; return; fi
+  if (( OFFLINE )); then run sudo pacman -S --needed --noconfirm yay-bin && ok "yay installed from the offline repo" || warn "yay-bin not in the offline repo; run resi-shell update online later"; return; fi
   local tmp; tmp="$(mktemp -d)"
   run git clone --depth=1 https://aur.archlinux.org/yay-bin.git "$tmp/yay-bin"
   (( DRY )) || (cd "$tmp/yay-bin" && makepkg -si --noconfirm)
@@ -83,8 +91,21 @@ aur_helper() {
 
 aur_packages() {
   step "AUR packages ($(pkglist "$REPO/resi/packages.aur" | wc -l))"
+  if (( OFFLINE )); then run sudo pacman -S --needed --noconfirm $(pkglist "$REPO/resi/packages.aur") && ok "AUR packages installed from the offline repo" || warn "some AUR packages are missing from the offline repo; resi-shell update installs them online"; return; fi
   run yay -S --needed --noconfirm $(pkglist "$REPO/resi/packages.aur")
   ok "AUR done"
+}
+
+# Clone git, atau tarball vendor dari ISO offline ($RESI_VENDOR/<name>.tar berisi folder <name>/).
+clone_or_vendor() { # $1 nama tarball, $2 url, $3 tujuan
+  [ -d "$3" ] && return 0
+  if [ -f "${RESI_VENDOR:-/nonexistent}/$1.tar" ]; then
+    run mkdir -p "$(dirname "$3")"; (( DRY )) || { tar -xf "$RESI_VENDOR/$1.tar" -C "$(dirname "$3")" && [ "$(dirname "$3")/$1" = "$3" ] || mv "$(dirname "$3")/$1" "$3"; }
+    echo "  $1: from the offline vendor bundle"
+  else
+    (( OFFLINE )) && { warn "$1: no vendor bundle and offline; skipped (resi-shell update fetches it)"; return 0; }
+    run git clone --depth=1 "$2" "$3"
+  fi
 }
 
 gpu_drivers() {
@@ -116,9 +137,9 @@ gpu_drivers() {
 shell_setup() {
   step "zsh, oh-my-zsh, powerlevel10k, fzf-tab"
   local omz="$HOME/.oh-my-zsh"
-  [ -d "$omz" ] || run git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$omz"
-  [ -d "$omz/custom/themes/powerlevel10k" ] || run git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$omz/custom/themes/powerlevel10k"
-  [ -d "$omz/custom/plugins/fzf-tab" ] || run git clone --depth=1 https://github.com/Aloxaf/fzf-tab "$omz/custom/plugins/fzf-tab"
+  clone_or_vendor ohmyzsh https://github.com/ohmyzsh/ohmyzsh.git "$omz"
+  clone_or_vendor powerlevel10k https://github.com/romkatv/powerlevel10k.git "$omz/custom/themes/powerlevel10k"
+  clone_or_vendor fzf-tab https://github.com/Aloxaf/fzf-tab "$omz/custom/plugins/fzf-tab"
   run mkdir -p "$omz/custom/plugins"
   run ln -sfn /usr/share/zsh/plugins/zsh-autosuggestions "$omz/custom/plugins/zsh-autosuggestions"
   run ln -sfn /usr/share/zsh/plugins/zsh-syntax-highlighting "$omz/custom/plugins/zsh-syntax-highlighting"
@@ -159,13 +180,15 @@ stow_all() {
 tmux_plugins() {
   step "tmux: TPM + plugins"
   local tpm="$HOME/.config/tmux/plugins/tpm"
-  [ -d "$tpm" ] || run git clone --depth=1 https://github.com/tmux-plugins/tpm "$tpm"
-  (( DRY )) || "$tpm/bin/install_plugins" >/dev/null 2>&1 || true
+  clone_or_vendor tpm https://github.com/tmux-plugins/tpm "$tpm"
+  if (( OFFLINE )); then warn "tmux plugins (resurrect/continuum) need GitHub; deferred to the first resi-shell update"; return 0; fi
+  (( DRY )) || { [ -x "$tpm/bin/install_plugins" ] && "$tpm/bin/install_plugins" >/dev/null 2>&1 || true; }
   ok "tmux ready"
 }
 
 nvim_plugins() {
   step "neovim: plugins (lazy.nvim headless)"
+  if (( OFFLINE )); then warn "nvim plugins need GitHub; deferred to the first resi-shell update (nvim also installs them on first start)"; return 0; fi
   (( DRY )) || GIT_TERMINAL_PROMPT=0 timeout 300 nvim --headless "+Lazy! install" +qa >/dev/null 2>&1 || warn "lazy install failed/timed out; open nvim and run :Lazy sync"
   ok "nvim ready"
 }
@@ -249,6 +272,7 @@ greeter_sync() {
 finish() {
   step "Done"
   (( CHROOT )) && echo "  Installed from the ISO: GTK theme and greeter sync finish automatically at first login (resi-shell first-login)."
+  (( OFFLINE )) && echo "  Offline install: nvim/tmux plugins and the Wallhaven plugin are fetched by the first 'resi-shell update' with internet."
   cat <<MSG
   Manual steps that cannot be automated:
    - Reboot (GPU drivers, greetd, login shell).
@@ -417,6 +441,7 @@ git_sync() {
 update() {
   update_confirm; sudo_keepalive
   git_sync
+  [ -f "$OFFLINE_MARKER" ] && { step "Finishing the offline install (plugins that need GitHub)"; rm -f "$OFFLINE_MARKER"; }
   step "Update"
   pacman_packages; aur_packages
   step "Upgrade AUR packages"; if run yay -Sua --noconfirm; then ok "AUR up to date"; else warn "AUR upgrade failed; continuing with the rest of the update"; fi
@@ -521,6 +546,7 @@ install_all() {
   pacman_packages; aur_helper; aur_packages; gpu_drivers
   shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; system_extras; gtk_theme; greeter
   (( CHROOT )) || { lockscreen_layout; noctalia_plugins; }   # di chroot tidak ada Hyprland/Noctalia: first-login yang mengerjakannya
+  if (( OFFLINE )); then run mkdir -p "$(dirname "$OFFLINE_MARKER")"; run touch "$OFFLINE_MARKER"; fi   # plugin nvim/tmux menyusul saat online
   finish
 }
 

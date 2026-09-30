@@ -4,7 +4,8 @@
 set -euo pipefail
 STATE="${1:-/root/resi}"; MNT=/mnt; RESI_SHARE=/usr/share/resi-shell
 # shellcheck disable=SC1091
-source "$STATE/answers"        # disk username encrypt git_name git_email
+source "$STATE/answers"        # disk username encrypt git_name git_email offline
+offline="${offline:-0}"
 
 info() { printf '\e[1;32m  › %s\e[0m\n' "$*"; }
 
@@ -37,17 +38,34 @@ arch-chroot "$MNT" runuser -u "$username" -- bash -c "cd $home/dotconfigfiles &&
 info "snapper: snapshots of / (Btrfs)"
 arch-chroot "$MNT" bash -c 'snapper --no-dbus -c root create-config / 2>/dev/null || true; systemctl enable snapper-timeline.timer snapper-cleanup.timer >/dev/null 2>&1 || true'
 
-info "running resi-shell install --chroot as $username"
+# Mirror offline: bind-mount /usr/share/resi-shell (repo + vendor) ke target; selama chroot, pacman.conf target HANYA
+# repo lokal (db core/extra tidak ada di target tanpa jaringan). Sesudahnya pacman.conf bersih dikembalikan.
+extra=(); if (( offline )); then
+  info "offline mirror: binding $RESI_SHARE into the target"
+  mkdir -p "$MNT$RESI_SHARE"; mount --bind "$RESI_SHARE" "$MNT$RESI_SHARE"
+  printf '[options]\nArchitecture = auto\nHoldPkg = pacman glibc\nCheckSpace\nParallelDownloads = 8\nSigLevel = Required DatabaseOptional\nLocalFileSigLevel = Optional\n\n[resi-offline]\nSigLevel = Optional TrustAll\nServer = file://%s/repo\n' "$RESI_SHARE" >"$MNT/etc/pacman.conf"
+  arch-chroot "$MNT" pacman -Sy >/dev/null 2>&1 || true
+  extra=(--offline)
+fi
+info "running resi-shell install --chroot ${extra[*]} as $username"
 echo "$username ALL=(ALL) NOPASSWD: ALL" >"$MNT/etc/sudoers.d/99-resi-install"; chmod 440 "$MNT/etc/sudoers.d/99-resi-install"
 cp -L /etc/resolv.conf "$MNT/etc/resolv.conf" 2>/dev/null || true
 set +e
-arch-chroot "$MNT" runuser -u "$username" -- env HOME="$home" USER="$username" RESI_GIT_NAME="$git_name" RESI_GIT_EMAIL="$git_email" \
-  bash "$home/dotconfigfiles/install.sh" install --chroot
+arch-chroot "$MNT" runuser -u "$username" -- env HOME="$home" USER="$username" RESI_GIT_NAME="$git_name" RESI_GIT_EMAIL="$git_email" RESI_VENDOR="$RESI_SHARE/vendor" \
+  bash "$home/dotconfigfiles/install.sh" install --chroot "${extra[@]}"
 rc=$?
 set -e
 rm -f "$MNT/etc/sudoers.d/99-resi-install"
+if (( offline )); then
+  umount "$MNT$RESI_SHARE" 2>/dev/null || true; rmdir "$MNT$RESI_SHARE" 2>/dev/null || true
+  install -m644 "$RESI_SHARE/pacman.conf.clean" "$MNT/etc/pacman.conf"        # kembali ke repo Arch biasa
+  rm -f "$MNT/var/lib/pacman/sync/resi-offline.db"
+  info "target pacman.conf restored (Arch mirrors); first 'resi-shell update' with internet fetches nvim/tmux plugins"
+fi
 (( rc == 0 )) || { echo "resi-shell install --chroot exited with $rc" >&2; exit $rc; }
 
+# log installer ikut ke sistem baru (ISO live hilang setelah reboot)
+cp /root/resi-install.log "$MNT/var/log/resi-install.log" 2>/dev/null || true
 info "unmounting"
 umount -R "$MNT" || true
 (( encrypt )) && cryptsetup close resi_root 2>/dev/null || true

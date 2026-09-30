@@ -3,6 +3,9 @@
 # Butuh: paket archiso, root (mkarchiso), ~10 GB ruang kerja, internet (mkarchiso mengunduh paket live).
 #   sudo resi/iso/build.sh              -> resi/iso/out/resi-shell-<tanggal>-x86_64.iso (+ SHA256SUMS)
 #   RESI_ISO_WORK=/path  RESI_ISO_OUT=/path   ubah lokasi kerja/keluaran
+#   RESI_ISO_ONLINE=1                       lewati mirror offline (ISO kecil, instalasi butuh internet)
+# Mirror offline (offline-repo.sh, dijalankan sebagai user pemanggil sudo karena makepkg menolak root) di-cache di
+# resi/iso/cache/ dan dibakar ke /usr/share/resi-shell/{repo,vendor}. Instalasi dari ISO offline tidak butuh internet.
 # Isi ISO: live Arch (releng) + archinstall + repo dotfiles ini (git archive HEAD) di /usr/share/resi-shell/.
 # Installer live (resi-iso-install) berjalan otomatis di tty1 setelah boot.
 set -euo pipefail
@@ -31,12 +34,35 @@ sort -u -o "$PROFILE/packages.x86_64" "$PROFILE/packages.x86_64"
 # Overlay airootfs: installer, motd, autostart di tty1
 cp -a "$HERE/airootfs"/. "$PROFILE/airootfs"/
 
-# Repo dotfiles dibakar ke ISO (commit HEAD; perubahan belum di-commit tidak ikut)
+# Repo dotfiles dibakar ke ISO: file TERLACAK apa adanya di working tree (perubahan belum di-commit ikut, supaya
+# skrip installer di airootfs dan install.sh di tarball selalu satu versi). File untracked tidak ikut: commit/add dulu.
 mkdir -p "$PROFILE/airootfs/usr/share/resi-shell"
-git -C "$REPO" archive --format=tar --prefix=dotconfigfiles/ HEAD >"$PROFILE/airootfs/usr/share/resi-shell/dotconfigfiles.tar"
+dirty=""; [[ -z $(git -C "$REPO" status --porcelain --untracked-files=no) ]] || dirty="-dirty"
+untracked=$(git -C "$REPO" ls-files --others --exclude-standard | grep -v "^resi/iso/" || true)
+[[ -z $untracked ]] || { echo "==> WARNING: untracked files are NOT baked into the ISO (git add them first):"; printf '    %s\n' $untracked; }
+( cd "$REPO" && git ls-files -z | tar --null -T - -cf "$PROFILE/airootfs/usr/share/resi-shell/dotconfigfiles.tar" --transform 's|^|dotconfigfiles/|' )
 cp "$REPO/resi/packages.pacman" "$PROFILE/airootfs/usr/share/resi-shell/dotconfigfiles.packages"
-printf 'version=%s\nbuilt=%s\ncommit=%s\n' "$version" "$(date -Is)" "$(git -C "$REPO" rev-parse HEAD 2>/dev/null || echo unknown)" \
+printf 'version=%s\nbuilt=%s\ncommit=%s\n' "$version$dirty" "$(date -Is)" "$(git -C "$REPO" rev-parse HEAD 2>/dev/null || echo unknown)$dirty" \
   >"$PROFILE/airootfs/usr/share/resi-shell/version"
+
+# Mirror offline: closure paket + AUR (makepkg) + vendor clone; dibangun sebagai $SUDO_USER, lalu hardlink ke airootfs
+if [[ ${RESI_ISO_ONLINE:-} != 1 ]]; then
+  echo "==> Offline mirror (pacman -Sy, then offline-repo.sh as ${SUDO_USER:-root})"
+  pacman -Sy >/dev/null
+  mkdir -p "$HERE/cache"; [[ -n ${SUDO_USER:-} ]] && chown "$SUDO_USER:" "$HERE/cache"
+  if [[ -n ${SUDO_USER:-} ]]; then
+    # dependensi build paket AUR dipasang di sini (root); makepkg di bawah berjalan sebagai user tanpa sudo
+    deps=$(runuser -u "$SUDO_USER" -- bash "$HERE/offline-repo.sh" --print-deps "$HERE/cache" 2>/dev/null)
+    [[ -z $deps ]] || pacman -S --needed --noconfirm --asdeps $deps >/dev/null
+    runuser -u "$SUDO_USER" -- bash "$HERE/offline-repo.sh" "$HERE/cache/offline" "$HERE/cache"
+  else echo "offline-repo.sh must run as a normal user (makepkg); set RESI_ISO_ONLINE=1 or run build.sh via sudo from your user" >&2; exit 1; fi
+  cp -al "$HERE/cache/offline/repo" "$PROFILE/airootfs/usr/share/resi-shell/repo" 2>/dev/null || cp -a "$HERE/cache/offline/repo" "$PROFILE/airootfs/usr/share/resi-shell/repo"
+  cp -a "$HERE/cache/offline/vendor" "$PROFILE/airootfs/usr/share/resi-shell/vendor"
+  cp "$HERE/cache/offline/manifest" "$PROFILE/airootfs/usr/share/resi-shell/offline-manifest"
+  echo "    offline mirror: $(command ls "$PROFILE/airootfs/usr/share/resi-shell/repo"/*.pkg.tar.zst | wc -l) packages, $(du -sh "$HERE/cache/offline/repo" | cut -f1)"
+fi
+# Salinan pacman.conf live yang bersih, untuk dikembalikan ke target setelah instalasi offline
+cp "$PROFILE/pacman.conf" "$PROFILE/airootfs/usr/share/resi-shell/pacman.conf.clean"
 
 # profiledef: nama/label ISO + hak akses skrip kita
 sed -i -e "s|^iso_name=.*|iso_name=\"resi-shell\"|" \

@@ -65,7 +65,8 @@ things that were tried and rejected.
 
 ## Installation
 
-Two ways: the **installer ISO** (fresh machine, Btrfs + Limine like Omarchy; see
+Two ways: the **installer ISO** (fresh machine, Btrfs + Limine like Omarchy, installs in a few
+minutes from the offline mirror on the ISO, no internet needed; see
 [`resi/iso/README.md`](resi/iso/README.md)) or the **script on an existing Arch install** below.
 
 
@@ -157,6 +158,7 @@ Once installed, the same script is available as `resi-shell`:
 |---|---|
 | `resi-shell install [--dry-run]` | full setup, safe to repeat |
 | `resi-shell update [-y]` | asks for confirmation (skip with `-y`), then `git pull` (uncommitted local changes are stashed and re-applied after asking; a diverged branch or a conflict stops with instructions), full pacman + AUR upgrade, `mise up` when mise is installed, orphan removal (asked first) and package-cache pruning (`paccache -rk2`), new packages, restow, plugin updates, reload Hyprland and Noctalia; offers a reboot when the kernel or Hyprland was replaced. Output is logged to `~/.cache/resi-shell-update.log` |
+| `resi-shell install --offline` | used by the ISO: packages (including pre-built AUR ones) from the `resi-offline` repo, git clones from the vendored tarballs; nvim/tmux plugins are deferred to the first online `resi-shell update` |
 | `resi-shell install --chroot` | used by the ISO: runs inside `arch-chroot` as the new user (temporary passwordless sudo); steps that need a live session are deferred |
 | `resi-shell lockscreen-layout [--force]` | writes a compact, centered lock-screen login box for this machine's outputs to `~/.config/noctalia/lockscreen-widgets.toml` (skipped when a host overlay provides one); run automatically by install and first-login |
 | `resi-shell first-login` | run by Hyprland at every start, does the deferred steps once (GTK theme, greeter sync) when the marker from a chroot install exists |

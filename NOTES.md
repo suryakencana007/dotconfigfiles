@@ -329,6 +329,23 @@ Hyprland's window borders, and the login screen.
   skipped; gtk_theme deferred) and `first-login` (autostart.lua runs it every start, no-op without
   the marker `~/.local/state/resi/first-login-pending`). Online only for now; an offline mirror
   (AUR built at build time, vendored oh-my-zsh/p10k/TPM) is the next step if the ISO is shared.
+  **Offline mirror** (2026-09-30, "a few minutes like Omarchy"): `resi/iso/offline-repo.sh` resolves the
+  full closure with `pacman -Sp --dbpath <empty local db + copied sync dbs>` (699 packages, 1.6 GB;
+  NVIDIA adds 0.5 GB), downloads packages + `.sig`, builds `yay-bin` + `resi/packages.aur` with
+  makepkg (must run as a user), `repo-add`s them into `resi-offline`, and tars the git clones. The
+  live installer prepends `[resi-offline]` (file://) to pacman.conf so pacstrap reads from the ISO;
+  with no network it also drops core/extra so nothing is attempted online. In the chroot the
+  target's pacman.conf is temporarily ONLY the local repo (the target has no core/extra sync dbs
+  offline), `install.sh --offline` uses `pacman -S` without -y for pacman and AUR packages and the
+  vendor tarballs for oh-my-zsh/p10k/fzf-tab/TPM; afterwards the clean releng pacman.conf is restored
+  and the resi-offline sync db removed. nvim/tmux plugins and the Wallhaven plugin still need GitHub:
+  an `offline-install-pending` marker makes the first `resi-shell update` say so and fetch them.
+  First offline ISO build failed in the VM for a dumb reason: build.sh baked `git archive HEAD` while
+  the installer scripts came from the working tree, so the ISO had the new `resi-iso-postinstall`
+  but an `install.sh` without `--offline` ("unknown argument" -> nothing installed). build.sh now
+  tars the tracked files from the working tree (version marked -dirty) and warns about untracked
+  files; postinstall copies `/root/resi-install.log` into the target at `/var/log/resi-install.log`;
+  the hostname prompt is validated (a stray Delete key had produced the hostname `[3~`).
   First VM install (2026-09-30) worked end to end except the greeter kept its default look: `first-login`
   called `greeter()`, whose first lines are `sudo install`/`sudo noctalia-greeter ...`; with no terminal
   sudo cannot prompt, `set -e` killed the script before `noctalia msg greeter-sync`. The sync is now

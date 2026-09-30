@@ -4,7 +4,11 @@ A bootable Arch Linux ISO that installs resi-shell the way the Omarchy ISO does:
 out the disk (GPT, 1 GiB EFI on `/boot`, the rest Btrfs with `@`, `@home`, `@log`, `@pkg` subvolumes,
 `compress=zstd`, optional LUKS), installs Arch with the resi package list, Limine and zram, creates
 the user, then `resi-shell install --chroot` runs inside the new system. Snapper is configured for
-`/`. It is an **online** installer: the live system needs internet (Ethernet, or `iwctl` for Wi-Fi).
+`/`. The ISO carries an **offline mirror** (the full package closure, the AUR packages pre-built,
+and the git clones the installer needs), so a fresh machine installs in a few minutes without
+internet, like the Omarchy ISO. With internet the mirror is still used first and Arch mirrors only
+fill in anything missing. Only the nvim/tmux plugins and the Wallhaven plugin are fetched later, by
+the first `resi-shell update` with a connection.
 
 ## Build (on any Arch machine)
 
@@ -14,8 +18,17 @@ sudo resi/iso/build.sh            # -> resi/iso/out/resi-shell-<date>-x86_64.iso
 ```
 
 The build stages the official `releng` profile, appends `packages.extra`, overlays `airootfs/`, and
-bakes the repo's **committed HEAD** (`git archive`) into `/usr/share/resi-shell/dotconfigfiles.tar`.
-Commit before building. Work dir `resi/iso/work` (~10 GB, gitignored), output `resi/iso/out`.
+bakes the repo's **tracked files as they are in the working tree** into
+`/usr/share/resi-shell/dotconfigfiles.tar` (uncommitted edits are included and the version is
+marked `-dirty`; untracked files are not, `git add` them first). Work dir `resi/iso/work` (~10 GB, gitignored), output `resi/iso/out`.
+
+The offline mirror is built by `offline-repo.sh`, run as your user (makepkg refuses root): it
+resolves the closure of base + kernel + firmware + Limine/Btrfs/snapper + GPU drivers (Mesa, Intel,
+AMD, NVIDIA) + `resi/packages.pacman` against an empty package database, downloads the packages
+with their signatures, builds `yay-bin` and `resi/packages.aur` with makepkg, runs `repo-add`, and
+tars oh-my-zsh, powerlevel10k, fzf-tab and TPM. Everything is cached in `resi/iso/cache/` (about
+2.5 GB, gitignored) so rebuilds only fetch what changed. The ISO ends up around 4 GB.
+`RESI_ISO_ONLINE=1 sudo resi/iso/build.sh` skips the mirror for a small online-only ISO.
 
 ## Test in a VM
 
@@ -31,14 +44,18 @@ resi/iso/test-vm.sh                                  # boot the installed system
 
 ## What the live installer does
 
-1. `resi-iso-install` starts on tty1 (`/root/.zlogin`). It checks the network, then asks: target
+1. `resi-iso-install` starts on tty1 (`/root/.zlogin`). It checks the network; with the offline
+   mirror present it puts `[resi-offline]` first in the live `pacman.conf` (and, without network,
+   removes the Arch repos so pacstrap never tries to download). Then it asks: target
    disk (fzf), hostname, username + password, LUKS yes/no, timezone (fzf), keyboard layout, and an
    optional git name/email for the dotfiles repo.
 2. It writes `/root/resi/user_configuration.json` and `user_credentials.json` and runs
    `archinstall --silent`.
 3. `resi-iso-postinstall` copies the baked repo to `/home/<user>/dotconfigfiles` (as a git repo
    tracking `origin/main`), sets up snapper, adds a temporary NOPASSWD sudoers drop-in and runs
-   `resi-shell install --chroot` as the user, then removes the drop-in and unmounts.
+   `resi-shell install --chroot` as the user (with `--offline` and the mirror bind-mounted into the
+   target when installing from the mirror), restores a clean `pacman.conf` pointing at the normal
+   Arch mirrors, then removes the drop-in and unmounts.
 4. On first login Hyprland runs `resi-shell first-login`, which finishes the steps that need a live
    session (GTK theme via gsettings, greeter sync).
 

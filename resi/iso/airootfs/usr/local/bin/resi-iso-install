@@ -6,6 +6,8 @@
 #   3. archinstall --silent memasang Arch + paket resi + user (wheel/sudo) + NetworkManager + zram
 #   4. resi-iso-postinstall: repo dotfiles ke home user, snapper, resi-shell install --chroot
 #   RESI_ISO_DRY=1  hanya menulis JSON ke /root/resi/ dan berhenti (untuk uji tanpa menyentuh disk)
+# Offline: bila ISO membawa /usr/share/resi-shell/repo (mirror resi-offline), pacman live memakainya lebih dulu, jadi
+# pacstrap tidak mengunduh apa pun; tanpa jaringan pun instalasi jalan penuh (hanya repo lokal yang dipakai).
 set -euo pipefail
 
 RESI_SHARE=/usr/share/resi-shell
@@ -26,13 +28,23 @@ clear; box "resi-shell installer" "" "Arch Linux + Hyprland + Noctalia, Btrfs + 
   "This ERASES the disk you choose. Ctrl+C aborts at any time before the last confirmation."
 echo
 
-# ---- jaringan (installer online: paket diunduh dari mirror Arch) ----
+# ---- jaringan & mirror offline ----
 step "Network"
-if ! curl -fsI --max-time 8 https://archlinux.org >/dev/null 2>&1; then
-  echo "No internet connection. For Wi-Fi run:  iwctl   then:  station wlan0 scan; station wlan0 connect \"SSID\""
-  echo "Then run resi-iso-install again."; exit 1
+OFFLINE_REPO=/usr/share/resi-shell/repo; has_offline=0; [[ -f $OFFLINE_REPO/resi-offline.db.tar.zst ]] && has_offline=1
+online=0; curl -fsI --max-time 8 https://archlinux.org >/dev/null 2>&1 && online=1
+if (( online )); then echo "online"; else
+  if (( has_offline )); then echo "no internet: installing from the offline mirror on this ISO ($(sed -n 's/^packages=//p' /usr/share/resi-shell/offline-manifest 2>/dev/null) packages)"
+  else echo "No internet connection and this ISO has no offline mirror. For Wi-Fi run:  iwctl   then:  station wlan0 scan; station wlan0 connect \"SSID\""; echo "Then run resi-iso-install again."; exit 1; fi
 fi
-echo "online"
+if (( has_offline )); then
+  # pacman.conf live: repo lokal PERTAMA (pacstrap tidak mengunduh yang sudah ada di ISO); tanpa jaringan hanya repo lokal
+  cp -n /etc/pacman.conf "$STATE/pacman.conf.live-orig"
+  # [options] tetap paling atas; repo lokal disisipkan sebelum repo pertama ([core]); tanpa jaringan core/extra dibuang
+  src="$STATE/pacman.conf.live-orig"
+  if (( ! online )); then sed -E '/^\[(core|extra|multilib)\]/,/^$/d' "$src" >"$STATE/pacman.conf.offline-only"; src="$STATE/pacman.conf.offline-only"; fi
+  awk -v repo="$OFFLINE_REPO" 'BEGIN{done=0} /^\[/ && $0 != "[options]" && !done { print "[resi-offline]"; print "SigLevel = Optional TrustAll"; print "Server = file://" repo; print ""; done=1 } { print } END { if (!done) { print ""; print "[resi-offline]"; print "SigLevel = Optional TrustAll"; print "Server = file://" repo } }' "$src" >/etc/pacman.conf
+  pacman -Sy >/dev/null 2>&1 || true
+fi
 
 # ---- pilihan ----
 step "Target disk"
@@ -42,7 +54,7 @@ disk_bytes=$(blockdev --getsize64 "$disk")
 (( disk_bytes > 20 * 1024 * 1024 * 1024 )) || die "disk smaller than 20 GiB"
 
 step "System"
-hostname=$(ask "Hostname [resi]: " resi)
+hostname=$(ask "Hostname [resi]: " resi); [[ $hostname =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]] || die "invalid hostname: '$hostname' (letters, digits, dashes)"
 username=$(ask "Username: " ""); [[ $username =~ ^[a-z_][a-z0-9_-]*$ ]] || die "invalid username"
 while true; do read -rsp "Password for $username: " p1; echo; read -rsp "Repeat password: " p2; echo; [[ -n $p1 && $p1 == "$p2" ]] && break; echo "Passwords differ or empty, try again."; done
 encrypt=0; luks_pw=""
@@ -65,7 +77,8 @@ if (( encrypt )); then
   disk_encryption=$(jq -n '{encryption_type:"luks", lvm_volumes:[], iter_time:2000, partitions:["8c2c2b92-1070-455d-b76a-56263bab24aa"]}')
 else disk_encryption=null; fi
 jq -n --arg disk "$disk" --argjson bstart "$boot_start" --argjson bsize "$boot_size" --argjson mstart "$main_start" --argjson msize "$main_size" \
-      --arg hostname "$hostname" --arg tz "$timezone" --arg kb "$keyboard" --argjson pkgs "$pkgs" --argjson enc "$disk_encryption" '
+      --arg hostname "$hostname" --arg tz "$timezone" --arg kb "$keyboard" --argjson pkgs "$pkgs" --argjson enc "$disk_encryption" \
+      --argjson online "$( (( online )) && echo true || echo false )" '
 {
   "archinstall-language": "English",
   "app_config": null, "auth_config": {},
@@ -91,7 +104,7 @@ jq -n --arg disk "$disk" --argjson bstart "$boot_start" --argjson bsize "$boot_s
   "locale_config": { "kb_layout": $kb, "sys_enc": "UTF-8", "sys_lang": "en_US.UTF-8" },
   "mirror_config": { "custom_repositories": [], "custom_servers": [], "mirror_regions": {}, "optional_repositories": [] },
   "network_config": { "type": "nm" },
-  "ntp": true, "parallel_downloads": 8, "script": null,
+  "ntp": $online, "offline": ($online | not), "parallel_downloads": 8, "script": null,
   "packages": (["base-devel","git","zsh","btrfs-progs","limine","snapper","sudo","networkmanager"] + $pkgs | unique),
   "services": [],
   "swap": true,
@@ -100,10 +113,10 @@ jq -n --arg disk "$disk" --argjson bstart "$boot_start" --argjson bsize "$boot_s
 jq -n --arg u "$username" --arg h "$enc_pw_hash" --arg e "$luks_pw" '
   { users: [ { username: $u, enc_password: $h, sudo: true } ] } + (if $e == "" then {} else { encryption_password: $e } end)' >"$STATE/user_credentials.json"
 chmod 600 "$STATE"/*.json
-printf 'disk=%s\nusername=%s\nencrypt=%s\ngit_name=%s\ngit_email=%s\n' "$disk" "$username" "$encrypt" "$git_name" "$git_email" >"$STATE/answers"
+printf 'disk=%s\nusername=%s\nencrypt=%s\ngit_name=%s\ngit_email=%s\noffline=%s\n' "$disk" "$username" "$encrypt" "$git_name" "$git_email" "$has_offline" >"$STATE/answers"
 
 echo; box "Summary" "" "Disk:      $disk ($(numfmt --to=iec "$disk_bytes")) - WILL BE ERASED" "Layout:    EFI 1 GiB + Btrfs (@ @home @log @pkg, zstd)$( ((encrypt)) && echo ', LUKS')" \
-  "Boot:      Limine, zram swap" "Hostname:  $hostname" "User:      $username (sudo)" "Timezone:  $timezone   Keyboard: $keyboard"
+  "Boot:      Limine, zram swap" "Packages:  $( (( has_offline )) && echo "offline mirror on this ISO$( (( online )) && echo ' (+ internet for anything missing)')" || echo "downloaded from Arch mirrors")" "Hostname:  $hostname" "User:      $username (sudo)" "Timezone:  $timezone   Keyboard: $keyboard"
 echo; [[ ${RESI_ISO_DRY:-} == 1 ]] && { echo "dry run: JSON written to $STATE"; exit 0; }
 confirm "Erase $disk and install now?" || die "aborted"
 
