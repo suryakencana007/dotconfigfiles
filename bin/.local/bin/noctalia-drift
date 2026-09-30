@@ -12,9 +12,11 @@ CONF_DIR="$HOME/.config/noctalia"
 [[ -f $STATE ]] || { echo "no Noctalia GUI state"; exit 0; }
 
 # "section<TAB>key<TAB>value" untuk kunci skalar di tabel biasa [x.y] (array table [[...]] dilewati), komentar dibuang.
-entries() { awk '/^\[\[/{sec=""; next} /^\[/{sec=$0; next}
+# Header tabel dan kunci boleh diindentasi (Noctalia menulis state dengan indentasi bertingkat), jadi spasi awal dibuang dulu.
+entries() { awk '{ sub(/^[ \t]+/, "") } /^\[\[/{sec=""; next} /^\[/{sec=$0; next}
   sec!="" && /^[A-Za-z0-9_]+[ \t]*=/ { k=$0; sub(/[ \t]*=.*/,"",k); v=$0; sub(/^[^=]*=[ \t]*/,"",v)
-    if (v !~ /^"/) sub(/[ \t]*#.*/,"",v); sub(/[ \t]+$/,"",v); print sec "\t" k "\t" v }' "$@"; }
+    if (v ~ /^"/) { match(v, /^"([^"\\]|\\.)*"/); v = substr(v, RSTART, RLENGTH) } else sub(/[ \t]*#.*/,"",v)
+    sub(/[ \t]+$/,"",v); print sec "\t" k "\t" v }' "$@"; }
 
 # Drift = kunci ada di keduanya DAN nilainya berbeda (angka dibandingkan dengan toleransi 1e-4: GUI menyimpan
 # 0.99999998 untuk 1.0). Kunci bernilai sama hanya duplikat, tidak membuat mesin berbeda.
@@ -38,10 +40,11 @@ backup="$STATE.bak-$(date +%Y%m%d-%H%M%S)"; cp "$STATE" "$backup"
 tmp=$(mktemp)
 awk -v list="$(printf '%s\n' "${drift[@]}")" '
   BEGIN { n = split(list, L, "\n"); for (i = 1; i <= n; i++) if (L[i] != "") { split(L[i], f, "\t"); drop[f[1] "\t" f[2]] = 1 } }
-  /^\[\[/ { sec = ""; print; next }
-  /^\[/   { sec = $0; print; next }
-  sec != "" && /^[A-Za-z0-9_]+[ \t]*=/ { k = $0; sub(/[ \t]*=.*/, "", k); if ((sec "\t" k) in drop) next }
-  { print }' "$STATE" >"$tmp" && mv "$tmp" "$STATE"
+  { line = $0; t = $0; sub(/^[ \t]+/, "", t) }
+  t ~ /^\[\[/ { sec = ""; print line; next }
+  t ~ /^\[/   { sec = t; print line; next }
+  sec != "" && t ~ /^[A-Za-z0-9_]+[ \t]*=/ { k = t; sub(/[ \t]*=.*/, "", k); if ((sec "\t" k) in drop) next }
+  { print line }' "$STATE" >"$tmp" && mv "$tmp" "$STATE"
 printf '%s\n' "${drift[@]}" | awk -F'\t' '{ printf "Removed from GUI state: %s %s (was %s, repo %s)\n", $1, $2, $3, $4 }'
 echo "Backup: $backup"
 command -v noctalia >/dev/null && noctalia msg config-reload >/dev/null 2>&1 && echo "Noctalia config reloaded."

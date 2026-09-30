@@ -1,0 +1,11 @@
+# Tema Noctalia: warna diambil dari wallpaper (Material You, skema tonal-spot), mode gelap.
+# Sebelumnya hanya ada di state GUI (dipilih lewat wizard) sehingga mesin baru/ISO memakai palet bawaan Noctalia
+# yang kebiruan; di sini supaya install segar langsung sama dengan legionarch/dynarch.
+# Template warna aplikasi (Hyprland, alacritty, GTK, btop, nvim) ada di templates.toml dan dirender saat tema berubah.
+# Di GUI: Settings > Color scheme. Kunci yang sama di ~/.local/state/noctalia/settings.toml menang atas file ini.
+[theme]
+source = "wallpaper"            # "wallpaper" | "builtin" | "community"
+mode = "dark"                   # "dark" | "light"
+wallpaper_scheme = "m3-tonal-spot"
+builtin = "Noctalia"            # dipakai bila source = "builtin"
+community_palette = "Oxocarbon" # dipakai bila source = "community"

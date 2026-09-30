@@ -333,6 +333,28 @@ Hyprland's window borders, and the login screen.
   called `greeter()`, whose first lines are `sudo install`/`sudo noctalia-greeter ...`; with no terminal
   sudo cannot prompt, `set -e` killed the script before `noctalia msg greeter-sync`. The sync is now
   its own sudo-free `greeter_sync()`. Anything run from autostart must not touch sudo.
+  Two more from the same VM: (1) `~/dotconfigfiles` was not a git repo because `git init` ran before
+  `chown` (tar extracted as root) - order swapped; (2) the lock screen used Noctalia's default login
+  box because the compact centered layout only existed in `hosts/<host>/lockscreen-widgets.toml`,
+  keyed by output name (eDP-2). `install.sh lockscreen_layout` now generates that file per machine
+  from `hyprctl monitors` (first-login / install / `resi-shell lockscreen-layout --force`) unless a
+  host overlay already provides it, then runs `noctalia-drift --fix` so GUI state cannot override it.
+  `noctalia-drift` itself had two parser bugs found here: Noctalia indents nested table headers
+  (`    [lockscreen_widgets.widget."..."]`), which the old `/^\[/` match skipped, and quoted values
+  with a trailing comment were compared with the comment included. Fixed; on legionarch the fix then
+  surfaced a real drift (`theme.templates.builtin_ids` had 10 templates enabled via the GUI vs 5 in
+  the repo) which was reset to the repo's list. `resi-shell doctor` no longer stops on the first
+  failing check (`set +e` inside doctor); before, it silently ended after the hyprctl check when run
+  outside a Hyprland session (ssh).
+  Third VM finding: the bar islands and control center were Noctalia's default blue. `[theme]`
+  (source = wallpaper, dark, m3-tonal-spot) had only ever been set through the first-run wizard, so it
+  lived in each machine's GUI state and never reached the repo. It is now `noctalia/theme.toml`;
+  applying it in the VM immediately recolored everything from the wallpaper and re-rendered the
+  templates (hypr/noctalia.lua, alacritty theme). Rule of thumb from these three: anything picked in
+  Noctalia's GUI that should look the same on every machine must be copied into a repo TOML, and
+  `noctalia-drift` is the check that it stayed there. Same treatment for the Wallhaven plugin:
+  `noctalia/plugins.toml` declares it and `noctalia_plugins()` (first-login / install) runs
+  `noctalia msg plugins enable noctalia/wallhaven`, which downloads it from the official source.
 - **Mouse selection copies to the clipboard** (2026-09-30), like the Claude Code terminal: alacritty
   `selection.save_to_clipboard = true`, and because tmux owns the mouse, tmux.conf pipes selections
   to `wl-copy` on drag end / double-click (word) / triple-click (line) with `copy-pipe-no-clear` so

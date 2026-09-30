@@ -15,7 +15,7 @@ widget_order = [ "lockscreen-login-box@eDP-2" ]
     visible = true
 
     [lockscreen_widgets.widget."lockscreen-login-box@eDP-2"]
-    box_height = 196.0
+    box_height = 70.0    # satu baris: kotak setinggi input saja (GUI legionarch memakai 70)
     box_width = 480.0   # compact; semula 810
     cx = 960.0               # tengah horizontal layar 1920x1080
     cy = 540.0               # tengah vertikal (bawaan 898 = dekat bawah)

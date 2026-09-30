@@ -88,7 +88,7 @@ Supaya program CLI ikut tema: pakai warna ANSI 0-15, bukan indeks 256 (sudah dit
 
 ## Lock screen (Super+Ctrl+L)
 
-`lockscreen.toml`: `[lockscreen]` blurred_desktop/blur_intensity/tint_intensity, dan `[lockscreen_widgets]`
+`plugins.toml`: `[plugins] enabled = ["noctalia/wallhaven"]` (first-login/install juga `noctalia msg plugins enable`). `theme.toml`: `[theme]` source=wallpaper, mode=dark, wallpaper_scheme=m3-tonal-spot (tanpa ini mesin baru memakai palet bawaan Noctalia yang kebiruan). `lockscreen.toml`: `[lockscreen]` blurred_desktop/blur_intensity/tint_intensity, dan `[lockscreen_widgets]` (kotak login: overlay host untuk legionarch/dynarch; mesin lain dibuatkan `resi-shell lockscreen-layout` dari hyprctl monitors, file `~/.config/noctalia/lockscreen-widgets.toml` di luar repo)
 (tidak ada di docs tapi dikenal validator; ditulis di file setelah blok yang sama dihapus dari state).
 Login box: `cx/cy` (pusat), `box_width`, `settings.layout = "regular" | "compact"` (BUKAN "minimal",
 validator menolak), `background_opacity`, `show_unlock_hint`, `show_*`. Nilai enum yang tidak yakin:

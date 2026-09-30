@@ -1,0 +1,7 @@
+# Plugin Noctalia yang harus aktif di semua mesin. Wallhaven = bagian dari alur tema/wallpaper
+# (widget "wallhaven" di bar.toml, panel browser Super+Ctrl+Alt+Space). Plugin diunduh Noctalia dari sumber
+# resminya saat diaktifkan; resi-shell first-login/install juga menjalankan `noctalia msg plugins enable`
+# supaya pasti terpasang. API key Wallhaven (opsional) tetap di state GUI, bukan di sini.
+[plugins]
+enabled = [ "noctalia/wallhaven" ]
+auto_update = "official"

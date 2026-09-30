@@ -24,6 +24,9 @@ sudo pacman -S qemu-desktop edk2-ovmf
 resi/iso/test-vm.sh resi/iso/out/resi-shell-*.iso   # boot the ISO into a 40 GB virtual disk
 resi/iso/test-vm.sh                                  # boot the installed system afterwards
 # the virtual disk lives in ~/.local/state/resi/vm/ (delete it to start from an empty disk)
+# SSH into the VM: host port 2222 is forwarded to the VM's port 22
+#   in the VM:  sudo systemctl enable --now sshd
+#   on the host: ssh -p 2222 <user>@127.0.0.1
 ```
 
 ## What the live installer does

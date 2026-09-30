@@ -29,10 +29,10 @@ home="/home/$username"
 
 info "copying the dotfiles repo to $home/dotconfigfiles"
 rm -rf "$MNT$home/dotconfigfiles"; tar -xf "$RESI_SHARE/dotconfigfiles.tar" -C "$MNT$home"
+arch-chroot "$MNT" chown -R "$username:$username" "$home"     # SEBELUM git init: tar mengekstrak sebagai root, user tidak bisa membuat .git
 # jadikan repo git supaya resi-shell update (git pull) bekerja
 arch-chroot "$MNT" runuser -u "$username" -- bash -c "cd $home/dotconfigfiles && git init -q -b main && git remote add origin https://github.com/suryakencana007/dotconfigfiles.git && git add -A && git -c user.name=resi -c user.email=resi@localhost commit -q -m 'Installed from ISO' && git fetch -q origin main && git reset -q --soft origin/main && git branch -q --set-upstream-to=origin/main main" \
   || echo "  (could not link the repo to GitHub now; resi-shell update will need: git fetch && git reset --hard origin/main)"
-arch-chroot "$MNT" chown -R "$username:$username" "$home"
 
 info "snapper: snapshots of / (Btrfs)"
 arch-chroot "$MNT" bash -c 'snapper --no-dbus -c root create-config / 2>/dev/null || true; systemctl enable snapper-timeline.timer snapper-cleanup.timer >/dev/null 2>&1 || true'
