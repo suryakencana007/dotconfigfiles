@@ -239,3 +239,8 @@ stow --no-folding -t ~ hypr noctalia claude bin gtk
 - Noctalia: `noctalia config validate`, then `noctalia msg config-reload`. Values changed in the Settings GUI are
   stored in `~/.local/state/noctalia/settings.toml` and win over the files here.
 - Commit and push from `~/dotconfigfiles`; `resi-shell update` on the other machines.
+
+## License
+
+MIT, see [LICENSE](LICENSE). The Hyprland configuration structure and the menu design follow
+[Omarchy](https://github.com/basecamp/omarchy) (MIT); the ISO layout follows the Omarchy ISO.
