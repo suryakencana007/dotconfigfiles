@@ -48,16 +48,24 @@ resi/iso/test-vm.sh                                  # boot the installed system
    mirror present it puts `[resi-offline]` first in the live `pacman.conf` (and, without network,
    removes the Arch repos so pacstrap never tries to download). Then it asks: target
    disk (fzf), hostname, username + password, LUKS yes/no, timezone (fzf), keyboard layout, and an
-   optional git name/email for the dotfiles repo.
+   optional git name/email for the dotfiles repo. A summary box ends with `[ Install ] [ Back ]`;
+   Back returns to the questions with the previous answers as defaults.
 2. It writes `/root/resi/user_configuration.json` and `user_credentials.json` and runs
-   `archinstall --silent`.
-3. `resi-iso-postinstall` copies the baked repo to `/home/<user>/dotconfigfiles` (as a git repo
-   tracking `origin/main`), sets up snapper, adds a temporary NOPASSWD sudoers drop-in and runs
-   `resi-shell install --chroot` as the user (with `--offline` and the mirror bind-mounted into the
-   target when installing from the mirror), restores a clean `pacman.conf` pointing at the normal
-   Arch mirrors, then removes the drop-in and unmounts.
+   `archinstall --silent` for the base system only (Btrfs layout, Limine, user, NetworkManager, zram).
+3. `resi-iso-postinstall` runs in three phases: `prepare` copies the baked repo to
+   `/home/<user>/dotconfigfiles` (as a git repo tracking `origin/main`), sets up snapper and adds a
+   temporary NOPASSWD sudoers drop-in (plus the mirror bind-mount and a local-only `pacman.conf`
+   when installing offline); `install` runs `resi-shell install --chroot [--offline]` as the user,
+   which installs the desktop packages, shell, dotfiles and services; `finish` restores a clean
+   `pacman.conf` pointing at the normal Arch mirrors, removes the drop-in, copies the log to
+   `/var/log/resi-install.log` and unmounts.
 4. On first login Hyprland runs `resi-shell first-login`, which finishes the steps that need a live
    session (GTK theme via gsettings, greeter sync).
 
-Log: `/root/resi-install.log` in the live system. `RESI_ISO_DRY=1 resi-iso-install` only writes the
+While installing, the screen shows only a stage board (one line per stage with a spinner, the
+elapsed time and a sub-status taken from the log: the current `resi-shell` step and the pacman
+`installing foo (178/420)` counter). Everything else goes to `/root/resi-install.log`; press
+Ctrl+Alt+F2 and `tail -f` it to watch. A failed stage shows the last error lines from the log and
+leaves the target mounted at `/mnt`. `RESI_VERBOSE=1 resi-iso-install` (or the kernel parameter
+`resi.verbose`) prints the full output instead. `RESI_ISO_DRY=1 resi-iso-install` only writes the
 JSON files, useful to inspect the plan without touching a disk.

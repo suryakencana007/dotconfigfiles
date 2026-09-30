@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Installer live resi-shell (berjalan sebagai root di ISO). Alur ala Omarchy ISO:
-#   1. tanya disk, hostname, user, password, enkripsi, zona waktu, keyboard (fzf/read)
+#   1. wizard: disk, hostname, user, password, enkripsi, zona waktu, keyboard (fzf/read), ringkasan → [ Install ] [ Back ]
 #   2. tulis user_configuration.json + user_credentials.json untuk archinstall
 #      (GPT: EFI 1 GiB di /boot, sisanya Btrfs subvolume @ @home @log @pkg, compress=zstd, Limine, LUKS opsional)
-#   3. archinstall --silent memasang Arch + paket resi + user (wheel/sudo) + NetworkManager + zram
-#   4. resi-iso-postinstall: repo dotfiles ke home user, snapper, resi-shell install --chroot
+#   3. papan tahapan (stage board): archinstall (base) → resi-iso-postinstall prepare/install/finish; output penuh
+#      HANYA ke $LOG, layar hanya spinner + timer + sub-status (langkah install.sh & hitungan paket dari log)
 #   RESI_ISO_DRY=1  hanya menulis JSON ke /root/resi/ dan berhenti (untuk uji tanpa menyentuh disk)
+#   RESI_VERBOSE=1  atau parameter kernel resi.verbose: tampilkan output penuh seperti dulu (debugging di VM)
 # Offline: bila ISO membawa /usr/share/resi-shell/repo (mirror resi-offline), pacman live memakainya lebih dulu, jadi
 # pacstrap tidak mengunduh apa pun; tanpa jaringan pun instalasi jalan penuh (hanya repo lokal yang dipakai).
 set -euo pipefail
@@ -14,14 +15,33 @@ RESI_SHARE=/usr/share/resi-shell
 STATE=/root/resi; mkdir -p "$STATE"
 LOG=/root/resi-install.log
 exec > >(tee -a "$LOG") 2>&1
+VERBOSE=${RESI_VERBOSE:-0}; grep -qw resi.verbose /proc/cmdline 2>/dev/null && VERBOSE=1
+TTY=/dev/tty; [[ -w $TTY ]] || VERBOSE=1        # tanpa terminal (mis. dipanggil dari script) tidak ada papan, output penuh
 
-c=$'\e[1;34m'; g=$'\e[1;32m'; y=$'\e[1;33m'; r=$'\e[1;31m'; o=$'\e[0m'
+c=$'\e[1;34m'; g=$'\e[1;32m'; r=$'\e[1;31m'; o=$'\e[0m'; btn=$'\e[1;30;47m'; dim=$'\e[2m'
 step() { printf '\n%s==> %s%s\n' "$c" "$*" "$o"; }
 die()  { printf '%s%s%s\n' "$r" "$*" "$o" >&2; exit 1; }
 box()  { local w=0 l; for l in "$@"; do (( ${#l} > w )) && w=${#l}; done; local bar; bar="$(printf '─%.0s' $(seq 1 $((w + 4))))"
          printf '┌%s┐\n' "$bar"; for l in "$@"; do printf '│  %s%*s  │\n' "$l" $((w - ${#l})) ''; done; printf '└%s┘\n' "$bar"; }
-confirm() { local a; read -rp "$1 [y/N] " a; [[ $a =~ ^[Yy] ]]; }
-ask() { local v; read -rp "$1" v; printf '%s' "${v:-$2}"; }
+ask()  { local v; read -rp "$1" v </dev/tty; printf '%s' "${v:-$2}"; }
+fmt_dur() { local s=$1; (( s >= 60 )) && printf '%dm %02ds' $((s / 60)) $((s % 60)) || printf '%ds' "$s"; }
+pick() { # $1 pertanyaan, $2 tombol kiri, $3 tombol kanan; dua tombol horizontal ala gum confirm (←/→/Tab, Enter). Sukses bila kiri.
+  local sel=0 key
+  printf '\033[?25l'
+  while true; do
+    printf '\r\033[K  %s   ' "$1"
+    if (( sel == 0 )); then printf '%s  %s  %s    %s   ' "$btn" "$2" "$o" "$3"; else printf '   %s    %s  %s  %s' "$2" "$btn" "$3" "$o"; fi
+    IFS= read -rsn1 key </dev/tty || { sel=1; break; }
+    case "$key" in
+      $'\e') if read -rsn2 -t 0.05 key </dev/tty; then [[ $key == '[C' || $key == '[D' || $key == '[Z' ]] && sel=$((1 - sel)); else sel=1; break; fi ;;
+      $'\t'|h|l|j|k|' ') sel=$((1 - sel)) ;;
+      y|Y) sel=0; break ;;
+      n|N|q) sel=1; break ;;
+      '') break ;;
+    esac
+  done
+  printf '\033[?25h\n'; (( sel == 0 ))
+}
 
 clear; box "resi-shell installer" "" "Arch Linux + Hyprland + Noctalia, Btrfs + Limine, like Omarchy." \
   "Version: $(sed -n 's/^version=//p' $RESI_SHARE/version 2>/dev/null || echo dev)" "" \
@@ -46,38 +66,47 @@ if (( has_offline )); then
   pacman -Sy >/dev/null 2>&1 || true
 fi
 
-# ---- pilihan ----
-step "Target disk"
-disk=$(lsblk -dpno NAME,SIZE,MODEL,TYPE | awk '$NF=="disk" && $1 !~ /loop|sr[0-9]|zram/' | fzf --prompt='Install to disk > ' --height=12 --layout=reverse | awk '{print $1}')
-[[ -n $disk && -b $disk ]] || die "no disk selected"
-disk_bytes=$(blockdev --getsize64 "$disk")
-(( disk_bytes > 20 * 1024 * 1024 * 1024 )) || die "disk smaller than 20 GiB"
+# ---- wizard (diulang bila user memilih Back di ringkasan; jawaban sebelumnya jadi default) ----
+hostname=resi; username=""; timezone="${RESI_TZ_DEFAULT:-Asia/Jakarta}"; keyboard=us; git_name=""; git_email=""
+while true; do
+  step "Target disk"
+  disk=$(lsblk -dpno NAME,SIZE,MODEL,TYPE | awk '$NF=="disk" && $1 !~ /loop|sr[0-9]|zram/' | fzf --prompt='Install to disk > ' --height=12 --layout=reverse | awk '{print $1}')
+  [[ -n $disk && -b $disk ]] || die "no disk selected"
+  disk_bytes=$(blockdev --getsize64 "$disk")
+  (( disk_bytes > 20 * 1024 * 1024 * 1024 )) || die "disk smaller than 20 GiB"
 
-step "System"
-hostname=$(ask "Hostname [resi]: " resi); [[ $hostname =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]] || die "invalid hostname: '$hostname' (letters, digits, dashes)"
-username=$(ask "Username: " ""); [[ $username =~ ^[a-z_][a-z0-9_-]*$ ]] || die "invalid username"
-while true; do read -rsp "Password for $username: " p1; echo; read -rsp "Repeat password: " p2; echo; [[ -n $p1 && $p1 == "$p2" ]] && break; echo "Passwords differ or empty, try again."; done
-encrypt=0; luks_pw=""
-if confirm "Encrypt the disk with LUKS (asks a passphrase at every boot)?"; then
-  encrypt=1; while true; do read -rsp "Disk passphrase: " e1; echo; read -rsp "Repeat passphrase: " e2; echo; [[ -n $e1 && $e1 == "$e2" ]] && { luks_pw=$e1; break; }; echo "Passphrases differ or empty, try again."; done
-fi
-timezone=$(timedatectl list-timezones | fzf --prompt='Timezone > ' --height=15 --layout=reverse --query="${RESI_TZ_DEFAULT:-Asia/Jakarta}" --select-1 || true)
-[[ -n $timezone ]] || timezone="Asia/Jakarta"
-keyboard=$(ask "Keyboard layout [us]: " us)
-git_name=$(ask "Git name (optional, for the dotfiles repo): " ""); git_email=$(ask "Git email (optional): " "")
+  step "System"
+  hostname=$(ask "Hostname [$hostname]: " "$hostname"); [[ $hostname =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$ ]] || die "invalid hostname: '$hostname' (letters, digits, dashes)"
+  username=$(ask "Username${username:+ [$username]}: " "$username"); [[ $username =~ ^[a-z_][a-z0-9_-]*$ ]] || die "invalid username"
+  while true; do read -rsp "Password for $username: " p1 </dev/tty; echo; read -rsp "Repeat password: " p2 </dev/tty; echo; [[ -n $p1 && $p1 == "$p2" ]] && break; echo "Passwords differ or empty, try again."; done
+  encrypt=0; luks_pw=""
+  if pick "Encrypt the disk with LUKS (asks a passphrase at every boot)?" "Yes" "No"; then
+    encrypt=1; while true; do read -rsp "Disk passphrase: " e1 </dev/tty; echo; read -rsp "Repeat passphrase: " e2 </dev/tty; echo; [[ -n $e1 && $e1 == "$e2" ]] && { luks_pw=$e1; break; }; echo "Passphrases differ or empty, try again."; done
+  fi
+  timezone=$(timedatectl list-timezones | fzf --prompt='Timezone > ' --height=15 --layout=reverse --query="$timezone" --select-1 || true)
+  [[ -n $timezone ]] || timezone="Asia/Jakarta"
+  keyboard=$(ask "Keyboard layout [$keyboard]: " "$keyboard")
+  git_name=$(ask "Git name (optional, for the dotfiles repo)${git_name:+ [$git_name]}: " "$git_name"); git_email=$(ask "Git email (optional)${git_email:+ [$git_email]}: " "$git_email")
+
+  echo; box "Summary" "" "Disk:      $disk ($(numfmt --to=iec "$disk_bytes")) - WILL BE ERASED" "Layout:    EFI 1 GiB + Btrfs (@ @home @log @pkg, zstd)$( ((encrypt)) && echo ', LUKS')" \
+    "Boot:      Limine, zram swap" "Packages:  $( (( has_offline )) && echo "offline mirror on this ISO$( (( online )) && echo ' (+ internet for anything missing)')" || echo "downloaded from Arch mirrors")" "Hostname:  $hostname" "User:      $username (sudo)" "Timezone:  $timezone   Keyboard: $keyboard"
+  echo
+  [[ ${RESI_ISO_DRY:-} == 1 ]] && break
+  pick "Erase $disk and install now?" "Install" "Back" && break
+  echo; echo "Back to the questions (previous answers are the defaults)."
+done
 
 # ---- tata letak partisi (byte, sejajar 1 MiB) ----
 mib=$((1024 * 1024)); boot_start=$mib; boot_size=$((1024 * mib)); main_start=$((boot_start + boot_size))
 main_size=$(( (disk_bytes - main_start - mib) / mib * mib ))
 enc_pw_hash=$(openssl passwd -6 "$p1")
 
-# ---- JSON archinstall ----
-pkgs=$(sed -E 's/#.*//; s/^[[:space:]]+//; s/[[:space:]]+$//' "$RESI_SHARE/dotconfigfiles.packages" | grep -v '^$' | jq -R . | jq -s .)
+# ---- JSON archinstall: hanya sistem dasar; paket desktop dipasang resi-shell install --chroot (tahap dengan hitungan paket) ----
 if (( encrypt )); then
   disk_encryption=$(jq -n '{encryption_type:"luks", lvm_volumes:[], iter_time:2000, partitions:["8c2c2b92-1070-455d-b76a-56263bab24aa"]}')
 else disk_encryption=null; fi
 jq -n --arg disk "$disk" --argjson bstart "$boot_start" --argjson bsize "$boot_size" --argjson mstart "$main_start" --argjson msize "$main_size" \
-      --arg hostname "$hostname" --arg tz "$timezone" --arg kb "$keyboard" --argjson pkgs "$pkgs" --argjson enc "$disk_encryption" \
+      --arg hostname "$hostname" --arg tz "$timezone" --arg kb "$keyboard" --argjson enc "$disk_encryption" \
       --argjson online "$( (( online )) && echo true || echo false )" '
 {
   "archinstall-language": "English",
@@ -105,7 +134,7 @@ jq -n --arg disk "$disk" --argjson bstart "$boot_start" --argjson bsize "$boot_s
   "mirror_config": { "custom_repositories": [], "custom_servers": [], "mirror_regions": {}, "optional_repositories": [] },
   "network_config": { "type": "nm" },
   "ntp": $online, "offline": ($online | not), "parallel_downloads": 8, "script": null,
-  "packages": (["base-devel","git","zsh","btrfs-progs","limine","snapper","sudo","networkmanager"] + $pkgs | unique),
+  "packages": ["base-devel","git","zsh","btrfs-progs","limine","snapper","sudo","networkmanager"],
   "services": [],
   "swap": true,
   "timezone": $tz
@@ -114,20 +143,69 @@ jq -n --arg u "$username" --arg h "$enc_pw_hash" --arg e "$luks_pw" '
   { users: [ { username: $u, enc_password: $h, sudo: true } ] } + (if $e == "" then {} else { encryption_password: $e } end)' >"$STATE/user_credentials.json"
 chmod 600 "$STATE"/*.json
 printf 'disk=%s\nusername=%s\nencrypt=%s\ngit_name=%s\ngit_email=%s\noffline=%s\n' "$disk" "$username" "$encrypt" "$git_name" "$git_email" "$has_offline" >"$STATE/answers"
+[[ ${RESI_ISO_DRY:-} == 1 ]] && { echo "dry run: JSON written to $STATE"; exit 0; }
 
-echo; box "Summary" "" "Disk:      $disk ($(numfmt --to=iec "$disk_bytes")) - WILL BE ERASED" "Layout:    EFI 1 GiB + Btrfs (@ @home @log @pkg, zstd)$( ((encrypt)) && echo ', LUKS')" \
-  "Boot:      Limine, zram swap" "Packages:  $( (( has_offline )) && echo "offline mirror on this ISO$( (( online )) && echo ' (+ internet for anything missing)')" || echo "downloaded from Arch mirrors")" "Hostname:  $hostname" "User:      $username (sudo)" "Timezone:  $timezone   Keyboard: $keyboard"
-echo; [[ ${RESI_ISO_DRY:-} == 1 ]] && { echo "dry run: JSON written to $STATE"; exit 0; }
-confirm "Erase $disk and install now?" || die "aborted"
+# ---- papan tahapan ----
+STAGES=("Partitioning $disk and installing the base system" "Copying the dotfiles repo, Btrfs snapshots (snapper)" \
+        "Installing the desktop: packages, shell, dotfiles, services" "Finishing up")
+STATUS=(todo todo todo todo); ELAPSED=("" "" "" ""); tick=0; detail=""; SPIN='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+mapfile -t HEADER < <(box "resi-shell installer" "Installing to $disk as $username@$hostname$( (( has_offline && ! online )) && echo ' (offline mirror)')")
+draw_board() {   # gambar ulang dari pojok atas; \e[K bersihkan sisa baris, \e[J bersihkan sisa layar (baris detail bisa hilang)
+  local i sym l
+  { printf '\e[H'; for l in "${HEADER[@]}"; do printf '%s\e[K\n' "$l"; done; printf '\e[K\n'
+    for i in "${!STAGES[@]}"; do
+      case ${STATUS[i]} in done) sym="$g✓$o";; run) sym="$c${SPIN:$((tick % 10)):1}$o";; fail) sym="$r✗$o";; *) sym="$dim·$o";; esac
+      printf '  %s %-62s %s%8s%s\e[K\n' "$sym" "${STAGES[i]}" "$dim" "${ELAPSED[i]}" "$o"
+      [[ ${STATUS[i]} == run && -n $detail ]] && printf '      %s%s%s\e[K\n' "$dim" "$detail" "$o"
+    done
+    printf '\e[K\n  %sLog: %s   ·   Ctrl+Alt+F2 then: tail -f %s%s\e[K\n\e[J' "$dim" "$LOG" "$LOG" "$o"; } >"$TTY"
+}
+log_detail() {   # $1 offset byte awal tahap; sub-status dari log: langkah install.sh (==>) / pesan archinstall + paket pacman (N/T)
+  local txt stp pkg
+  txt=$(tail -c +"$(( $1 + 1 ))" "$LOG" 2>/dev/null | tail -c 65536 | tr '\r' '\n' | sed 's/\x1b\[[0-9;?]*[A-Za-z]//g')
+  stp=$(grep -E '^==> ' <<<"$txt" | tail -1 | sed 's/^==> //; s/ ([0-9]*)$//')
+  [[ -n $stp ]] || stp=$(grep -E '^(Wiping|Creating|Formatting|Mounting|Installing|Configuring|Setting|Adding|Generating|Enabling|Running|Waiting|Starting) ' <<<"$txt" | tail -1 | cut -c1-70)
+  pkg=$(grep -oE '\( *[0-9]+/[0-9]+\) (installing|upgrading|reinstalling) [^ ]+' <<<"$txt" | tail -1 | sed -E 's/^\( *([0-9]+)\/([0-9]+)\) (\w+) (.*)$/\3 \4 (\1\/\2)/')
+  printf '%s%s%s' "$stp" "${stp:+${pkg:+  ·  }}" "$pkg"
+}
+stage() {   # $1 indeks tahap; sisanya perintah. Output ke $LOG; layar hanya spinner + timer + sub-status. Gagal → kotak error, keluar.
+  local i=$1 t0=$EPOCHSECONDS off rc=0 pid; shift
+  STATUS[i]=run; ELAPSED[i]=""; detail=""; off=$(stat -c %s "$LOG")
+  if (( VERBOSE )); then step "${STAGES[i]}"; "$@" || rc=$?
+  else
+    "$@" >>"$LOG" 2>&1 </dev/null & pid=$!
+    trap 'kill "$pid" 2>/dev/null; printf "\e[?25h" >"$TTY"; die "aborted (Ctrl+C); the disk may be half-written, run resi-iso-install again"' INT
+    while kill -0 "$pid" 2>/dev/null; do
+      ELAPSED[i]=$(fmt_dur $((EPOCHSECONDS - t0))); detail=$(log_detail "$off"); draw_board; tick=$((tick + 1)); sleep 0.3
+    done
+    wait "$pid" || rc=$?; trap - INT
+  fi
+  ELAPSED[i]=$(fmt_dur $((EPOCHSECONDS - t0))); detail=""
+  if (( rc == 0 )); then STATUS[i]='done'; (( VERBOSE )) || draw_board; return 0; fi
+  STATUS[i]=fail
+  if (( VERBOSE )); then die "${STAGES[i]}: failed (exit $rc), see $LOG"; fi
+  draw_board; printf '\e[?25h' >"$TTY"
+  { echo; printf '%s✗ %s failed (exit %s)%s\n\n  Last errors from the log:\n' "$r" "${STAGES[i]}" "$rc" "$o"
+    tail -c +"$((off + 1))" "$LOG" | tr '\r' '\n' | sed 's/\x1b\[[0-9;?]*[A-Za-z]//g' | grep -iE 'error|failed|fatal|cannot|unable' | grep -vE 'libgpg-error|xcb-util-errors|perl-error|^\(' | tail -8 | cut -c1-110 | sed 's/^/    /'
+    printf '\n  Full log: %s   (also: less %s)\n' "$LOG" "$LOG"
+    printf '  The target stays mounted at /mnt for inspection. Fix the cause, then run  resi-iso-install  again.\n\n'; } >"$TTY"
+  exit "$rc"
+}
 
-# ---- archinstall ----
-step "Installing Arch Linux (archinstall)"
-archinstall --config "$STATE/user_configuration.json" --creds "$STATE/user_credentials.json" --silent || die "archinstall failed (see $LOG)"
+T0=$EPOCHSECONDS
+(( VERBOSE )) || { clear >"$TTY"; printf '\e[?25l' >"$TTY"; }
+stage 0 archinstall --config "$STATE/user_configuration.json" --creds "$STATE/user_credentials.json" --silent
+stage 1 resi-iso-postinstall "$STATE" prepare
+stage 2 resi-iso-postinstall "$STATE" install
+stage 3 resi-iso-postinstall "$STATE" finish
+(( VERBOSE )) || printf '\e[?25h' >"$TTY"
 
-# ---- pasca-install: resi-shell di dalam chroot ----
-step "Installing resi-shell into the new system"
-resi-iso-postinstall "$STATE" || die "post-install failed (see $LOG)"
-
+# ---- selesai ----
+total=$(fmt_dur $((EPOCHSECONDS - T0)))
 step "Finished"
-box "Installation complete." "" "Remove the USB stick and reboot. Log in as $username; the desktop finishes its first-login setup by itself."
-confirm "Reboot now?" && systemctl reboot
+done_lines=("Installed in $total." "" "Remove the USB stick, then reboot. Log in as $username; the desktop finishes its first-login setup by itself.")
+(( has_offline && ! online )) && done_lines+=("Installed offline: tmux/nvim plugins finish on the first online 'resi-shell update'.")
+box "${done_lines[@]}"
+echo
+pick "Reboot now?" "Reboot" "Shell" && systemctl reboot
+echo "Staying in the live shell. Reboot with: systemctl reboot"
