@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Toast "Copied" saat teks diblok di terminal (alacritty save_to_clipboard / tmux copy-pipe): alacritty tidak punya
+# tanda apa pun bahwa seleksi sudah masuk clipboard. Pemantau clipboard (wl-paste --watch) menampilkan notifikasi
+# Noctalia dengan cuplikan teks, hanya bila jendela aktif adalah terminal (class Alacritty / TUI.* / hypr-*),
+# supaya salinan dari browser dkk. tidak menimbulkan toast.
+#   hypr-clipboard-toast watch    jalan terus (autostart.lua), satu instance
+#   hypr-clipboard-toast notify   dipanggil wl-paste dengan isi clipboard di stdin
+set -uo pipefail
+STATE_DIR="$HOME/.local/state/resi"; TERMINAL_CLASS='^(Alacritty|TUI\..*|hypr-[a-z-]+|kitty|foot|com\.mitchellh\.ghostty)$'
+
+case "${1:-watch}" in
+  watch)
+    mkdir -p "$STATE_DIR"; exec 9>"$STATE_DIR/clipboard-toast.lock"; flock -n 9 || exit 0
+    command -v wl-paste >/dev/null || exit 0
+    # tetap sebagai proses bash (doctor mengenali "bash .../hypr-clipboard-toast watch"); anak ikut mati bersama kita
+    wl-paste --type text --watch "$0" notify & child=$!; trap 'kill $child 2>/dev/null' EXIT INT TERM; wait $child ;;
+  notify)
+    class=$(hyprctl activewindow -j 2>/dev/null | jq -r '.class // ""')
+    [[ $class =~ $TERMINAL_CLASS ]] || exit 0
+    text=$(head -c 4000)                                   # cukup untuk cuplikan; jangan baca clipboard raksasa
+    [[ -n ${text//[[:space:]]/} ]] || exit 0
+    lines=$(printf '%s\n' "$text" | grep -c .)
+    snippet=$(printf '%s\n' "$text" | sed -n '1{s/^[[:space:]]*//;p}' | cut -c1-60)
+    (( ${#snippet} == 60 )) && snippet="$snippet…"
+    (( lines > 1 )) && snippet="$snippet  (+$((lines - 1)) lines)"
+    noctalia msg notification-show "Copied" "$snippet" >/dev/null 2>&1 || true ;;
+  *) echo "usage: hypr-clipboard-toast watch|notify" >&2; exit 2 ;;
+esac

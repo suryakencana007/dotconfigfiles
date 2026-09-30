@@ -331,6 +331,15 @@ Hyprland's window borders, and the login screen.
   (AUR built at build time, vendored oh-my-zsh/p10k/TPM) is the next step if the ISO is shared.
   Not yet tested end to end: `mkarchiso` needs root and the VM run needs qemu, so the first real
   build and install are the user's to run; the wizard and JSON were verified in dry-run mode.
+- **Mouse selection copies to the clipboard** (2026-09-30), like the Claude Code terminal: alacritty
+  `selection.save_to_clipboard = true`, and because tmux owns the mouse, tmux.conf pipes selections
+  to `wl-copy` on drag end / double-click (word) / triple-click (line) with `copy-pipe-no-clear` so
+  the selection stays visible; `y` uses `copy-pipe-and-cancel wl-copy`. OSC 52 (`set-clipboard on`)
+  stays as the fallback path. Inside nvim the mouse belongs to nvim (Shift+drag for the terminal).
+  Alacritty gives no feedback that a selection was copied, so `bin/hypr-clipboard-toast watch`
+  (autostart, single instance, kept as a bash parent so doctor can see it) runs `wl-paste --watch`
+  and shows a Noctalia notification "Copied" with a one-line snippet, but only when the focused
+  window's class is a terminal (Alacritty, TUI.*, hypr-*), so copies from browsers stay silent.
 - **Backspace in `hypr-menu` submenus** means Back when the filter is empty. rofi cannot tell that
   apart from deleting a character, so in submenus Backspace is bound to `kb-custom-1` (exit 10) and
   the script decides: empty filter = back, otherwise it reopens rofi with the filter shortened by one

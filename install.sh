@@ -289,7 +289,7 @@ doctor() {
     else warn "noctalia: GUI state overrides repo config (machines will differ):"; printf '%s\n' "$out" | sed -n '2,$p' | sed 's/^/    /'; fi
   fi
   if have hyprctl && hyprctl version >/dev/null 2>&1; then   # pemantau latar yang dijalankan autostart.lua (hanya berarti di dalam sesi Hyprland)
-    for w in hypr-power hypr-updates; do
+    for w in hypr-power hypr-updates hypr-clipboard-toast; do
       [ -x "$HOME/.local/bin/$w" ] || continue
       pgrep -f "^bash $HOME/.local/bin/$w watch" >/dev/null && ok "$w watcher running" || { warn "$w watcher not running (start: resi-shell update, or log in again)"; bad=1; }
     done
@@ -426,6 +426,7 @@ update() {
   if have hyprctl && hyprctl version >/dev/null 2>&1 && [ -x "$HOME/.local/bin/hypr-power" ]; then
     run hyprctl dispatch "hl.dsp.exec_cmd(\"$HOME/.local/bin/hypr-power watch\")" >/dev/null 2>&1 && ok "battery watcher (hypr-power) running" || warn "could not start hypr-power watch"
     [ -x "$HOME/.local/bin/hypr-updates" ] && run hyprctl dispatch "hl.dsp.exec_cmd(\"$HOME/.local/bin/hypr-updates watch\")" >/dev/null 2>&1 && ok "update checker (hypr-updates) running"
+    [ -x "$HOME/.local/bin/hypr-clipboard-toast" ] && run hyprctl dispatch "hl.dsp.exec_cmd(\"$HOME/.local/bin/hypr-clipboard-toast watch\")" >/dev/null 2>&1 && ok "clipboard toast (hypr-clipboard-toast) running"
   fi
   [ -x "$HOME/.local/bin/hypr-updates" ] && "$HOME/.local/bin/hypr-updates" check >/dev/null 2>&1 || true   # bersihkan indikator bar
   ok "update done"

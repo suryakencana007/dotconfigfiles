@@ -59,3 +59,9 @@ lazydocker memakai Podman. `podman-docker` memberi CLI `docker`. Service user: `
 `.zshrc` mengaktifkan mise hanya bila terpasang: `eval "$(mise activate zsh)"` + shims `~/.local/share/mise/shims` di PATH.
 mise dipasang saat pertama dipakai oleh `hypr-dev-env` (paket bin), bukan dari daftar paket resi. `resi-shell update`
 menjalankan `mise up` bila ada. Alias/tool global mise: `mise use -g <tool>@latest`; per proyek: `.mise.toml`.
+
+## Seleksi mouse -> clipboard (seperti Claude Code)
+alacritty: `[selection] save_to_clipboard = true`. tmux menangkap mouse sendiri, jadi tmux.conf memipa seleksi ke
+`wl-copy`: `MouseDragEnd1Pane` (copy-pipe-no-clear, seleksi tetap tampil), `DoubleClick1Pane` (kata), `TripleClick1Pane`
+(baris) di tabel root dan copy-mode-vi; `y` = copy-pipe-and-cancel wl-copy. Di dalam nvim, mouse ditangani nvim
+(pakai Shift+drag untuk seleksi terminal). Tanda visual: `hypr-clipboard-toast watch` (autostart) = `wl-paste --watch` yang menampilkan notifikasi Noctalia "Copied" + cuplikan hanya bila jendela aktif ber-class terminal.

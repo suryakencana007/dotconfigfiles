@@ -11,6 +11,8 @@ hl.on("hyprland.start", function()
   hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-power watch")
   -- Indikator update paket di bar: cek repo + AUR tiap 6 jam (hypr-updates).
   hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-updates watch")
+  -- Toast "Copied" saat teks diblok di terminal (alacritty/tmux menyalin diam-diam ke clipboard).
+  hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-clipboard-toast watch")
 
   -- Instalasi dari ISO: selesaikan langkah yang ditunda (tema GTK, sinkron greeter) sekali; no-op bila tidak ada penanda.
   hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/resi-shell first-login")

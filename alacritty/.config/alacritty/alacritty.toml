@@ -24,3 +24,8 @@ shell = "/usr/bin/zsh"
 opacity = 0.8
 padding = { x = 12, y = 10 }   # jarak teks dari tepi jendela, dalam piksel
 dynamic_padding = true       # sisa ruang dibagi rata supaya teks tetap di tengah
+
+# Teks yang diblok dengan mouse langsung masuk clipboard (seperti di Claude Code): tempel di mana saja dengan Ctrl+V.
+# Di dalam tmux, tmux yang menangkap mouse; aturan yang sama ada di tmux.conf (copy-pipe ke wl-copy).
+[selection]
+save_to_clipboard = true
