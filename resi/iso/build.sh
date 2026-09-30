@@ -51,5 +51,6 @@ echo "==> mkarchiso (this takes a while and downloads the live packages)"
 rm -rf "$WORK/tmp"; mkdir -p "$WORK/tmp"
 mkarchiso -v -w "$WORK/tmp" -o "$OUT" "$PROFILE"
 ( cd "$OUT" && sha256sum -- *.iso >SHA256SUMS )
+[[ -n ${SUDO_USER:-} ]] && chown -R "$SUDO_USER:" "$OUT"      # ISO dapat dipakai user tanpa sudo (test-vm.sh)
 echo "==> Done: $(command ls "$OUT"/*.iso)"
 echo "    Test in a VM: resi/iso/test-vm.sh $(command ls "$OUT"/*.iso | head -1)"

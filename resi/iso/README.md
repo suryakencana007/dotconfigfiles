@@ -23,6 +23,7 @@ Commit before building. Work dir `resi/iso/work` (~10 GB, gitignored), output `r
 sudo pacman -S qemu-desktop edk2-ovmf
 resi/iso/test-vm.sh resi/iso/out/resi-shell-*.iso   # boot the ISO into a 40 GB virtual disk
 resi/iso/test-vm.sh                                  # boot the installed system afterwards
+# the virtual disk lives in ~/.local/state/resi/vm/ (delete it to start from an empty disk)
 ```
 
 ## What the live installer does
