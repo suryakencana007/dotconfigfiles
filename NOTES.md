@@ -329,8 +329,10 @@ Hyprland's window borders, and the login screen.
   skipped; gtk_theme deferred) and `first-login` (autostart.lua runs it every start, no-op without
   the marker `~/.local/state/resi/first-login-pending`). Online only for now; an offline mirror
   (AUR built at build time, vendored oh-my-zsh/p10k/TPM) is the next step if the ISO is shared.
-  Not yet tested end to end: `mkarchiso` needs root and the VM run needs qemu, so the first real
-  build and install are the user's to run; the wizard and JSON were verified in dry-run mode.
+  First VM install (2026-09-30) worked end to end except the greeter kept its default look: `first-login`
+  called `greeter()`, whose first lines are `sudo install`/`sudo noctalia-greeter ...`; with no terminal
+  sudo cannot prompt, `set -e` killed the script before `noctalia msg greeter-sync`. The sync is now
+  its own sudo-free `greeter_sync()`. Anything run from autostart must not touch sudo.
 - **Mouse selection copies to the clipboard** (2026-09-30), like the Claude Code terminal: alacritty
   `selection.save_to_clipboard = true`, and because tmux owns the mouse, tmux.conf pipes selections
   to `wl-copy` on drag end / double-click (word) / triple-click (line) with `copy-pipe-no-clear` so

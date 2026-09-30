@@ -231,8 +231,13 @@ greeter() {
   run sudo install -o greeter -g greeter -m 644 "$tmp" /var/lib/noctalia-greeter/greeter.toml; rm -f "$tmp"
   run sudo noctalia-greeter passwordless-sync enable "$USER" || warn "passwordless-sync failed (greeter < 1.5?)"
   ok "greeter.toml + passwordless sync"
-  # Auto-sync dinyalakan oleh noctalia/greeter.toml; sync pertama harus dipicu sekali kalau shell sedang jalan
-  # (tanpa ini greeter tampil bawaan sampai tema berubah, karena /var/lib/noctalia-greeter/sync.toml belum ada).
+  greeter_sync
+}
+
+# Sync tampilan shell -> greeter. Tanpa sudo: dipakai juga first-login (dijalankan Hyprland tanpa terminal, sudo
+# tidak bisa minta password). Auto-sync dinyalakan noctalia/greeter.toml; sync pertama harus dipicu sekali kalau shell
+# sedang jalan (tanpa ini greeter tampil bawaan sampai tema berubah, karena /var/lib/noctalia-greeter/sync.toml belum ada).
+greeter_sync() {
   if have noctalia && noctalia msg status >/dev/null 2>&1; then
     if (( DRY )); then run noctalia msg greeter-sync; else noctalia msg greeter-sync >/dev/null 2>&1 && ok "greeter synced with the current theme"; fi || warn "greeter-sync failed; run: noctalia msg greeter-sync"
   else
@@ -439,7 +444,7 @@ first_login() {
   CHROOT=0
   gtk_theme
   if have noctalia; then for _ in $(seq 1 30); do noctalia msg status >/dev/null 2>&1 && break; sleep 1; done; fi
-  greeter
+  greeter_sync                                  # bukan greeter(): itu butuh sudo (greeter.toml sudah dipasang saat --chroot)
   rm -f "$FIRST_LOGIN_MARKER"
   have noctalia && noctalia msg notification-show "resi-shell" "First-login setup finished (GTK theme, greeter sync)." >/dev/null 2>&1 || true
   ok "first-login setup done"
