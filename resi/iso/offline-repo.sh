@@ -30,14 +30,19 @@ if (( PRINT_DEPS )); then aur_clone >&2; aur_deps | tr '\n' ' '; echo; exit 0; f
 mkdir -p "$OUT"
 
 # ---- 1. closure paket resmi terhadap database lokal KOSONG (supaya dependensi yang sudah ada di host ikut) ----
+# Termasuk dependensi runtime paket AUR (spotify butuh libcurl-gnutls/libayatana-*, noctalia-greeter wlroots0.20):
+# tanpa ini pacman di chroot menolak seluruh transaksi AUR (pelajaran dari VM 2026-09-30).
 step "Resolving the package closure"
 DB="$CACHE/db"; mkdir -p "$DB/sync" "$DB/local"
 cp -u /var/lib/pacman/sync/*.db "$DB/sync/"
+aur_clone
+aur_runtime_deps() { local p; for p in "${AUR[@]}"; do ( cd "$CACHE/aur/$p" && makepkg --printsrcinfo 2>/dev/null | awk -F" = " '/^[[:space:]]*depends = /{print $2}' | sed 's/[<>=].*//' ); done | sort -u; }
+official_aur_deps=(); for d in $(aur_runtime_deps); do pacman -Sp --dbpath "$DB" --logfile /dev/null "$d" >/dev/null 2>&1 && official_aur_deps+=("$d"); done
 TARGETS=( base base-devel linux linux-firmware linux-headers limine btrfs-progs snapper efibootmgr dosfstools
           networkmanager sudo git zsh mesa vulkan-radeon vulkan-intel intel-media-driver libva-mesa-driver
-          amd-ucode intel-ucode nvidia-open-dkms nvidia-utils $(pkglist "$REPO/resi/packages.pacman") )
+          amd-ucode intel-ucode nvidia-open-dkms nvidia-utils $(pkglist "$REPO/resi/packages.pacman") "${official_aur_deps[@]}" )
 mapfile -t urls < <(pacman -Sp --dbpath "$DB" --logfile /dev/null "${TARGETS[@]}")
-ok "${#urls[@]} packages in the closure"
+ok "${#urls[@]} packages in the closure (incl. ${#official_aur_deps[@]} runtime deps of the AUR packages)"
 
 # ---- 2. unduh paket + .sig (paralel, lewati yang sudah ada dan utuh) ----
 step "Downloading packages into $CACHE/pkg"
@@ -52,7 +57,6 @@ ok "all packages present"
 
 # ---- 3. paket AUR: makepkg di host (dependensi build harus sudah ada di host) ----
 step "Building AUR packages"
-aur_clone
 miss=$(missing_deps | tr '\n' ' '); [[ -z $miss ]] || warn "build dependencies missing on this host (makepkg cannot sudo here): $miss -> sudo pacman -S --needed --asdeps $miss"
 for p in "${AUR[@]}"; do
   d="$CACHE/aur/$p"
@@ -82,5 +86,11 @@ powerlevel10k https://github.com/romkatv/powerlevel10k.git
 fzf-tab https://github.com/Aloxaf/fzf-tab
 tpm https://github.com/tmux-plugins/tpm
 LIST
+# ---- 6. verifikasi: semua target + paket AUR harus terpasang HANYA dari repo offline (seperti di chroot tanpa jaringan) ----
+step "Verifying the closure against the offline repo alone"
+VDB="$CACHE/verify-db"; rm -rf "$VDB"; mkdir -p "$VDB/sync" "$VDB/local"; cp "$OUT/repo/resi-offline.db" "$VDB/sync/resi-offline.db"
+printf '[options]\nArchitecture = auto\n\n[resi-offline]\nSigLevel = Never\nServer = file://%s/repo\n' "$OUT" >"$CACHE/verify.conf"
+if pacman -Sp --config "$CACHE/verify.conf" --dbpath "$VDB" --logfile /dev/null "${TARGETS[@]}" "${AUR[@]}" >/dev/null 2>"$CACHE/verify.log"; then ok "every target resolves from the offline repo"
+else warn "unresolvable from the offline repo (installation would fail offline):"; grep -iE "error|unable|not found" "$CACHE/verify.log" | head -10 | sed 's/^/    /'; exit 1; fi
 printf 'built=%s\npackages=%s\naur=%s\n' "$(date -Is)" "$(command ls "$OUT/repo"/*.pkg.tar.zst | wc -l)" "${AUR[*]}" >"$OUT/manifest"
 ok "offline mirror ready: $(du -sh "$OUT" | cut -f1)"
