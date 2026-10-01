@@ -1,0 +1,81 @@
+/**
+ * Tema situs Resi Arch: netral gelap seperti layar boot (hitam + putih gading), satu warna aksen.
+ */
+
+:root {
+  --vp-c-brand-1: #4f5bd5;
+  --vp-c-brand-2: #6470e6;
+  --vp-c-brand-3: #4f5bd5;
+  --vp-c-brand-soft: #6470e61f;
+  --vp-font-family-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #4f5bd5 20%, #9aa5ff 90%);
+  --vp-home-hero-image-background-image: linear-gradient(135deg, #6470e640 0%, #9aa5ff26 100%);
+  --vp-home-hero-image-filter: blur(56px);
+}
+
+.dark {
+  --vp-c-brand-1: #a3adff;
+  --vp-c-brand-2: #8f9bff;
+  --vp-c-brand-3: #6470e6;
+  --vp-c-brand-soft: #8f9bff24;
+  --vp-c-bg: #0b0b0f;
+  --vp-c-bg-alt: #101016;
+  --vp-c-bg-soft: #16161e;
+  --vp-home-hero-name-background: linear-gradient(120deg, #e6e6ea 10%, #a3adff 90%);
+}
+
+/* Gambar hero = layar boot: bingkai tipis dan sudut membulat supaya terbaca sebagai layar, juga di tema terang */
+.VPHero .image-src {
+  border-radius: 14px;
+  border: 1px solid var(--vp-c-divider);
+  box-shadow: 0 18px 50px -20px #000000aa;
+}
+
+/* Di layar lebar gambar hero boleh lebih besar dari 320px bawaan VitePress supaya logo ASCII terbaca */
+@media (min-width: 960px) {
+  .VPHero .image-container {
+    width: 460px !important;
+    height: 320px !important;
+  }
+  .VPHero .image-src {
+    max-width: 460px !important;
+    max-height: 320px !important;
+  }
+}
+
+/* Ikon di navbar berlatar hitam: beri garis tipis supaya terlihat di tema gelap */
+.VPNavBarTitle .logo {
+  border-radius: 6px;
+  border: 1px solid var(--vp-c-divider);
+}
+
+.VPFeature {
+  border-radius: 12px;
+}
+
+.VPFeature:hover {
+  border-color: var(--vp-c-brand-2);
+}
+
+.vp-doc table {
+  display: table;
+  width: 100%;
+}
+
+.vp-doc th {
+  background: var(--vp-c-bg-soft);
+  text-align: left;
+}
+
+/* Tombol keyboard */
+.vp-doc kbd {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.85em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--vp-c-divider);
+  border-bottom-width: 2px;
+  background: var(--vp-c-bg-soft);
+  white-space: nowrap;
+}

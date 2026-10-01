@@ -17,6 +17,8 @@ screen.
 It is inspired by [Omarchy](https://omarchy.org) (same key bindings, menu and window rules) and built on
 [Noctalia](https://noctalia.dev).
 
+**Website with the full guide: <https://suryakencana007.github.io/dotconfigfiles/>**
+
 **Contents:** [Install](#install) · [First steps](#first-steps-after-installing) ·
 [Everyday keys](#everyday-keys) · [The menu](#the-menu-superspace) · [Features](#features) ·
 [The `resi-shell` command](#the-resi-shell-command) · [Several machines](#several-machines) ·
@@ -374,6 +376,7 @@ directory. Configs in `~/.config/...` are links into this repo, so editing eithe
 | `claude` | Claude Code skills and agents that know this setup |
 | `hosts/<hostname>` | per-machine overlay |
 | `resi/` | installer data: package lists, login-screen templates, boot splash (`resi/boot`), ISO builder (`resi/iso`) |
+| `docs/` | the website (VitePress), deployed to GitHub Pages by `.github/workflows/docs.yml` |
 | `install.sh` | the installer, also installed as `resi-shell` |
 
 Files that Noctalia renders from templates are in `.gitignore` and never committed.

@@ -1,0 +1,17 @@
+{
+  "name": "resi-shell-docs",
+  "private": true,
+  "description": "Website for resi-shell (VitePress), deployed to GitHub Pages",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev .",
+    "build": "vitepress build .",
+    "preview": "vitepress preview ."
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

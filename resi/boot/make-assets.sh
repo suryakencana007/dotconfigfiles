@@ -4,7 +4,8 @@
 # ffmpeg (untuk BMP UKI).
 #   resi/boot/make-assets.sh
 # Keluaran di resi/boot/plymouth/resi/: logo.png (2x), prompt.png, entry.png, bullet.png, progress_box.png,
-# progress_bar.png, splash.bmp (splash UKI systemd-stub), dan resi/boot/iso-splash.png (menu boot ISO mode BIOS, 640x480).
+# progress_bar.png, splash.bmp (splash UKI systemd-stub), resi/boot/iso-splash.png (menu boot ISO mode BIOS, 640x480),
+# dan untuk situs web docs/public/{boot-splash.png,logo-mark.png}.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; OUT="$HERE/plymouth/resi"; TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 command -v rsvg-convert >/dev/null || { echo "rsvg-convert not found (pacman -S librsvg)" >&2; exit 1; }
@@ -46,6 +47,19 @@ def centered(cw, ch, fs):                          # splash UKI / ISO: logo di t
     return svg(cw, ch, wordmark((cw - w) / 2, (ch - h) / 2, fs), BG)
 write("splash", centered(640, 320, 18))
 write("iso-splash", centered(640, 480, 18))
+# situs web (docs/public): layar boot sebagai gambar hero, dan huruf "R" dari seni yang sama sebagai ikon
+write("site-splash", centered(1200, 620, 35))
+R_ART = [l[:7] for l in ART]
+def mark(sz=256, fs=28):
+    adv, lh = fs * 0.6, fs * 1.22
+    w, h = 7 * adv, len(R_ART) * lh + fs * 0.35
+    x0, y0, out = (sz - w) / 2, (sz - h) / 2, [f'<rect width="{sz}" height="{sz}" rx="48" fill="{BG}"/>',
+                 f'<g font-family="{FONT}" font-weight="700" font-size="{fs}" fill="{FG}" text-anchor="middle">']
+    for r, row in enumerate(R_ART):
+        for c, ch in enumerate(row):
+            if ch != " ": out.append(f'<text x="{x0 + (c + 0.5) * adv:.2f}" y="{y0 + fs + r * lh:.2f}">{escape(ch)}</text>')
+    return svg(sz, sz, "\n".join(out) + "</g>")
+write("site-mark", mark())
 write("prompt", svg(560, 44, text(280, 32, 28, 3, "Enter disk passphrase")))
 write("entry", svg(640, 84, f'<rect x="2" y="2" width="636" height="80" rx="14" fill="none" stroke="{DIM}" stroke-width="3"/>'))
 write("bullet", svg(24, 24, f'<circle cx="12" cy="12" r="9" fill="{FG}"/>'))
@@ -58,5 +72,9 @@ rsvg-convert "$TMP/iso-splash.svg" -o "$HERE/iso-splash.png"
 rsvg-convert "$TMP/splash.svg" -o "$TMP/splash.png"
 if command -v ffmpeg >/dev/null; then ffmpeg -loglevel error -y -i "$TMP/splash.png" -pix_fmt bgr24 "$OUT/splash.bmp"
 else echo "ffmpeg not found: splash.bmp (UKI splash) not regenerated" >&2; fi
+if [[ -d $HERE/../../docs/public ]]; then
+  rsvg-convert "$TMP/site-splash.svg" -o "$HERE/../../docs/public/boot-splash.png"
+  rsvg-convert "$TMP/site-mark.svg" -o "$HERE/../../docs/public/logo-mark.png"
+fi
 cp "$TMP/logo.svg" "$HERE/logo.svg"
 ls -la "$OUT" "$HERE/iso-splash.png"
