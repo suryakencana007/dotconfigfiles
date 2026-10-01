@@ -58,7 +58,7 @@ phase_prepare() {
   if (( offline )); then
     info "offline mirror: binding $RESI_SHARE into the target"
     mkdir -p "$MNT$RESI_SHARE"; mountpoint -q "$MNT$RESI_SHARE" || mount --bind "$RESI_SHARE" "$MNT$RESI_SHARE"
-    printf '[options]\nArchitecture = auto\nHoldPkg = pacman glibc\nCheckSpace\nParallelDownloads = 8\nSigLevel = Required DatabaseOptional\nLocalFileSigLevel = Optional\n\n[resi-offline]\nSigLevel = Optional TrustAll\nServer = file://%s/repo\n' "$RESI_SHARE" >"$MNT/etc/pacman.conf"
+    printf '[options]\nArchitecture = auto\nHoldPkg = pacman glibc\nCheckSpace\nParallelDownloads = 8\nSigLevel = Required DatabaseOptional\nLocalFileSigLevel = Optional\n\n[resi-offline]\nSigLevel = Never\nServer = file://%s/repo\n' "$RESI_SHARE" >"$MNT/etc/pacman.conf"
     arch-chroot "$MNT" pacman -Sy >/dev/null 2>&1 || true
   fi
   # sudo tanpa password selama instalasi. NOPASSWD saja tidak cukup: archinstall sudah menulis "<user> ALL=(ALL) ALL", dan

@@ -63,9 +63,12 @@ if (( has_offline )); then
   # pacman.conf live: repo lokal PERTAMA (pacstrap tidak mengunduh yang sudah ada di ISO); tanpa jaringan hanya repo lokal
   cp -n /etc/pacman.conf "$STATE/pacman.conf.live-orig"
   # [options] tetap paling atas; repo lokal disisipkan sebelum repo pertama ([core]); tanpa jaringan core/extra dibuang
+  # SigLevel = Never: pacstrap -K memberi target keyring KOSONG; dengan Optional pacman tetap memeriksa .sig yang ada di
+  # mirror, lalu gagal ("keyring is not writable / required key missing") karena tanpa jaringan kunci tidak bisa diambil.
+  # Tanda tangan paket resmi diperiksa saat mirror dibuat (offline-repo.sh: gpgv terhadap keyring pacman mesin build).
   src="$STATE/pacman.conf.live-orig"
   if (( ! online )); then sed -E '/^\[(core|extra|multilib)\]/,/^$/d' "$src" >"$STATE/pacman.conf.offline-only"; src="$STATE/pacman.conf.offline-only"; fi
-  awk -v repo="$OFFLINE_REPO" 'BEGIN{done=0} /^\[/ && $0 != "[options]" && !done { print "[resi-offline]"; print "SigLevel = Optional TrustAll"; print "Server = file://" repo; print ""; done=1 } { print } END { if (!done) { print ""; print "[resi-offline]"; print "SigLevel = Optional TrustAll"; print "Server = file://" repo } }' "$src" >/etc/pacman.conf
+  awk -v repo="$OFFLINE_REPO" 'BEGIN{done=0} /^\[/ && $0 != "[options]" && !done { print "[resi-offline]"; print "SigLevel = Never"; print "Server = file://" repo; print ""; done=1 } { print } END { if (!done) { print ""; print "[resi-offline]"; print "SigLevel = Never"; print "Server = file://" repo } }' "$src" >/etc/pacman.conf
   pacman -Sy >/dev/null 2>&1 || true
 fi
 
@@ -196,6 +199,9 @@ stage() {   # $1 indeks tahap; sisanya perintah. Output ke $LOG; layar hanya spi
   exit "$rc"
 }
 
+# Sisa percobaan sebelumnya (tahap gagal membiarkan target terpasang di /mnt): lepas dulu supaya disk bisa dihapus lagi
+if mountpoint -q /mnt; then umount -R /mnt 2>/dev/null || true; fi
+cryptsetup close resi_root 2>/dev/null || true
 T0=$EPOCHSECONDS
 (( VERBOSE )) || { clear >"$TTY"; printf '\e[?25l' >"$TTY"; }
 # Tanpa jaringan archinstall harus diberi tahu lewat ARGUMEN (bukan kunci JSON): tanpa --skip-ntp ia menunggu

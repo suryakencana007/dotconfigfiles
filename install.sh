@@ -475,6 +475,7 @@ update() {
   if have mise; then step "Update mise tools"; if MISE_MINIMUM_RELEASE_AGE=0 run mise up; then ok "mise tools up to date"; else warn "mise up failed; continuing"; fi; fi
   stow_all; system_extras; tmux_plugins; nvim_plugins
   have hyprctl && run hyprctl reload >/dev/null; have noctalia && run noctalia msg config-reload >/dev/null 2>&1 || true
+  noctalia_plugins      # plugin yang gagal diunduh saat first-login offline dipasang di sini begitu ada jaringan
   # Podman API: drop-in podman.service terbaru (restart saat balapan login, API persisten) untuk mesin yang sudah punya Podman.
   if have podman && [ -x "$HOME/.local/bin/hypr-docker-db" ]; then
     run "$HOME/.local/bin/hypr-docker-db" api-setup && ok "podman API service configured" || warn "podman API setup failed"
@@ -567,6 +568,16 @@ first_login() {
   ok "first-login setup done"
 }
 
+# Install offline: Noctalia tidak bisa mengunduh plugin (wallhaven) dari GitHub, jadi state plugin dibawa dari bundle
+# vendor ISO (resi/iso/offline-repo.sh) ke ~/.local/state/noctalia/plugins; Noctalia memakainya apa adanya.
+noctalia_plugins_vendor() {
+  local t="${RESI_VENDOR:-/nonexistent}/noctalia-plugins.tar" d="${XDG_STATE_HOME:-$HOME/.local/state}/noctalia"
+  [ -f "$t" ] && [ ! -d "$d/plugins" ] || return 0
+  step "Noctalia plugins (offline bundle)"
+  run mkdir -p "$d"; (( DRY )) || tar -xf "$t" -C "$d"
+  ok "plugins from the offline vendor bundle: $(command ls "$d/plugins/materialized/official" 2>/dev/null | tr '\n' ' ')"
+}
+
 # Boot splash "Resi Arch" ala Omarchy: tema Plymouth, hook initramfs, `quiet splash`, branding Limine (lihat skripnya).
 # Hanya di `install` (bukan update): mengubah initramfs dan konfigurasi bootloader.
 boot_splash() {
@@ -581,7 +592,7 @@ install_all() {
   pacman_packages; aur_helper; aur_packages; gpu_drivers
   shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; system_extras; gtk_theme; greeter; boot_splash
   (( CHROOT )) || { lockscreen_layout; noctalia_plugins; }   # di chroot tidak ada Hyprland/Noctalia: first-login yang mengerjakannya
-  if (( OFFLINE )); then run mkdir -p "$(dirname "$OFFLINE_MARKER")"; run touch "$OFFLINE_MARKER"; fi   # plugin nvim/tmux menyusul saat online
+  if (( OFFLINE )); then noctalia_plugins_vendor; run mkdir -p "$(dirname "$OFFLINE_MARKER")"; run touch "$OFFLINE_MARKER"; fi   # plugin nvim/tmux menyusul saat online
   finish
 }
 

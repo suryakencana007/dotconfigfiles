@@ -55,6 +55,16 @@ bad=0; for u in "${urls[@]}"; do f="$CACHE/pkg/$(basename "$u")"; [[ -f $f ]] ||
 (( bad )) && { echo "some packages failed to download" >&2; exit 1; }
 ok "all packages present"
 
+# ---- 2b. verifikasi tanda tangan: installer memakai SigLevel = Never (keyring target kosong saat pacstrap -K dan tanpa
+# jaringan kunci tidak bisa diambil), jadi di sinilah satu-satunya pemeriksaan paket resmi. gpgv terhadap keyring pacman host.
+step "Verifying package signatures (gpgv, host pacman keyring)"
+KEYRING=/etc/pacman.d/gnupg/pubring.gpg
+if [[ -r $KEYRING ]] && command -v gpgv >/dev/null; then
+  failed=$(for u in "${urls[@]}"; do basename "$u"; done | xargs -r -P 8 -I{} sh -c 'cd "$1" && gpgv --keyring "$2" "{}.sig" "{}" >/dev/null 2>&1 || echo "{}"' _ "$CACHE/pkg" "$KEYRING")
+  if [[ -n $failed ]]; then warn "bad or missing signature:"; printf '%s\n' "$failed" | head -10 | sed 's/^/    /'; echo "delete these from $CACHE/pkg and run again" >&2; exit 1; fi
+  ok "${#urls[@]} signatures good"
+else warn "gpgv or $KEYRING not available: package signatures NOT verified"; fi
+
 # ---- 3. paket AUR: makepkg di host (dependensi build harus sudah ada di host) ----
 step "Building AUR packages"
 miss=$(missing_deps | tr '\n' ' '); [[ -z $miss ]] || warn "build dependencies missing on this host (makepkg cannot sudo here): $miss -> sudo pacman -S --needed --asdeps $miss"
@@ -86,6 +96,23 @@ powerlevel10k https://github.com/romkatv/powerlevel10k.git
 fzf-tab https://github.com/Aloxaf/fzf-tab
 tpm https://github.com/tmux-plugins/tpm
 LIST
+# ---- 5b. plugin Noctalia yang aktif (noctalia/.config/noctalia/plugins.toml) ----
+# Noctalia mengunduh plugin dari GitHub saat diaktifkan; tanpa jaringan widget/panelnya hilang. Kita bawa state yang sama
+# dengan yang dibuat Noctalia sendiri: plugins/sources/official/repo (klon blob:none tanpa checkout; blob katalog dan
+# plugin sudah terambil, FETCH_HEAD ada) dan plugins/materialized/official/<plugin> (ekspor direktori plugin pada HEAD).
+step "Vendoring Noctalia plugins"
+mapfile -t nplugins < <(sed -n 's/^enabled *= *\[\(.*\)\]/\1/p' "$REPO/noctalia/.config/noctalia/plugins.toml" | tr -d '" ' | tr ',' '\n' | grep . || true)
+NP="$CACHE/vendor/noctalia-plugins"; NR="$NP/plugins/sources/official/repo"
+rm -rf "$NP"; mkdir -p "$NP/plugins/sources/official" "$NP/plugins/materialized/official"
+git clone -q --no-checkout --filter=blob:none https://github.com/noctalia-dev/official-plugins "$NR"
+git -C "$NR" fetch -q origin; git -C "$NR" show HEAD:catalog.toml >/dev/null
+for p in "${nplugins[@]}"; do
+  if [[ $p == noctalia/* ]] && git -C "$NR" cat-file -e "HEAD:${p#noctalia/}/plugin.toml" 2>/dev/null; then
+    git -C "$NR" archive HEAD "${p#noctalia/}" | tar -x -C "$NP/plugins/materialized/official/"; ok "$p $(sed -n 's/^version *= *"\(.*\)"/\1/p' "$NP/plugins/materialized/official/${p#noctalia/}/plugin.toml")"
+  else warn "$p is not an official plugin; not vendored (Noctalia fetches it when online)"; fi
+done
+tar -C "$NP" -cf "$OUT/vendor/noctalia-plugins.tar" plugins
+
 # ---- 6. verifikasi: semua target + paket AUR harus terpasang HANYA dari repo offline (seperti di chroot tanpa jaringan) ----
 step "Verifying the closure against the offline repo alone"
 VDB="$CACHE/verify-db"; rm -rf "$VDB"; mkdir -p "$VDB/sync" "$VDB/local"; cp "$OUT/repo/resi-offline.db" "$VDB/sync/resi-offline.db"
