@@ -59,6 +59,9 @@ resi/iso/test-vm.sh                                  # boot the installed system
    which installs the desktop packages, shell, dotfiles and services; `finish` restores a clean
    `pacman.conf` pointing at the normal Arch mirrors, removes the drop-in, copies the log to
    `/var/log/resi-install.log` and unmounts.
+   The last install step is the boot splash (`resi/boot/setup-boot-splash.sh`): Plymouth theme "Resi Arch",
+   `quiet splash`, Limine entry "Resi Arch". The ISO's own boot menu is branded by `build.sh`
+   ("Resi Arch installer", `resi/boot/iso-splash.png` for the BIOS menu).
 4. On first login Hyprland runs `resi-shell first-login`, which finishes the steps that need a live
    session (GTK theme via gsettings, greeter sync).
 

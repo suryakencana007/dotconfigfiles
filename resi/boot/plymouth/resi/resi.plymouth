@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Resi Arch
+Description=Resi Arch boot splash: wordmark, progress bar, disk passphrase prompt
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/resi
+ScriptFile=/usr/share/plymouth/themes/resi/resi.script

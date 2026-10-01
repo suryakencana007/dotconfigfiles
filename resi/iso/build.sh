@@ -73,6 +73,11 @@ sed -i -e "s|^iso_name=.*|iso_name=\"resi-shell\"|" \
 # file_permissions: tambahkan skrip kita (array bash di profiledef.sh)
 sed -i "s|^file_permissions=(|file_permissions=(\n  [\"/usr/local/bin/resi-iso-install\"]=\"0:0:755\"\n  [\"/usr/local/bin/resi-iso-postinstall\"]=\"0:0:755\"\n  [\"/root/.zlogin\"]=\"0:0:644\"|" "$PROFILE/profiledef.sh"
 
+# Branding menu boot ISO: "Resi Arch installer" (systemd-boot UEFI, GRUB, syslinux BIOS) + splash syslinux dari resi/boot
+sed -i 's/Arch Linux install medium/Resi Arch installer/g' "$PROFILE"/efiboot/loader/entries/*.conf "$PROFILE"/grub/*.cfg "$PROFILE"/syslinux/*.cfg
+sed -i 's/^MENU TITLE Arch Linux/MENU TITLE Resi Arch/' "$PROFILE/syslinux/archiso_head.cfg"
+[[ -f $REPO/resi/boot/iso-splash.png ]] && cp "$REPO/resi/boot/iso-splash.png" "$PROFILE/syslinux/splash.png"
+
 echo "==> mkarchiso (this takes a while and downloads the live packages)"
 rm -rf "$WORK/tmp"; mkdir -p "$WORK/tmp"
 rm -f "$OUT"/resi-shell-*.iso          # hanya ISO terbaru yang disimpan (glob out/resi-shell-*.iso di test-vm.sh jadi tidak ambigu)

@@ -406,6 +406,22 @@ Hyprland's window borders, and the login screen.
   because it clears the history at the end. Scenes whose tool is missing (podman-tui, carousel, updates)
   are skipped instead of prompting.
 
+- **Boot splash "Resi Arch" (`resi/boot/`)**, modelled on Omarchy's Plymouth theme. One root script,
+  `resi/boot/setup-boot-splash.sh`, does everything and is idempotent: installs the Plymouth `script` theme from
+  `resi/boot/plymouth/resi/`, inserts the `plymouth` hook right after `systemd`/`udev` in `HOOKS` (so it is before
+  `encrypt`/`sd-encrypt` and the LUKS prompt is drawn by the theme), appends `quiet splash` to every `cmdline:` in
+  `limine.conf` and to `/etc/kernel/cmdline` (UKI machines need both: systemd-stub prefers the command line Limine
+  passes), writes a marked branding block at the top of `limine.conf` and renames `/Arch Linux` entries to
+  `/Resi Arch`, points a UKI preset's `--splash` at our `splash.bmp`, then runs `mkinitcpio -P`. Edited files get a
+  one-time `<file>.resi-bak`. It runs in `resi-shell install` only, never in `update`, because it touches the
+  initramfs and the bootloader config. Everything is black (`000000`) with an off-white wordmark so firmware →
+  Limine → UKI splash → Plymouth do not flash between colours. `/etc/os-release` is left alone: pacman, yay and
+  other tools key on it, and Omarchy keeps it too. The assets are pre-rendered and committed
+  (`resi/boot/make-assets.sh` regenerates them with rsvg-convert + ffmpeg), so installing needs no image tools and
+  the theme does not depend on Plymouth's label plugin or a font in the initramfs (the passphrase prompt is a PNG).
+  `RESI_BOOT_ROOT=/some/dir` runs the script against a fake root without root, plymouth or mkinitcpio, which is how
+  the config rewriting is tested.
+
 ## Noctalia's two config layers (read this before debugging "my change didn't work")
 
 Noctalia merges two layers, and the second always wins for any key it defines:

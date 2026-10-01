@@ -72,6 +72,8 @@ brightnessctl
 power-profiles-daemon
 upower
 greetd
+# boot splash "Resi Arch" (tema di resi/boot/plymouth/resi, dipasang resi/boot/setup-boot-splash.sh)
+plymouth
 # --- file manager & mount ---
 thunar
 thunar-volman

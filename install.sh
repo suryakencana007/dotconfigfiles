@@ -318,6 +318,14 @@ doctor() {
   have noctalia && { noctalia config validate >/dev/null 2>&1 && ok "noctalia config valid" || { warn "noctalia config invalid"; bad=1; }; }
   have rofi && { rofi -dump-theme >/dev/null 2>&1 && ok "rofi theme valid" || { warn "rofi theme broken"; bad=1; }; }
   [ -x "$HOME/.local/bin/hypr-menu" ] && { HYPR_MENU_CHECK=1 "$HOME/.local/bin/hypr-menu" >/dev/null 2>&1 && ok "hypr-menu: all submenu targets resolve" || { warn "hypr-menu: a submenu points to a missing function (HYPR_MENU_CHECK=1 hypr-menu)"; bad=1; }; }
+  # Boot splash: tema terpasang → default Plymouth dan hook initramfs harus cocok; belum dipasang = catatan saja (opsional).
+  if have plymouth-set-default-theme; then
+    if [ -d /usr/share/plymouth/themes/resi ]; then
+      if grep -qs '^Theme=resi' /etc/plymouth/plymouthd.conf && grep -hsE '^HOOKS=' /etc/mkinitcpio.conf /etc/mkinitcpio.conf.d/*.conf | tail -1 | grep -qw plymouth; then
+        ok "boot splash: Resi Arch (plymouth theme + initramfs hook)$(grep -qw splash /proc/cmdline || echo '; shows after the next reboot')"
+      else warn "boot splash: theme installed but not the default or the plymouth hook is missing (sudo $REPO/resi/boot/setup-boot-splash.sh)"; bad=1; fi
+    else printf '  - boot splash not set up on this machine (optional: sudo %s/resi/boot/setup-boot-splash.sh)\n' "$REPO"; fi
+  fi
   # Drift Noctalia: state GUI yang menimpa kunci repo dengan nilai lain membuat mesin berbeda walau repo sama.
   if [ -x "$HOME/.local/bin/noctalia-drift" ]; then
     if out=$("$HOME/.local/bin/noctalia-drift" 2>&1); then ok "noctalia: GUI state does not override the repo config"
@@ -545,10 +553,19 @@ first_login() {
   ok "first-login setup done"
 }
 
+# Boot splash "Resi Arch" ala Omarchy: tema Plymouth, hook initramfs, `quiet splash`, branding Limine (lihat skripnya).
+# Hanya di `install` (bukan update): mengubah initramfs dan konfigurasi bootloader.
+boot_splash() {
+  step "Boot splash (Plymouth theme, Limine branding)"
+  if ! have plymouth-set-default-theme; then warn "plymouth not installed; boot splash skipped"; return; fi
+  if run sudo bash "$REPO/resi/boot/setup-boot-splash.sh"; then ok "boot splash: Resi Arch"
+  else warn "boot splash setup failed; the system still boots with the default text boot (retry: sudo $REPO/resi/boot/setup-boot-splash.sh)"; fi
+}
+
 install_all() {
   require_arch; sudo_keepalive
   pacman_packages; aur_helper; aur_packages; gpu_drivers
-  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; system_extras; gtk_theme; greeter
+  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; system_extras; gtk_theme; greeter; boot_splash
   (( CHROOT )) || { lockscreen_layout; noctalia_plugins; }   # di chroot tidak ada Hyprland/Noctalia: first-login yang mengerjakannya
   if (( OFFLINE )); then run mkdir -p "$(dirname "$OFFLINE_MARKER")"; run touch "$OFFLINE_MARKER"; fi   # plugin nvim/tmux menyusul saat online
   finish
