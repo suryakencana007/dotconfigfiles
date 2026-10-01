@@ -21,10 +21,24 @@ PROFILE="$WORK/profile"
 command -v mkarchiso >/dev/null || { echo "archiso is not installed: pacman -S archiso" >&2; exit 1; }
 [[ -d $RELENG ]] || { echo "releng profile not found at $RELENG" >&2; exit 1; }
 
+# JANGAN pernah rm -rf pohon kerja yang masih punya mount. mkarchiso/arch-chroot yang terputus (atau umount yang gagal
+# karena gpg-agent di chroot masih memegang /dev/null) meninggalkan devtmpfs terpasang di work/tmp/x86_64/airootfs/dev,
+# dan devtmpfs itu SAMA dengan /dev milik host: rm -rf lewat situ menghapus /dev/null dkk. dari mesin yang sedang
+# berjalan (terjadi 2026-10-01; pulih hanya dengan reboot). Jadi: lepas dulu semua mount di bawah $WORK, berhenti bila
+# masih ada, dan setiap rm memakai --one-file-system sebagai pengaman kedua.
+leftover_mounts() { findmnt -rn -o TARGET | grep -F -- "$WORK/" | sort -r || true; }
+release_mounts() { local m; for m in $(leftover_mounts); do umount -R "$m" 2>/dev/null || umount -l "$m" 2>/dev/null || true; done; }
+release_mounts
+if [[ -n $(leftover_mounts) ]]; then
+  echo "mounts are still active under $WORK; refusing to delete anything there:" >&2; leftover_mounts >&2
+  echo "unmount them (sudo umount -R <path>) or reboot, then run again" >&2; exit 1
+fi
+trap release_mounts EXIT          # build terputus/gagal: jangan tinggalkan mount untuk percobaan berikutnya
+
 version="$(git -C "$REPO" describe --tags --always 2>/dev/null || date +%Y%m%d)"
 stamp="$(date +%Y.%m.%d)"
 echo "==> Staging profile ($PROFILE)"
-rm -rf "$PROFILE"; mkdir -p "$PROFILE" "$OUT"
+rm -rf --one-file-system "$PROFILE"; mkdir -p "$PROFILE" "$OUT"
 cp -a "$RELENG"/. "$PROFILE"/
 
 # Paket tambahan di live ISO (installer): archinstall + alat kita
@@ -82,7 +96,8 @@ sed -i 's/^MENU TITLE Arch Linux/MENU TITLE Resi Arch/' "$PROFILE/syslinux/archi
 [[ -f $REPO/resi/boot/iso-splash.png ]] && cp "$REPO/resi/boot/iso-splash.png" "$PROFILE/syslinux/splash.png"
 
 echo "==> mkarchiso (this takes a while and downloads the live packages)"
-rm -rf "$WORK/tmp"; mkdir -p "$WORK/tmp"
+release_mounts; [[ -z $(leftover_mounts) ]] || { echo "mounts are still active under $WORK; not deleting it" >&2; leftover_mounts >&2; exit 1; }
+rm -rf --one-file-system "$WORK/tmp"; mkdir -p "$WORK/tmp"
 rm -f "$OUT"/resi-shell-*.iso          # hanya ISO terbaru yang disimpan (glob out/resi-shell-*.iso di test-vm.sh jadi tidak ambigu)
 mkarchiso -v -w "$WORK/tmp" -o "$OUT" "$PROFILE"
 ( cd "$OUT" && sha256sum -- *.iso >SHA256SUMS )
