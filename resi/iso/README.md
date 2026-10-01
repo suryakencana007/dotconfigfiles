@@ -7,8 +7,8 @@ the user, then `resi-shell install --chroot` runs inside the new system. Snapper
 `/`. The ISO carries an **offline mirror** (the full package closure, the AUR packages pre-built,
 and the git clones the installer needs), so a fresh machine installs in a few minutes without
 internet, like the Omarchy ISO. With internet the mirror is still used first and Arch mirrors only
-fill in anything missing. Only the nvim/tmux plugins and the Wallhaven plugin are fetched later, by
-the first `resi-shell update` with a connection.
+fill in anything missing. Only the nvim/tmux plugins are fetched later, by the first `resi-shell
+update` with a connection, which also links the dotfiles repo to GitHub.
 
 ## Build (on any Arch machine)
 
@@ -25,8 +25,12 @@ marked `-dirty`; untracked files are not, `git add` them first). Work dir `resi/
 The offline mirror is built by `offline-repo.sh`, run as your user (makepkg refuses root): it
 resolves the closure of base + kernel + firmware + Limine/Btrfs/snapper + GPU drivers (Mesa, Intel,
 AMD, NVIDIA) + `resi/packages.pacman` against an empty package database, downloads the packages
-with their signatures, builds `yay-bin` and `resi/packages.aur` with makepkg, runs `repo-add`, and
-tars oh-my-zsh, powerlevel10k, fzf-tab and TPM. Everything is cached in `resi/iso/cache/` (about
+with their signatures and **verifies every one with `gpgv` against this machine's pacman keyring**
+(the build fails on a bad or missing signature), builds `yay-bin` and `resi/packages.aur` with
+makepkg, runs `repo-add`, and bundles oh-my-zsh, powerlevel10k, fzf-tab, TPM and the enabled Noctalia
+plugins (Wallhaven). The installer itself uses `SigLevel = Never` for this repo: `pacstrap -K` gives
+the target an empty keyring and no key can be fetched without a network, so the check has to happen
+here, at build time. Everything is cached in `resi/iso/cache/` (about
 2.5 GB, gitignored) so rebuilds only fetch what changed. The ISO ends up around 4 GB.
 `RESI_ISO_ONLINE=1 sudo resi/iso/build.sh` skips the mirror for a small online-only ISO.
 

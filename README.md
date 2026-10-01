@@ -1,248 +1,429 @@
 # resi-shell
 
-An opinionated Arch Linux desktop in one command: **Hyprland** (Lua config, Omarchy-style keybindings and
-window rules) + **Noctalia v5** (bar, launcher panels, notifications, lock screen, idle, wallpaper, greeter)
-+ **rofi** (app launcher and a hierarchical menu) + a modern terminal stack (zsh, Powerlevel10k, alacritty,
-tmux, Neovim/LazyVim). Every color follows the wallpaper: Noctalia generates a Material 3 palette and renders
-it into alacritty, rofi, Neovim, the Hyprland borders, the shell prompt and the login screen.
-
-The whole thing is a [GNU Stow](https://www.gnu.org/software/stow/) dotfiles repo plus an idempotent
-installer, so a wiped machine is back to 100% with:
-
-```sh
-git clone https://github.com/suryakencana007/dotconfigfiles.git ~/dotconfigfiles
-~/dotconfigfiles/install.sh
+```
+______ _____ _____ _____    ___  ______  _____  _   _
+| ___ \  ___/  ___|_   _|  / _ \ | ___ \/  __ \| | | |
+| |_/ / |__ \ `--.  | |   / /_\ \| |_/ /| /  \/| |_| |
+|    /|  __| `--. \ | |   |  _  ||    / | |    |  _  |
+| |\ \| |___/\__/ /_| |_  | | | || |\ \ | \__/\| | | |
+\_| \_\____/\____/ \___/  \_| |_/\_| \_| \____/\_| |_/
 ```
 
-Heavily inspired by [Omarchy](https://omarchy.org) (bindings, menu, tmux and window rules were ported from
-its Lua config) and built on [Noctalia](https://noctalia.dev).
+A complete Arch Linux desktop that installs itself: **Hyprland** for windows, **Noctalia** for the bar,
+panels, lock screen and login, **rofi** for the launcher and menu, and a modern terminal setup. Pick a
+wallpaper and everything follows its colors: terminal, launcher, editor, window borders, prompt, login
+screen.
 
-See [NOTES.md](NOTES.md) for the *why* behind the decisions here, gotchas to know before editing, and
-things that were tried and rejected.
+It is inspired by [Omarchy](https://omarchy.org) (same key bindings, menu and window rules) and built on
+[Noctalia](https://noctalia.dev).
 
----
-
-## What you get
-
-| Area | Details |
-|---|---|
-| **Compositor** | Hyprland 0.56+ with the native Lua config, split into modules (`looknfeel`, `input`, `windows`, `bindings/*`). Omarchy defaults: gaps 5/10, `Super+W` close, `Super+arrows` focus, `Super+1..0` workspaces, groups, resize, universal `Super+C/V/X/A` clipboard, Quake-style scratchpad on ``Super+` ``. Blur, subtle window opacity, Noctalia-themed borders. |
-| **Capture** | Screenshots by Noctalia's native screencopy capture (frozen region select, annotator, clipboard + `~/Pictures/Screenshots`); screen recording by gpu-screen-recorder (KMS capture, GPU encoding, 60 fps, desktop audio), toggled from one key like Omarchy, with a red REC button in the bar while recording (click to stop). |
-| **Shell** | Noctalia v5: transparent floating bar with island-style capsule groups (square corners like the windows, frosted-glass capsules blurred by Hyprland, every gap on the same 10 px grid as the windows; icons only for network, volume and brightness, media hidden when nothing plays, date + time in the center, a caffeine toggle next to notifications and clipboard that keeps the screen from locking or turning off, a night light toggle (left click on/off, right click forced on; the moon icon shows off / scheduled / forced) and a dark/light theme toggle), control center, notifications, clipboard history, wallpaper picker, OSD, polkit agent, idle lock (10 min) and screen-off (11 min), blurred lock screen with a centered compact login box. Notifications and the volume/brightness OSD use the same frosted glass and 10 px grid (toasts top right, at most 3 on screen, Spotify track-change toasts suppressed). Control center (`Super+S`), session menu (`Super+Esc`) and wallpaper panel float below the bar on the same 10 px grid (control center and session at the top right, wallpaper at the top center); the control center shows Jakarta weather and dates like "Sunday, 27 September 2026". The Noctalia launcher (bar icon) is a glass panel with Alacritty, Brave, Thunar, Zed and Spotify pinned on top, no category row, and only the selected row highlighted. |
-| **Launcher & menu** | rofi 2.0 (Wayland). `Super+Alt+Space` = app launcher, `Super+Space` = Omarchy-style hierarchical menu (Apps, Learn, Trigger, Toggle, Style, Setup, Install, Update, Remove, About, System). Install > Package / AUR opens a floating fzf picker with package previews (multi-select with Tab), like Omarchy's; Update > Resi shell runs `resi-shell update` in a floating terminal, after a Yes/No confirmation like Omarchy's update screen. Update > Firmware checks LVFS with fwupd (offers to install fwupd the first time). Update > Process > Shell restarts Noctalia (refused while the session is locked). System shows Suspend and Hibernate only when logind reports them possible (Hibernate needs a real swap file plus resume setup; see NOTES.md). Fresh installs get the same look automatically: theme from the wallpaper (`theme.toml`), the Wallhaven plugin (`plugins.toml`), a centered compact lock-screen box (`lockscreen-layout`) and the greeter sync run at first login. Install > Development installs language environments the Omarchy way: mise for Ruby on Rails, Node.js/Bun/Deno, Go, PHP/Laravel/Symfony, Python (+uv), Elixir/Phoenix, Java, Zig, .NET, Clojure, Scala; rustup for Rust; opam for OCaml; Docker DB starts MySQL, PostgreSQL, Redis, MongoDB, MariaDB or MSSQL as containers bound to 127.0.0.1 with development credentials. The engine is rootless Podman (offered for install on first use, with podman-docker for a `docker`-compatible CLI and podman-compose; docker-compose and lazydocker work through `DOCKER_HOST`); an existing Docker install is used through sudo instead. mise itself is installed on first use and activated in `.zshrc`. Installed ones show a ✓; Remove > Development lists only what is installed (groups like JavaScript appear only when one of their members is), or "Nothing installed yet". Install > Web App turns a website into an app-launcher entry with its own window and icon (Brave `--app=`, icon fetched from the site), like Omarchy; Remove > Web App appears once one exists; Learn opens the Hyprland and Noctalia docs the same way. Setup > Power profile switches performance / balanced / power-saver (✓ on the active one); the choice is remembered per power source, so a manual pick survives plugging and unplugging (defaults: balanced on AC, power-saver on battery). Setup > Monitors opens nwg-displays (offers to install it the first time); its layout is saved outside the repo and loaded by `monitors.lua`. Remove > Package lists explicitly installed packages (Remove > AUR only foreign/AUR ones), shows everything that would go (including unused dependencies) and asks Yes/No before removing. Entries that open a submenu carry a right-aligned 󰅂 chevron. In a submenu, Backspace on an empty filter goes back. Both toggle: press again to close. |
-| **Login** | greetd + noctalia-greeter; wallpaper, palette, font, corner radius and monitor layout are auto-synced from the desktop (`noctalia/greeter.toml`) without a password prompt. |
-| **GTK apps** | Thunar and other GTK3/GTK4 apps use adw-gtk3 + Papirus icons in dark mode, colored by Noctalia's GTK templates. Folder icons follow the theme too: `hypr-folder-color` builds a `Papirus-Dark-Resi` icon theme in your home that points every folder icon at the Papirus color closest to the palette's primary color (no root, no AUR), re-run automatically on every theme change. |
-| **Update indicator** | A small watcher (`hypr-updates`, started by Hyprland) checks official repos and the AUR every 6 hours. When updates exist a 󰏖 button with the count appears in the bar (left click runs `resi-shell update`, right click lists them) and a notification is shown; it disappears after updating. Update > Check for updates does it on demand. |
-| **Battery mode** | Unplugging the charger switches to the `power-saver` profile, caps brightness at 50% (raise it manually if you like) and drops the panel to its lowest refresh rate when the panel has one; plugging in restores `balanced`, brightness and refresh. Runs as a small watcher started by Hyprland (`hypr-power`), no root needed. Setup > Battery limit turns on UPower's charge limit (stop at 80%, resume at 75%) for a laptop that is mostly plugged in; UPower keeps it across reboots. It only works where the battery firmware honors it (the Dynabook G83/HS ignores it; the menu and `hypr-power` say so). |
-| **Keyring & SSH** | gnome-keyring unlocks with your login password at the greeter (PAM), so Brave stores passwords and cookies in it (`--password-store=gnome-libsecret`) and Noctalia has a Secret Service; the gcr SSH agent (`SSH_AUTH_SOCK`) keeps unlocked keys for the session. |
-| **Night light** | Warms the screen automatically from sunset to sunrise for the configured location (Jakarta), with a one-hour fade. |
-| **Laptop lid** | Closing the lid suspends (logind default, deep sleep) with Noctalia locking first. With an external monitor connected it does not suspend; instead the internal panel is switched off (clamshell mode, like Omarchy) and comes back when the lid opens or the external monitor is unplugged. |
-| **Media** | mpv + yt-dlp as the default video/audio player, hardware decoding on the iGPU, floating window without transparency. |
-| **Terminal** | alacritty (JetBrains Mono Nerd Font, also used by Noctalia, rofi, mpv and the login screen; opacity, Noctalia colors), zsh + oh-my-zsh + Powerlevel10k (lean, one line, ANSI colors so it follows the theme), fzf/fzf-tab, zoxide, eza, bat, fd, ripgrep, delta, dust, duf, btop, tldr, lazygit. Text selected with the mouse goes straight to the clipboard, also inside tmux (drag, double-click word, triple-click line), with a "Copied" toast showing a snippet. |
-| **tmux** | Omarchy's config: `Ctrl+Space` prefix, `Alt+Enter` split, `Alt+1..9` windows, status bar on top, TPM with resurrect + continuum (sessions survive reboots). |
-| **Neovim** | LazyVim with a base16 colorscheme rendered by Noctalia (live reload on theme change), transparent background. |
-| **Helpers** | `hypr-keybindings` (`Super+K`, searchable list formatted like Omarchy's), `hypr-menu`, `hypr-theme-carousel` (`Super+Shift+Ctrl+Space`: sliding wallpaper carousel like omarchy-shell's theme picker, the centered card is the selection), `hypr-theme` (rofi: palettes, dark/light, gallery), `hypr-record` (screen recording toggle), `hypr-pkg-install` (fzf package picker for repo/AUR install and removal, used by the menu), `hypr-update-firmware` (fwupd refresh + update), `hypr-restart-shell` (restart Noctalia safely), `hypr-monitors` (nwg-displays with repo-safe output paths), `hypr-clamshell` / `hypr-lid-close` (lid handling), `hypr-power` (battery mode: `status|apply|watch|profile [P]`), `hypr-dev-env` (`install|remove|installed <env>`, mise-based dev environments), `hypr-updates` (`check|list|watch|clear`, bar update indicator), `hypr-webapp` (`install|remove|launch|list`, web apps as launcher entries), `hypr-folder-color` (`apply|set|pick|list|status`, Papirus folder color from the theme), `hypr-demo` (records a ~3 minute automatic tour of every feature to `~/Videos/resi-shell-demo.mp4`; `--no-record` for a dry run, `--shots DIR` for per-scene screenshots), `hypr-docker-db` (`install|remove|list`, dev databases in Podman), `hypr-containers` (podman-tui, installed on first use), `noctalia-drift` (lists or `--fix`es Noctalia GUI settings that override the repo config), `hypr-clipboard-toast` ("Copied" notification for terminal selections), `hypr-tui` (runs a command in a floating terminal and waits for a key before closing, like Omarchy's presentation wrapper; also `--confirm`/`--box` helpers for Yes/No prompts), `rofi-toggle`, `resi-shell`. |
-| **Claude Code** | Skills and agents that know this setup (`hyprland-config`, `noctalia-config`, `terminal-stack`, `dotfiles-stow`; agents `hyprland-tweaker`, `noctalia-tweaker`, `dotfiles-keeper`). |
-
-### Key bindings (the ones you will use every day)
-
-| Action | Keys |
-|---|---|
-| Menu / App launcher | `Super+Space` / `Super+Alt+Space` |
-| Containers TUI (podman-tui) | `Super+Shift+D` |
-| Terminal / Terminal + tmux | `Super+Enter` / `Super+Alt+Enter` |
-| Browser (Brave) / File manager (Thunar) | `Super+Shift+B` / `Super+Shift+F` |
-| Close window / Fullscreen / Float | `Super+W` / `Super+F` / `Super+T` |
-| Focus / Swap / Workspace | `Super+arrows` / `Super+Shift+arrows` / `Super+1..0` |
-| Control center / Session menu / Lock | `Super+S` / `Super+Esc` / `Super+Ctrl+L` |
-| Clipboard history / Wallpaper | `Super+Ctrl+V` / `Super+Ctrl+Space` |
-| Theme switcher / Wallhaven browser | `Super+Shift+Ctrl+Space` / `Super+Ctrl+Alt+Space` |
-| Screenshot area / window / screen | `Print` / `Shift+Print` / `Ctrl+Print` (Noctalia, with annotator) |
-| Record area / screen (toggle) | `Alt+Print` / `Ctrl+Alt+Print` (gpu-screen-recorder, like Omarchy) |
-| All key bindings | `Super+K` |
+**Contents:** [Install](#install) · [First steps](#first-steps-after-installing) ·
+[Everyday keys](#everyday-keys) · [The menu](#the-menu-superspace) · [Features](#features) ·
+[The `resi-shell` command](#the-resi-shell-command) · [Several machines](#several-machines) ·
+[Troubleshooting](#troubleshooting) · [How the repo is organised](#how-the-repo-is-organised)
 
 ---
 
-## Installation
+## Install
 
-Two ways: the **installer ISO** (fresh machine, Btrfs + Limine like Omarchy, installs in a few
-minutes from the offline mirror on the ISO, no internet needed; see
-[`resi/iso/README.md`](resi/iso/README.md)) or the **script on an existing Arch install** below.
+There are two ways. Both end with the same desktop.
 
+| | Installer ISO | Script |
+|---|---|---|
+| Use it when | the machine is new or you want to wipe it | Arch is already installed |
+| Internet | not needed | needed |
+| Time | a few minutes | 10 to 20 minutes |
+| Disk | **erased**, set up as Btrfs + Limine | left as it is |
 
-### Walkthrough for a fresh machine
+### Option A: installer ISO
 
-Every step below is a command you can paste. Lines starting with `#` are comments.
+The ISO carries every package it needs, so it installs without internet.
+
+1. **Build the ISO** on any Arch machine (about 4 GB):
+   ```sh
+   git clone https://github.com/suryakencana007/dotconfigfiles.git ~/dotconfigfiles
+   sudo pacman -S archiso
+   sudo ~/dotconfigfiles/resi/iso/build.sh        # result: resi/iso/out/resi-shell-<date>-x86_64.iso
+   ```
+2. **Write it to a USB stick** of 8 GB or more. Check the device name first; `dd` overwrites it without asking:
+   ```sh
+   lsblk -dpo NAME,SIZE,MODEL,TRAN                # find the stick (TRAN = usb), e.g. /dev/sdb
+   sudo dd if=resi/iso/out/resi-shell-*.iso of=/dev/sdX bs=4M status=progress oflag=sync
+   ```
+3. **Boot the target machine from the stick** (UEFI, Secure Boot off). The installer starts by itself and
+   asks for: the disk, a hostname, your user name and password, optional disk encryption, time zone and
+   keyboard layout. It shows a summary; choose **Install** to start or **Back** to change an answer.
+4. **Wait for "Installed in ..."**, remove the stick, reboot. You get the Resi Arch boot splash and the
+   login screen.
+
+> The disk you choose is erased completely, including other operating systems on it.
+
+If the machine had no internet during the install, connect later and run `resi-shell update` once. That
+fetches the few things that only exist online (tmux and Neovim plugins) and links the dotfiles to GitHub.
+
+Details, VM testing and how the ISO is built: [`resi/iso/README.md`](resi/iso/README.md).
+
+### Option B: script on an existing Arch install
+
+You need a working Arch system and a user in the `wheel` group (archinstall's defaults are fine).
 
 ```sh
-# 1. Base Arch is installed (archinstall is fine) and you are logged in as your user (in the wheel group).
 sudo pacman -Syu --needed git base-devel
-
-# 2. Clone over HTTPS first: no SSH key exists on a fresh machine yet.
 git clone https://github.com/suryakencana007/dotconfigfiles.git ~/dotconfigfiles
 cd ~/dotconfigfiles
-
-# 3. Optional: preview what the installer will do.
-./install.sh --dry-run
-
-# 4. Install everything. Asks for sudo once; ~10-20 minutes depending on network.
-./install.sh
-
-# 5. Reboot so the GPU driver, greetd and the login shell take effect.
+./install.sh --dry-run        # optional: shows what would happen, changes nothing
+./install.sh                  # asks for sudo once
 sudo reboot
 ```
 
-After the reboot, log in through the Noctalia greeter and finish the parts no script can do:
+The installer is safe to run again at any time: it only fills in what is missing.
 
-```sh
-# 6. SSH key for GitHub, then switch the repo remote to SSH so push works.
-ssh-keygen -t ed25519 -C "$(cat /etc/hostname)"
-cat ~/.ssh/id_ed25519.pub        # paste at https://github.com/settings/keys
-cd ~/dotconfigfiles && git remote set-url origin git@github.com:suryakencana007/dotconfigfiles.git
-git config user.name "Your Name" && git config user.email "you@example.com"   # only if the installer did not ask
+<details>
+<summary>What the installer does, step by step</summary>
 
-# 7. Wallpapers: put images here, then pick one in Noctalia (Super+Ctrl+Space) or the carousel (Super+Shift+Ctrl+Space).
-mkdir -p ~/Pictures/Wallpapers && cp /path/to/*.jpg ~/Pictures/Wallpapers/
-
-# 8. Check the result any time.
-resi-shell doctor
-```
-
-In Noctalia Settings (`Super+Shift+,`): run the setup wizard if it opens. Greeter auto-sync is enabled by
-`noctalia/greeter.toml` and the installer triggers the first sync; if the login screen still shows the default look,
-run `noctalia msg greeter-sync` once (or Settings → Security → Sync Now). The color templates (Hyprland borders, alacritty, GTK 3/4, btop) are enabled by
-`noctalia/templates.toml`; if the wizard wrote its own list, check **Templates** and make sure Hyprland, Alacritty,
-GTK 3 and GTK 4 are on, otherwise borders and apps keep their static colors after a wallpaper change.
-Sign in to Brave and Spotify. On a laptop with a discrete GPU, set the BIOS to hybrid graphics.
-
-### Machine-specific parts
-
-If this machine should carry its own overrides (centered lock screen login box, extra monitors), add a host
-overlay before or after the install, see [Several machines](#several-machines-hostshostname) below:
-
-```sh
-cd ~/dotconfigfiles
-cp -r hosts/legionarch "hosts/$(cat /etc/hostname)"
-hyprctl monitors -j | jq -r '.[].name'                        # e.g. eDP-1
-sed -i 's/eDP-2/eDP-1/g' "hosts/$(cat /etc/hostname)/.config/noctalia/lockscreen-widgets.toml"
-resi-shell install                                            # re-run: idempotent, only stows what is missing
-git add hosts && git commit -m "Add host overlay for $(cat /etc/hostname)" && git push
-```
-
-### What the installer does
-
-The installer is **idempotent**: running it again on a configured machine is safe and only fills in what is
-missing. It performs these steps in order:
-
-1. **Packages** from the official repos, listed in `resi/packages.pacman` (Hyprland, Noctalia, rofi, terminal
-   tools, fonts, audio, network, greetd, mpv, ...).
+1. **Packages** from the official repos (`resi/packages.pacman`): Hyprland, Noctalia, rofi, terminal tools,
+   fonts, audio, network, greetd, mpv, Plymouth and more.
 2. **AUR**: installs `yay` if needed, then `resi/packages.aur` (Brave, Spotify, noctalia-greeter,
    gpu-screen-recorder).
-3. **GPU drivers by detection**: NVIDIA (`nvidia-open-dkms` + `linux-headers` + early KMS in mkinitcpio),
-   AMD (mesa, vulkan-radeon), Intel (mesa, vulkan-intel), plus CPU microcode.
-4. **Shell**: oh-my-zsh, Powerlevel10k, fzf-tab, links the distro's zsh plugins, `chsh` to zsh.
-5. **Stow**: links every package into `$HOME`, plus the host overlay when `hosts/<hostname>` exists. Existing
-   plain files are moved aside as `*.pre-resi` (never a file that already resolves into the repo, so re-runs are safe).
-6. **tmux** plugins (TPM) and **Neovim** plugins (lazy.nvim, headless).
+3. **GPU drivers by detection**: NVIDIA (`nvidia-open-dkms`, kernel headers, early KMS), AMD (mesa,
+   vulkan-radeon), Intel (mesa, vulkan-intel), plus CPU microcode.
+4. **Shell**: oh-my-zsh, Powerlevel10k, fzf-tab; zsh becomes the login shell.
+5. **Configs**: links every package of this repo into your home with GNU Stow, plus the overlay for this
+   machine when `hosts/<hostname>` exists. Files already in the way are kept as `*.pre-resi`.
+6. **Plugins** for tmux (TPM) and Neovim (lazy.nvim).
 7. **Folders** (`~/Pictures/Screenshots`, `~/Pictures/Wallpapers`) and your **git identity** (asked once,
-   stored in the repo's local config, never committed).
-8. **Services**: NetworkManager, bluetooth, power-profiles-daemon, greetd with `resi/greetd-config.toml`.
-9. **GTK**: dark mode, adw-gtk3 theme, Papirus icons; mpv as default video/audio player.
-10. **Greeter**: installs `resi/greeter.toml` for noctalia-greeter and enables passwordless theme sync.
+   stored locally, never committed).
+8. **Services**: NetworkManager, Bluetooth, power-profiles-daemon, greetd.
+9. **GTK**: dark mode, adw-gtk3 theme, Papirus icons; mpv as the default player.
+10. **Login screen**: noctalia-greeter with its look synced from the desktop.
+11. **Boot splash**: the Resi Arch Plymouth theme and bootloader branding (see [Boot splash](#boot-splash)).
 
-### The `resi-shell` command
+At the first login a short one-time step finishes what needs a running desktop: GTK theme, login-screen
+sync, the lock-screen layout for your monitor, and the Wallhaven plugin.
 
-Once installed, the same script is available as `resi-shell`:
-
-| Command | What it does |
-|---|---|
-| `resi-shell install [--dry-run]` | full setup, safe to repeat |
-| `resi-shell update [-y]` | asks for confirmation (skip with `-y`), then `git pull` (uncommitted local changes are stashed and re-applied after asking; a diverged branch or a conflict stops with instructions), full pacman + AUR upgrade, `mise up` when mise is installed, orphan removal (asked first) and package-cache pruning (`paccache -rk2`), new packages, restow, plugin updates, reload Hyprland and Noctalia; offers a reboot when the kernel or Hyprland was replaced. Output is logged to `~/.cache/resi-shell-update.log` |
-| `sudo resi/boot/setup-boot-splash.sh [--check\|--remove]` | the "Resi Arch" boot splash, run by `resi-shell install`: Plymouth theme `resi` (wordmark, progress bar, LUKS passphrase box), `plymouth` initramfs hook, `quiet splash` on the kernel command line, Limine branding (entry title and `interface_branding`), UKI splash when the machine boots a UKI; rebuilds the initramfs. `--remove` undoes it. `/etc/os-release` stays Arch |
-| `resi-shell install --offline` | used by the ISO: packages (including pre-built AUR ones) from the `resi-offline` repo, git clones from the vendored tarballs; nvim/tmux plugins are deferred to the first online `resi-shell update` |
-| `resi-shell install --chroot` | used by the ISO: runs inside `arch-chroot` as the new user (temporary passwordless sudo); steps that need a live session are deferred |
-| `resi-shell lockscreen-layout [--force]` | writes a compact, centered lock-screen login box for this machine's outputs to `~/.config/noctalia/lockscreen-widgets.toml` (skipped when a host overlay provides one); run automatically by install and first-login |
-| `resi-shell first-login` | run by Hyprland at every start, does the deferred steps once (GTK theme, greeter sync) when the marker from a chroot install exists |
-| `resi-shell doctor` | health check: script lint (`bash -n`, shellcheck errors, Python, Lua), keyring in PAM, stow packages, broken links, background watchers (battery mode, update indicator), key files present and pointing into the repo, Noctalia include in `hyprland.lua`, Hyprland/Noctalia/rofi/tmux/zsh configs, repo state, Noctalia GUI settings that override the repo config (`noctalia-drift`) |
-| `resi-shell packages` | print the package lists |
+</details>
 
 ---
 
-## Repository layout
+## First steps after installing
 
-Each top-level folder is a Stow package mirroring `$HOME`:
+Log in at the Noctalia login screen, then:
 
-| Package | Contents | Stow mode |
-|---|---|---|
-| `zsh` | `.zshrc`, `.p10k.zsh` | file links |
-| `git` | `.gitconfig` (delta pager only, no identity) | file links |
-| `alacritty` | `.config/alacritty/alacritty.toml` | plain stow: folder link when `~/.config/alacritty` did not exist yet (then `themes/` is rendered into the repo folder, gitignored), per-file link when it did |
-| `tmux` | `.config/tmux/tmux.conf` | same as alacritty (`plugins/` is TPM's, gitignored when it lands in the repo folder) |
-| `nvim` | `.config/nvim` (LazyVim + Noctalia theme template) | folder link |
-| `rofi` | `.config/rofi/{config,layout}.rasi` | folder link (`noctalia.rasi` is rendered, ignored) |
-| `hypr` | `.config/hypr/*.lua`, `bindings/*.lua` | `--no-folding` (real dir) |
-| `noctalia` | `.config/noctalia/*.toml`, `templates/` | `--no-folding` (real dir) |
-| `gtk` | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (dark mode; colors are rendered by Noctalia) | `--no-folding` |
-| `mpv` | `.config/mpv/{mpv.conf,input.conf}` (gpu-next on the compositor GPU, VA-API decode, default player for video/audio) | folder link |
-| `brave` | `.config/brave-flags.conf` (passwords and cookies in the keyring) | file link |
-| `bin` | `.local/share/applications/nwg-displays.desktop` (launcher entry overridden to go through `hypr-monitors`), `.local/share/applications/{bssh,bvnc,avahi-discover,lstopo,qv4l2,qvidcap,xfce4-about,rofi,rofi-theme-selector}.desktop` (`NoDisplay=true` overrides that hide utility entries from both app launchers), `.local/bin/{hypr-keybindings,hypr-menu,hypr-theme,hypr-theme-carousel,hypr-record,hypr-pkg-install,hypr-tui,hypr-update-firmware,hypr-restart-shell,hypr-monitors,hypr-clamshell,hypr-lid-close,hypr-power,hypr-dev-env,hypr-updates,hypr-webapp,hypr-demo,hypr-folder-color,hypr-docker-db,hypr-containers,noctalia-drift,hypr-clipboard-toast,rofi-toggle,resi-shell}` | `--no-folding` |
-| `claude` | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` |
-| `hosts/<hostname>` | machine-specific overlay, see below | `--no-folding`, from `hosts/` |
-| `resi/` | installer data: package lists, greeter and greetd templates | not stowed |
-| `install.sh` | the installer | not stowed |
+```sh
+# 1. See that everything is in place.
+resi-shell doctor
 
-Files Noctalia renders from templates are listed in `.gitignore` and never committed. So is Neovim's
-`lazy-lock.json`: lazy.nvim rewrites it on every machine, so each machine keeps its own plugin pins instead of
-fighting over one file in git.
+# 2. Add wallpapers, then pick one: Super+Ctrl+Space (panel) or Super+Shift+Ctrl+Space (carousel).
+cp /path/to/*.jpg ~/Pictures/Wallpapers/
 
-### Several machines: `hosts/<hostname>/`
+# 3. To push your own changes: create an SSH key and switch the repo to SSH.
+ssh-keygen -t ed25519 -C "$(cat /etc/hostname)"
+cat ~/.ssh/id_ed25519.pub        # add it at https://github.com/settings/keys
+cd ~/dotconfigfiles && git remote set-url origin git@github.com:suryakencana007/dotconfigfiles.git
+```
 
-Everything generic lives in the packages above and adapts by itself: GPU drivers and driver environment are
-detected at install time, the monitor rule is a wildcard, the NVIDIA environment is only applied when NVIDIA
-is the sole GPU. Anything tied to one machine goes into `hosts/<hostname>/`, a Stow overlay that the installer
-applies **only** when the folder name matches `/etc/hostname`.
+Also worth doing once:
 
-On a machine without a matching folder nothing breaks: the installer prints a note that no overlay exists and
-continues with the generic config. What you lose is only what is machine-specific, for example the lock screen
-login box falls back to Noctalia's default placement (bottom) instead of the centered layout.
+- Press `Super+K` for the full list of key bindings.
+- Sign in to Brave and Spotify.
+- On a laptop with a second graphics card, set the BIOS to hybrid graphics.
+- If Noctalia opens its setup wizard, just go through it. The theme, plugins and color templates already
+  come from this repo.
 
-`legionarch` (a Lenovo Legion, Ryzen 4800H + GTX 1660 Ti in hybrid mode) carries:
+---
 
-- `.config/noctalia/lockscreen-widgets.toml` — login box layout for its `eDP-2` panel;
-- `.config/hypr/local.lua` — Hyprland overrides loaded last (monitors, per-machine rules). Empty for now.
+## Everyday keys
 
-To add a machine:
+| Action | Keys |
+|---|---|
+| Menu / app launcher | `Super+Space` / `Super+Alt+Space` |
+| Terminal / terminal with tmux | `Super+Enter` / `Super+Alt+Enter` |
+| Browser (Brave) / file manager (Thunar) | `Super+Shift+B` / `Super+Shift+F` |
+| Close window / fullscreen / float | `Super+W` / `Super+F` / `Super+T` |
+| Focus / swap window / switch workspace | `Super+arrows` / `Super+Shift+arrows` / `Super+1..0` |
+| Copy / paste / cut / select all, in every app | `Super+C` / `Super+V` / `Super+X` / `Super+A` |
+| Drop-down terminal | ``Super+` `` |
+| Control center / session menu / lock | `Super+S` / `Super+Esc` / `Super+Ctrl+L` |
+| Clipboard history / wallpaper panel | `Super+Ctrl+V` / `Super+Ctrl+Space` |
+| Theme carousel / Wallhaven browser | `Super+Shift+Ctrl+Space` / `Super+Ctrl+Alt+Space` |
+| Screenshot: area / window / screen | `Print` / `Shift+Print` / `Ctrl+Print` |
+| Record: area / screen (press again to stop) | `Alt+Print` / `Ctrl+Alt+Print` |
+| Containers (podman-tui) | `Super+Shift+D` |
+| Noctalia settings | `Super+Shift+,` |
+| **All key bindings, searchable** | `Super+K` |
+
+---
+
+## The menu (`Super+Space`)
+
+One menu reaches everything. Entries that open a submenu show a `󰅂` on the right. In a submenu,
+Backspace on an empty search goes back. Pressing `Super+Space` again closes it.
+
+| Section | What is inside |
+|---|---|
+| **Apps** | the app launcher |
+| **Learn** | key bindings, tmux keys, Hyprland wiki, Noctalia docs |
+| **Trigger** | screenshots, screen recording, color picker, clipboard history, calendar |
+| **Toggle** | night light, caffeine (no idle lock), Do Not Disturb, bar, Wi-Fi, Bluetooth |
+| **Style** | theme carousel, palette and dark/light mode, wallpaper, random wallpaper, Noctalia settings |
+| **Setup** | audio, network, Bluetooth, display, monitors, power profile, battery limit, containers, config files |
+| **Install** | a package, an AUR package, a development environment, a web app |
+| **Update** | resi-shell, firmware, check for updates, restart the shell |
+| **Remove** | a package, an AUR package, a development environment, a web app |
+| **About** | system information |
+| **System** | lock, suspend, hibernate, logout, reboot, shutdown |
+
+Things that would be dangerous ask first: removing a package lists everything that would go and asks
+Yes/No, and so does the update.
+
+---
+
+## Features
+
+### Look and theme
+
+- Colors come from the wallpaper. Noctalia builds a palette and renders it into alacritty, rofi, Neovim,
+  GTK apps, the Hyprland borders, the prompt and the login screen.
+- Bar, panels, notifications and the launcher share one style: frosted glass, square corners, the same
+  10 px spacing as the windows.
+- Folder icons follow the theme too (`hypr-folder-color` picks the closest Papirus color).
+- Thunar and other GTK apps use adw-gtk3 with Papirus icons in dark mode.
+- Font everywhere: JetBrains Mono Nerd Font.
+
+### Bar and panels
+
+- Floating bar: launcher and workspaces on the left, date and time in the middle, and on the right the
+  tray, network, Bluetooth, volume, brightness and battery. The playing track shows up only while
+  something plays.
+- Bar buttons: notifications, clipboard, caffeine (keeps the screen awake), night light, dark/light
+  switch, control center and session menu. A red **REC** button appears while recording; click it to stop.
+- An update button with a count appears when updates exist (left click updates, right click lists them).
+- Control center (`Super+S`) with weather and calendar, session menu (`Super+Esc`), wallpaper panel.
+- The screen locks after 10 minutes without input and switches off after 11.
+
+### Screenshots and recording
+
+- Screenshots freeze the screen, let you select an area and annotate it, then go to the clipboard and
+  `~/Pictures/Screenshots`.
+- Recording uses gpu-screen-recorder: 60 fps with desktop audio, encoded on the GPU. One key starts it,
+  the same key stops it.
+
+### Laptops
+
+- **Battery mode**: unplugging switches to the power-saver profile, limits brightness to 50% and lowers
+  the refresh rate when the panel allows it. Plugging in restores everything.
+- **Power profile** (Setup menu): performance, balanced or power-saver. Your choice is remembered
+  separately for battery and charger.
+- **Battery limit** (Setup menu): stop charging at 80% for a laptop that is mostly plugged in. It only
+  shows up where the battery supports it.
+- **Lid**: closing it locks and suspends. With an external monitor attached it only switches the laptop
+  panel off (clamshell mode).
+- **Night light**: warms the screen from sunset to sunrise.
+
+### Updates
+
+- `resi-shell update` (or Update in the menu) updates this setup, Arch, the AUR and your development
+  tools in one go, then offers to remove unused packages and trims old package files. It offers a reboot when the
+  kernel or Hyprland changed.
+- A background check runs every 6 hours and shows the update button in the bar.
+- Update > Firmware installs firmware updates through fwupd.
+
+### Development tools
+
+Install > Development sets up a language with one click; installed ones show a ✓.
+
+- Through [mise](https://mise.jdx.dev): Ruby on Rails, Node.js, Bun, Deno, Go, PHP, Laravel, Symfony,
+  Python (with uv), Elixir, Phoenix, Java, Zig, .NET, Clojure, Scala.
+- Rust through rustup, OCaml through opam.
+- **Databases in containers**: MySQL, PostgreSQL, Redis, MongoDB, MariaDB or MSSQL, reachable only from
+  this machine, with development passwords. They run on rootless Podman; `docker` and `docker compose`
+  commands keep working.
+- **Web apps**: Install > Web App turns a website into its own window with an icon in the launcher.
+
+### Terminal
+
+- alacritty with zsh, oh-my-zsh and a one-line Powerlevel10k prompt.
+- Tools: fzf, zoxide, eza, bat, fd, ripgrep, delta, dust, duf, btop, tldr, lazygit.
+- Selecting text with the mouse copies it, also inside tmux, and shows a small "Copied" note.
+- tmux with Omarchy's keys (`Ctrl+Space` prefix, `Alt+Enter` split, `Alt+1..9` windows); sessions
+  survive a reboot.
+- Neovim with LazyVim; its colors change live with the theme.
+
+### Login, passwords and SSH
+
+- Login screen: greetd with noctalia-greeter, wearing the same wallpaper and colors as the desktop.
+- Your login password also unlocks the keyring, so Brave can store passwords and SSH keys stay unlocked
+  for the session.
+
+### Boot splash
+
+The machine boots with a Resi Arch logo and a progress bar instead of scrolling text, and the boot menu
+entry is called "Resi Arch". If the disk is encrypted, the passphrase is asked on the same screen.
+
+It is set up by `resi-shell install` (never by `update`, because it changes the boot configuration):
+
+```sh
+sudo ~/dotconfigfiles/resi/boot/setup-boot-splash.sh --check     # report only
+sudo ~/dotconfigfiles/resi/boot/setup-boot-splash.sh             # set up (again)
+sudo ~/dotconfigfiles/resi/boot/setup-boot-splash.sh --remove    # back to the plain text boot
+```
+
+The system stays plain Arch Linux underneath; only the look changes.
+
+---
+
+## The `resi-shell` command
+
+After installing, the installer is available everywhere as `resi-shell`.
+
+| Command | What it does |
+|---|---|
+| `resi-shell update` | Updates everything: this repo, Arch and AUR packages, development tools, plugins; then reloads the desktop. Asks before it starts (`-y` skips the question). The output is saved in `~/.cache/resi-shell-update.log`. |
+| `resi-shell doctor` | Health check. Tells you what is wrong and usually how to fix it. |
+| `resi-shell install` | The full setup again. Safe to repeat; add `--dry-run` to only see what it would do. |
+| `resi-shell packages` | Prints the package lists. |
+| `resi-shell lockscreen-layout` | Writes a centered login box for this machine's monitor on the lock screen (done automatically; `--force` rewrites it). |
+
+<details>
+<summary>What <code>update</code> does when you have local changes</summary>
+
+If you edited files in the repo, `update` shows them and offers to set them aside, pull, and put them back
+(`git stash`, `git pull`, `git stash pop`). If your branch has commits that are not on GitHub, or a change
+conflicts, it stops and prints the exact commands to run.
+
+</details>
+
+<details>
+<summary>Commands used by the installer ISO</summary>
+
+| Command | Purpose |
+|---|---|
+| `resi-shell install --offline` | packages (including pre-built AUR ones) come from the mirror on the ISO, git clones and the Noctalia plugins from bundles on the ISO |
+| `resi-shell install --chroot` | runs inside the freshly installed system before its first boot; steps that need a running desktop are postponed |
+| `resi-shell first-login` | started by Hyprland; does the postponed steps once |
+| `resi-shell iso-relink` | connects a repo installed from the ISO to GitHub (also done by the first `update`) |
+
+</details>
+
+<details>
+<summary>What <code>doctor</code> checks</summary>
+
+Stow links and broken links, key files pointing into the repo, Hyprland, Noctalia, rofi, tmux and zsh
+configs, script lint, the keyring at login, the background watchers (battery mode, update check,
+clipboard note), the login-screen sync, the boot splash, Noctalia settings changed in its GUI that now
+override the repo, and whether the repo has uncommitted changes.
+
+</details>
+
+---
+
+## Several machines
+
+The same repo runs on every machine. Graphics drivers are detected, monitors are handled by a wildcard
+rule, and the lock-screen layout is generated for the monitor it finds.
+
+Only real one-machine exceptions need a folder: `hosts/<hostname>/`. The installer applies it when the
+folder name equals the machine's hostname, and ignores it everywhere else. Two machines are in the repo
+as examples, `legionarch` and `dynarch`.
 
 ```sh
 cd ~/dotconfigfiles
 cp -r hosts/legionarch "hosts/$(cat /etc/hostname)"
-hyprctl monitors -j | jq -r '.[].name'                       # find the panel name, e.g. eDP-1
-sed -i 's/eDP-2/eDP-1/g' "hosts/$(cat /etc/hostname)/.config/noctalia/lockscreen-widgets.toml"
+# edit hosts/<hostname>/.config/hypr/local.lua for monitors or rules of this machine
+resi-shell install
 git add hosts && git commit -m "Add host overlay for $(cat /etc/hostname)" && git push
-resi-shell install                                           # or: cd hosts && stow --no-folding -t ~ "$(cat /etc/hostname)"
 ```
 
-Overlays never interfere with each other: each machine only stows the folder that carries its own hostname.
-Per-machine Hyprland tweaks (a second monitor, scale, a device-specific rule) go into that host's `local.lua`.
+When you install from the ISO, type the hostname of an existing overlay in the wizard to get it applied.
 
-### Manual stow (without the installer)
+---
+
+## Troubleshooting
+
+Start with `resi-shell doctor`. Common cases:
+
+| What you see | What to do |
+|---|---|
+| Colors of an app do not follow the wallpaper | `noctalia-drift` shows settings changed in Noctalia's GUI that override the repo; `noctalia-drift --fix` restores them. |
+| The login screen looks default | `noctalia msg greeter-sync` |
+| A change in a config file has no effect | Hyprland: `hyprctl reload && hyprctl configerrors`. Noctalia: `noctalia config validate && noctalia msg config-reload`. |
+| The bar or a panel is stuck | Menu > Update > Process > Shell restarts Noctalia. |
+| Plugins are missing after an offline install | Connect to the internet and run `resi-shell update`. |
+| The boot splash hangs or stays black | Press `Esc` to see the text. To turn it off: `setup-boot-splash.sh --remove` (see [Boot splash](#boot-splash)). |
+| The update stops because of local changes | Follow the commands it prints, then run `resi-shell update` again. |
+| A laptop drains its battery while idle | Check `NOTES.md` for known firmware problems (for example the Dynabook G83/HS). |
+
+[NOTES.md](NOTES.md) explains why things are built the way they are, what to know before editing, and
+what was tried and dropped.
+
+---
+
+## How the repo is organised
+
+Each top-level folder is a [GNU Stow](https://www.gnu.org/software/stow/) package that mirrors your home
+directory. Configs in `~/.config/...` are links into this repo, so editing either one edits the same file.
+
+| Folder | Contents |
+|---|---|
+| `hypr` | Hyprland config in Lua: `looknfeel`, `input`, `windows`, `monitors`, `bindings/*`, `autostart` |
+| `noctalia` | Noctalia config (`*.toml`) and color templates |
+| `rofi` | launcher and menu layout |
+| `alacritty`, `tmux`, `zsh`, `nvim`, `git` | terminal stack |
+| `gtk`, `mpv`, `brave` | app settings |
+| `bin` | helper scripts in `~/.local/bin` and a few launcher entries |
+| `claude` | Claude Code skills and agents that know this setup |
+| `hosts/<hostname>` | per-machine overlay |
+| `resi/` | installer data: package lists, login-screen templates, boot splash (`resi/boot`), ISO builder (`resi/iso`) |
+| `install.sh` | the installer, also installed as `resi-shell` |
+
+Files that Noctalia renders from templates are in `.gitignore` and never committed.
+
+<details>
+<summary>Helper scripts</summary>
+
+| Script | Purpose |
+|---|---|
+| `hypr-menu`, `rofi-toggle` | the menu and launcher toggles |
+| `hypr-keybindings` | searchable key binding list (`Super+K`) |
+| `hypr-theme`, `hypr-theme-carousel`, `hypr-folder-color` | palettes, dark/light, wallpaper carousel, folder icon color |
+| `hypr-record` | screen recording toggle |
+| `hypr-pkg-install` | package picker for install and removal (official repos and AUR) |
+| `hypr-dev-env`, `hypr-docker-db`, `hypr-containers`, `hypr-webapp` | development environments, databases, podman-tui, web apps |
+| `hypr-power` | battery mode, power profile, battery limit |
+| `hypr-updates`, `hypr-update-firmware` | update indicator, firmware updates |
+| `hypr-monitors`, `hypr-clamshell`, `hypr-lid-close` | monitor layout tool, lid handling |
+| `hypr-restart-shell` | restart Noctalia safely |
+| `hypr-clipboard-toast` | the "Copied" note for terminal selections |
+| `hypr-tui` | runs a command in a floating terminal, with Yes/No prompts |
+| `noctalia-drift` | finds Noctalia GUI settings that override the repo |
+| `hypr-demo` | records an automatic tour of the features to `~/Videos/resi-shell-demo.mp4` |
+
+</details>
+
+<details>
+<summary>Stow details and manual stow</summary>
+
+`hypr`, `noctalia`, `gtk`, `bin`, `claude` and the host overlays are stowed with `--no-folding` (real
+folders with one link per file), so machine overlays and rendered files can sit next to the repo files.
+The others are stowed normally.
 
 ```sh
 cd ~/dotconfigfiles
-stow -t ~ zsh git alacritty tmux nvim rofi mpv
+stow -t ~ zsh git alacritty tmux nvim rofi mpv brave
 stow --no-folding -t ~ hypr noctalia claude bin gtk
 (cd hosts && stow --no-folding -t ~ "$(cat /etc/hostname)")
 ```
 
----
+Neovim's `lazy-lock.json` is not committed: each machine keeps its own plugin versions.
 
-## Day-to-day
+</details>
 
-- Edit configs through their normal paths (`~/.config/hypr/...`) or in the repo; they are the same files.
-- Hyprland reloads on save; validate with `hyprctl reload && hyprctl configerrors`.
-- Noctalia: `noctalia config validate`, then `noctalia msg config-reload`. Values changed in the Settings GUI are
-  stored in `~/.local/state/noctalia/settings.toml` and win over the files here.
-- Commit and push from `~/dotconfigfiles`; `resi-shell update` on the other machines.
+### Day to day
+
+- Edit configs where they are (`~/.config/hypr/...`) or in the repo; it is the same file.
+- Values changed in Noctalia's Settings window are stored outside the repo and win over the files here.
+  `noctalia-drift` lists them.
+- Commit and push from `~/dotconfigfiles`, then run `resi-shell update` on your other machines.
 
 ## License
 

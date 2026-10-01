@@ -491,6 +491,10 @@ through the GUI instead, or removed from `settings.toml` by hand. `resi-shell do
   limine pacman hook only copies EFI binaries and never rewrites that file). Result: 5.4 W, ~10 h,
   charger detection, brightness keys and USB-C still work. Bootloader config is outside this repo,
   so a reinstall must re-add it by hand; check Dynabook for a BIOS newer than 8.90 first.
+  **After installing from the resi ISO** the file is `/boot/EFI/arch-limine/limine.conf` (archinstall's
+  location): append ` acpi_mask_gpe=0x6F` to the `cmdline:` line, after `quiet splash`, and reboot. Nothing in
+  `install.sh` or `resi/boot/setup-boot-splash.sh` adds it; a DMI-matched quirk list was considered on
+  2026-10-01 and left out on purpose, this note is the record.
 
 ## Evaluated and rejected
 
