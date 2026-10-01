@@ -19,7 +19,7 @@ CMD="install"; DRY=0; YES=0; CHROOT=0; FORCE=0; OFFLINE=0
 FIRST_LOGIN_MARKER="$HOME/.local/state/resi/first-login-pending"
 OFFLINE_MARKER="$HOME/.local/state/resi/offline-install-pending"     # plugin nvim/tmux belum diambil (install offline)
 RESI_VENDOR="${RESI_VENDOR:-/usr/share/resi-shell/vendor}"           # tarball vendor dari ISO offline (bind-mount saat chroot)
-for a in "$@"; do case "$a" in install|update|doctor|packages|first-login|lockscreen-layout) CMD="$a" ;; --force) FORCE=1 ;; --dry-run|-n) DRY=1 ;; -y|--yes) YES=1 ;; --chroot) CHROOT=1; YES=1 ;; --offline) OFFLINE=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "unknown argument: $a" >&2; exit 2 ;; esac; done
+for a in "$@"; do case "$a" in install|update|doctor|packages|first-login|lockscreen-layout|iso-relink) CMD="$a" ;; --force) FORCE=1 ;; --dry-run|-n) DRY=1 ;; -y|--yes) YES=1 ;; --chroot) CHROOT=1; YES=1 ;; --offline) OFFLINE=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "unknown argument: $a" >&2; exit 2 ;; esac; done
 
 PKGS_FOLD=(zsh git alacritty tmux nvim rofi mpv brave)            # stow biasa (folder boleh dilipat)
 PKGS_NOFOLD=(hypr noctalia claude bin gtk)                 # --no-folding: folder tetap nyata (overlay host & file render bisa masuk)
@@ -124,7 +124,7 @@ gpu_drivers() {
     fi
     ok "NVIDIA: nvidia-open-dkms + early KMS"
   fi
-  if grep -qiE 'amd|ati' <<<"$pci"; then
+  if grep -qiwE 'amd|ati' <<<"$pci"; then      # -w: kata utuh; tanpa itu "ati" cocok dengan "VGA compATIble controller" di setiap mesin
     run sudo pacman -S --needed --noconfirm mesa vulkan-radeon libva-mesa-driver
     ok "AMD: mesa + vulkan-radeon"
   fi
@@ -412,10 +412,24 @@ update_restart() {
 
 # git pull yang ramah: perubahan lokal yang belum di-commit disimpan (stash) lalu dikembalikan,
 # cabang yang menyimpang atau konflik saat mengembalikan dihentikan dengan petunjuk, bukan pesan git mentah.
+# Repo hasil install ISO: HEAD = satu commit "Installed from ISO" tanpa sejarah, belum punya upstream. Setelah fetch,
+# pindahkan HEAD (soft) ke commit asal ISO (.git/resi-iso-commit) supaya pohon kerja = commit itu dan `git pull` bisa
+# fast-forward. Tanpa ini update pertama berhenti dengan "local branch has 1 commit not on origin".
+iso_relink() {
+  local marker="$REPO/.git/resi-iso-commit" base
+  [ -f "$marker" ] || return 0
+  (( DRY )) && { echo "  [dry] would link the ISO-installed repo to origin/main"; return 0; }
+  git -C "$REPO" rev-parse -q --verify origin/main >/dev/null || timeout 120 git -C "$REPO" fetch -q origin main || return 1
+  base="$(cat "$marker")"; git -C "$REPO" cat-file -e "${base:-none}^{commit}" 2>/dev/null || base=origin/main
+  git -C "$REPO" reset -q --soft "$base" && git -C "$REPO" branch -q --set-upstream-to=origin/main main >/dev/null && rm -f "$marker"
+  ok "dotfiles repo linked to origin/main (installed from ISO commit ${base:0:7})"
+}
+
 git_sync() {
   step "Dotfiles: git pull"
   cd "$REPO"
   run git fetch -q origin || { warn "git fetch failed (offline?). Continuing with the local copy."; cd - >/dev/null; return 0; }
+  iso_relink || { warn "could not link the ISO-installed repo to origin/main; continuing with the local copy."; cd - >/dev/null; return 0; }
   local branch; branch="$(git rev-parse --abbrev-ref HEAD)"
   local dirty; dirty="$(git status --porcelain --untracked-files=no)"
   local behind ahead; behind="$(git rev-list --count HEAD..origin/"$branch" 2>/dev/null || echo 0)"; ahead="$(git rev-list --count origin/"$branch"..HEAD 2>/dev/null || echo 0)"
@@ -582,4 +596,5 @@ case "$CMD" in
   packages) echo "# pacman"; pkglist "$REPO/resi/packages.pacman"; echo "# aur"; pkglist "$REPO/resi/packages.aur" ;;
   first-login) first_login ;;
   lockscreen-layout) lockscreen_layout ;;
+  iso-relink) iso_relink ;;        # internal: dipakai installer ISO (resi-iso-postinstall) saat online
 esac

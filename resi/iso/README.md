@@ -42,6 +42,18 @@ resi/iso/test-vm.sh                                  # boot the installed system
 #   on the host: ssh -p 2222 <user>@127.0.0.1
 ```
 
+The VM has NAT networking by default, so it exercises the mirror but not the no-network path. For a
+true offline test run `RESI_VM_NET=0 resi/iso/test-vm.sh <iso>` (no network card at all). A host
+folder is shared over 9p and works without networking: in the VM
+`mkdir -p /tmp/host && mount -t 9p -o trans=virtio host /tmp/host`, which is
+`~/.local/state/resi/vm/share` on the host (handy for copying `/root/resi-install.log` out).
+
+Without network the installer passes `--offline --skip-ntp --skip-wkd --skip-wifi-check
+--no-pkg-lookups` to archinstall. These are command-line flags, not JSON keys: without `--skip-ntp`
+archinstall waits for an NTP sync forever, and without `--offline` it opens a Wi-Fi dialog that the
+stage board hides. The dotfiles repo is then linked to GitHub by the first online `resi-shell update`
+(`.git/resi-iso-commit` records the commit the ISO was built from).
+
 ## What the live installer does
 
 1. `resi-iso-install` starts on tty1 (`/root/.zlogin`). It checks the network; with the offline

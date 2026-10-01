@@ -10,7 +10,7 @@ STATE="${1:-/root/resi}"; PHASE="${2:-all}"; MNT=/mnt; RESI_SHARE=/usr/share/res
 # shellcheck disable=SC1091
 source "$STATE/answers"
 # jawaban wizard: disk username encrypt git_name git_email offline (datang dari file, bukan dari script ini)
-disk="${disk:?}"; username="${username:?}"; encrypt="${encrypt:-0}"; git_name="${git_name:-}"; git_email="${git_email:-}"
+disk="${disk:?}"; username="${username:?}"; encrypt="${encrypt:-0}"; git_name="${git_name:-}"; git_email="${git_email:-}"; online="${online:-1}"
 offline="${offline:-0}"; home="/home/$username"
 
 info() { printf '\e[1;32m  › %s\e[0m\n' "$*"; }
@@ -39,9 +39,16 @@ phase_prepare() {
   info "copying the dotfiles repo to $home/dotconfigfiles"
   rm -rf "$MNT$home/dotconfigfiles"; tar -xf "$RESI_SHARE/dotconfigfiles.tar" -C "$MNT$home"
   arch-chroot "$MNT" chown -R "$username:$username" "$home"     # SEBELUM git init: tar mengekstrak sebagai root, user tidak bisa membuat .git
-  # jadikan repo git supaya resi-shell update (git pull) bekerja
-  arch-chroot "$MNT" runuser -u "$username" -- bash -c "cd $home/dotconfigfiles && git init -q -b main && git remote add origin https://github.com/suryakencana007/dotconfigfiles.git && git add -A && git -c user.name=resi -c user.email=resi@localhost commit -q -m 'Installed from ISO' && git fetch -q origin main && git reset -q --soft origin/main && git branch -q --set-upstream-to=origin/main main" \
-    || echo "  (could not link the repo to GitHub now; resi-shell update will need: git fetch && git reset --hard origin/main)"
+  # Jadikan repo git supaya resi-shell update (git pull) bekerja. Tarball tidak membawa sejarah, jadi HEAD = satu commit
+  # "Installed from ISO"; .git/resi-iso-commit mencatat commit asal ISO supaya `resi-shell iso-relink` (di sini bila
+  # online, atau otomatis di `resi-shell update` pertama bila install offline) bisa menyambungkannya ke origin/main.
+  iso_commit=$(sed -n 's/^commit=//p' "$RESI_SHARE/version" 2>/dev/null | sed 's/-dirty$//')
+  arch-chroot "$MNT" runuser -u "$username" -- bash -c "cd $home/dotconfigfiles && git init -q -b main && git remote add origin https://github.com/suryakencana007/dotconfigfiles.git && git add -A && git -c user.name=resi -c user.email=resi@localhost commit -q -m 'Installed from ISO' && echo '$iso_commit' >.git/resi-iso-commit"
+  if (( online )); then
+    cp -L /etc/resolv.conf "$MNT/etc/resolv.conf" 2>/dev/null || true
+    arch-chroot "$MNT" runuser -u "$username" -- env HOME="$home" bash "$home/dotconfigfiles/install.sh" iso-relink \
+      || echo "  (could not reach GitHub now; the first 'resi-shell update' links the repo to origin/main)"
+  else info "offline: the dotfiles repo is linked to GitHub by the first online 'resi-shell update'"; fi
 
   info "snapper: snapshots of / (Btrfs)"
   arch-chroot "$MNT" bash -c 'snapper --no-dbus -c root create-config / 2>/dev/null || true; systemctl enable snapper-timeline.timer snapper-cleanup.timer >/dev/null 2>&1 || true'

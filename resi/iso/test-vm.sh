@@ -4,6 +4,8 @@
 #   resi/iso/test-vm.sh                                     boot dari disk virtual hasil instalasi
 #   RESI_VM_DISK=/path/x.qcow2                              disk lain (default ~/.local/state/resi/vm/resi-test.qcow2)
 #   rm ~/.local/state/resi/vm/resi-test.qcow2               mulai dari disk kosong lagi
+#   RESI_VM_NET=0 resi/iso/test-vm.sh <iso>                 VM tanpa jaringan (uji offline murni)
+# Folder bersama (juga saat offline): ~/.local/state/resi/vm/share  <->  di VM: mount -t 9p -o trans=virtio host /tmp/host
 # Monitor QEMU: ~/.local/state/resi/vm/monitor.sock (contoh: printf "sendkey ctrl-alt-f2\n" | nc -U -q1 <sock>).
 # SSH ke VM: port host 2222 -> 22 di VM. Di VM: sudo systemctl enable --now sshd; lalu dari host:
 #   ssh -p 2222 <user>@127.0.0.1   (kunci: ~/.local/state/resi/vm/id_vm, lihat resi/iso/README.md)
@@ -19,7 +21,13 @@ mkdir -p "$(dirname "$DISK")"; [[ -f $DISK ]] || qemu-img create -f qcow2 "$DISK
 MON="${RESI_VM_MONITOR:-$(dirname "$DISK")/monitor.sock}"
 args=( -enable-kvm -cpu host -smp 4 -m 4G -machine q35 -drive "if=pflash,format=raw,readonly=on,file=$OVMF" -monitor "unix:$MON,server,nowait"
        -drive "file=$DISK,if=virtio,format=qcow2" -device virtio-vga-gl -display gtk,gl=on
-       -nic user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:2222-:22 -audiodev pipewire,id=snd0 -device intel-hda -device hda-output,audiodev=snd0 )
+       -audiodev pipewire,id=snd0 -device intel-hda -device hda-output,audiodev=snd0 )
+# RESI_VM_NET=0: tanpa kartu jaringan sama sekali, untuk menguji instalasi yang benar-benar offline (default: NAT + SSH 2222)
+if [[ ${RESI_VM_NET:-1} == 0 ]]; then args+=( -nic none ); echo "network: none (true offline test)"
+else args+=( -nic "user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:2222-:22" ); fi
+# Folder bersama host <-> VM lewat 9p (jalan tanpa jaringan): di VM  mkdir -p /tmp/host && mount -t 9p -o trans=virtio host /tmp/host
+SHARE="$(dirname "$DISK")/share"; mkdir -p "$SHARE"
+args+=( -virtfs "local,path=$SHARE,mount_tag=host,security_model=none,id=host0" )
 # Beberapa ISO (glob out/resi-shell-*.iso cocok dengan build lama juga): boot yang TERBARU, bukan argumen pertama
 iso=""; if (( $# > 1 )); then iso=$(ls -t -- "$@" | head -1); echo "several ISOs given, booting the newest: $iso"; elif (( $# == 1 )); then iso=$1; fi
 if [[ -n $iso ]]; then args+=( -cdrom "$iso" -boot d ); fi

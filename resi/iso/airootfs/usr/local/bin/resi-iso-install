@@ -109,8 +109,7 @@ if (( encrypt )); then
   disk_encryption=$(jq -n '{encryption_type:"luks", lvm_volumes:[], iter_time:2000, partitions:["8c2c2b92-1070-455d-b76a-56263bab24aa"]}')
 else disk_encryption=null; fi
 jq -n --arg disk "$disk" --argjson bstart "$boot_start" --argjson bsize "$boot_size" --argjson mstart "$main_start" --argjson msize "$main_size" \
-      --arg hostname "$hostname" --arg tz "$timezone" --arg kb "$keyboard" --argjson enc "$disk_encryption" \
-      --argjson online "$( (( online )) && echo true || echo false )" '
+      --arg hostname "$hostname" --arg tz "$timezone" --arg kb "$keyboard" --argjson enc "$disk_encryption" '
 {
   "archinstall-language": "English",
   "app_config": null, "auth_config": {},
@@ -136,7 +135,7 @@ jq -n --arg disk "$disk" --argjson bstart "$boot_start" --argjson bsize "$boot_s
   "locale_config": { "kb_layout": $kb, "sys_enc": "UTF-8", "sys_lang": "en_US.UTF-8" },
   "mirror_config": { "custom_repositories": [], "custom_servers": [], "mirror_regions": {}, "optional_repositories": [] },
   "network_config": { "type": "nm" },
-  "ntp": $online, "offline": ($online | not), "parallel_downloads": 8, "script": null,
+  "ntp": true, "parallel_downloads": 8, "script": null,
   "packages": ["base-devel","git","zsh","btrfs-progs","limine","snapper","sudo","networkmanager"],
   "services": [],
   "swap": true,
@@ -145,7 +144,7 @@ jq -n --arg disk "$disk" --argjson bstart "$boot_start" --argjson bsize "$boot_s
 jq -n --arg u "$username" --arg h "$enc_pw_hash" --arg e "$luks_pw" '
   { users: [ { username: $u, enc_password: $h, sudo: true } ] } + (if $e == "" then {} else { encryption_password: $e } end)' >"$STATE/user_credentials.json"
 chmod 600 "$STATE"/*.json
-printf 'disk=%s\nusername=%s\nencrypt=%s\ngit_name=%s\ngit_email=%s\noffline=%s\n' "$disk" "$username" "$encrypt" "$git_name" "$git_email" "$has_offline" >"$STATE/answers"
+printf 'disk=%s\nusername=%s\nencrypt=%s\ngit_name=%s\ngit_email=%s\noffline=%s\nonline=%s\n' "$disk" "$username" "$encrypt" "$git_name" "$git_email" "$has_offline" "$online" >"$STATE/answers"
 [[ ${RESI_ISO_DRY:-} == 1 ]] && { echo "dry run: JSON written to $STATE"; exit 0; }
 
 # ---- papan tahapan ----
@@ -199,7 +198,11 @@ stage() {   # $1 indeks tahap; sisanya perintah. Output ke $LOG; layar hanya spi
 
 T0=$EPOCHSECONDS
 (( VERBOSE )) || { clear >"$TTY"; printf '\e[?25l' >"$TTY"; }
-stage 0 archinstall --config "$STATE/user_configuration.json" --creds "$STATE/user_credentials.json" --silent
+# Tanpa jaringan archinstall harus diberi tahu lewat ARGUMEN (bukan kunci JSON): tanpa --skip-ntp ia menunggu
+# "time sync" selamanya, tanpa --offline/--skip-wifi-check ia membuka dialog Wi-Fi yang tersembunyi di balik papan tahapan.
+ai_flags=(--silent --skip-version-check)
+(( online )) || ai_flags+=(--offline --skip-ntp --skip-wkd --skip-wifi-check --no-pkg-lookups)
+stage 0 archinstall --config "$STATE/user_configuration.json" --creds "$STATE/user_credentials.json" "${ai_flags[@]}"
 stage 1 resi-iso-postinstall "$STATE" prepare
 stage 2 resi-iso-postinstall "$STATE" install
 stage 3 resi-iso-postinstall "$STATE" finish
