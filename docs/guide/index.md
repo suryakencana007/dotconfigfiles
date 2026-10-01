@@ -6,6 +6,17 @@ single command that keeps them up to date.
 
 The desktop is called **Resi Arch**; the tool that installs and maintains it is **`resi-shell`**.
 
+<script setup>
+import { withBase } from "vitepress";
+</script>
+
+## A three-minute tour
+
+<video class="resi-demo" controls playsinline muted preload="none" :poster="withBase('/demo-poster.jpg')">
+  <source :src="withBase('/demo.mp4')" type="video/mp4">
+  Your browser does not play this video. <a :href="withBase('/demo.mp4')">Download it</a> instead.
+</video>
+
 ## The parts
 
 | Part | Role |

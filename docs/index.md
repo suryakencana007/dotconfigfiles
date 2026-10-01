@@ -42,6 +42,22 @@ features:
     details: The installer only fills in what is missing. resi-shell update keeps the setup, Arch, the AUR and your tools current, and resi-shell doctor tells you what is wrong.
 ---
 
+<script setup>
+import { withBase } from "vitepress";
+</script>
+
+## See it in action {#demo}
+
+A three-minute automatic tour: tiling, the launcher and menu, theme switching from a wallpaper, panels,
+notifications, the drop-down terminal and the containers view.
+
+<video class="resi-demo" controls playsinline muted preload="none" :poster="withBase('/demo-poster.jpg')">
+  <source :src="withBase('/demo.mp4')" type="video/mp4">
+  Your browser does not play this video. <a :href="withBase('/demo.mp4')">Download it</a> instead.
+</video>
+
+<p class="resi-demo-note">Recorded with <code>hypr-demo</code>, which ships with the desktop: run it to record the same tour on your own machine.</p>
+
 ## Two ways to install
 
 | | Installer ISO | Script |

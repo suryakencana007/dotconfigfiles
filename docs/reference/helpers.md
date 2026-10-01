@@ -52,7 +52,7 @@ from a terminal too.
 |---|---|
 | `hypr-record` | starts or stops a screen recording |
 | `hypr-clipboard-toast` | the "Copied" note for terminal selections |
-| `hypr-demo` | records an automatic tour of the features to `~/Videos/resi-shell-demo.mp4` (`--no-record` for a dry run, `--shots DIR` for screenshots per scene) |
+| `hypr-demo` | records an automatic tour of the features to `~/Videos/resi-shell-demo.mp4` (`--no-record` for a dry run, `--shots DIR` for screenshots per scene). The video on the [home page](/#demo) was made with it. |
 
 ## Maintenance
 

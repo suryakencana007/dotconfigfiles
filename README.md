@@ -19,6 +19,10 @@ It is inspired by [Omarchy](https://omarchy.org) (same key bindings, menu and wi
 
 **Website with the full guide: <https://suryakencana007.github.io/dotconfigfiles/>**
 
+[![Watch the three-minute demo](docs/public/demo-poster.jpg)](https://suryakencana007.github.io/dotconfigfiles/#demo)
+
+*Click the picture to watch the three-minute tour.*
+
 **Contents:** [Install](#install) · [First steps](#first-steps-after-installing) ·
 [Everyday keys](#everyday-keys) · [The menu](#the-menu-superspace) · [Features](#features) ·
 [The `resi-shell` command](#the-resi-shell-command) · [Several machines](#several-machines) ·
