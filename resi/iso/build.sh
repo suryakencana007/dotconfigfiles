@@ -75,6 +75,7 @@ sed -i "s|^file_permissions=(|file_permissions=(\n  [\"/usr/local/bin/resi-iso-i
 
 echo "==> mkarchiso (this takes a while and downloads the live packages)"
 rm -rf "$WORK/tmp"; mkdir -p "$WORK/tmp"
+rm -f "$OUT"/resi-shell-*.iso          # hanya ISO terbaru yang disimpan (glob out/resi-shell-*.iso di test-vm.sh jadi tidak ambigu)
 mkarchiso -v -w "$WORK/tmp" -o "$OUT" "$PROFILE"
 ( cd "$OUT" && sha256sum -- *.iso >SHA256SUMS )
 [[ -n ${SUDO_USER:-} ]] && chown -R "$SUDO_USER:" "$OUT"      # ISO dapat dipakai user tanpa sudo (test-vm.sh)

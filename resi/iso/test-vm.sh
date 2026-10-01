@@ -20,5 +20,7 @@ MON="${RESI_VM_MONITOR:-$(dirname "$DISK")/monitor.sock}"
 args=( -enable-kvm -cpu host -smp 4 -m 4G -machine q35 -drive "if=pflash,format=raw,readonly=on,file=$OVMF" -monitor "unix:$MON,server,nowait"
        -drive "file=$DISK,if=virtio,format=qcow2" -device virtio-vga-gl -display gtk,gl=on
        -nic user,model=virtio-net-pci,hostfwd=tcp:127.0.0.1:2222-:22 -audiodev pipewire,id=snd0 -device intel-hda -device hda-output,audiodev=snd0 )
-if [[ -n ${1:-} ]]; then args+=( -cdrom "$1" -boot d ); fi
+# Beberapa ISO (glob out/resi-shell-*.iso cocok dengan build lama juga): boot yang TERBARU, bukan argumen pertama
+iso=""; if (( $# > 1 )); then iso=$(ls -t -- "$@" | head -1); echo "several ISOs given, booting the newest: $iso"; elif (( $# == 1 )); then iso=$1; fi
+if [[ -n $iso ]]; then args+=( -cdrom "$iso" -boot d ); fi
 exec qemu-system-x86_64 "${args[@]}"

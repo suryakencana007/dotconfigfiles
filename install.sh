@@ -65,6 +65,8 @@ require_arch() { have pacman || { echo "Not Arch Linux (pacman not found)."; exi
 
 sudo_keepalive() {
   (( DRY )) && return 0
+  # chroot installer: tidak ada yang bisa mengetik password, jadi jangan pernah memunculkan prompt (sudo -n)
+  if (( CHROOT )); then sudo -n true 2>/dev/null || { echo "sudo needs a password inside the chroot; the installer's temporary sudoers drop-in is missing."; exit 1; }; return 0; fi
   sudo -v || { echo "sudo is required."; exit 1; }
   ( while true; do sudo -n true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done ) 2>/dev/null &
 }

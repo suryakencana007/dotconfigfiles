@@ -148,13 +148,15 @@ printf 'disk=%s\nusername=%s\nencrypt=%s\ngit_name=%s\ngit_email=%s\noffline=%s\
 # ---- papan tahapan ----
 STAGES=("Partitioning $disk and installing the base system" "Copying the dotfiles repo, Btrfs snapshots (snapper)" \
         "Installing the desktop: packages, shell, dotfiles, services" "Finishing up")
-STATUS=(todo todo todo todo); ELAPSED=("" "" "" ""); tick=0; detail=""; SPIN='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+STATUS=(todo todo todo todo); ELAPSED=("" "" "" ""); tick=0; detail=""
+# Konsol Linux (tty1 di ISO) memakai font VGA/CP437: tanpa braille, ✓, ✗ (tampil sebagai 0/8/#/?). Di sana pakai glyph CP437.
+if [[ ${TERM:-linux} == linux ]]; then SPIN='|/-\'; G_OK='√'; G_FAIL='x'; else SPIN='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'; G_OK='✓'; G_FAIL='✗'; fi
 mapfile -t HEADER < <(box "resi-shell installer" "Installing to $disk as $username@$hostname$( (( has_offline && ! online )) && echo ' (offline mirror)')")
 draw_board() {   # gambar ulang dari pojok atas; \e[K bersihkan sisa baris, \e[J bersihkan sisa layar (baris detail bisa hilang)
   local i sym l
   { printf '\e[H'; for l in "${HEADER[@]}"; do printf '%s\e[K\n' "$l"; done; printf '\e[K\n'
     for i in "${!STAGES[@]}"; do
-      case ${STATUS[i]} in done) sym="$g✓$o";; run) sym="$c${SPIN:$((tick % 10)):1}$o";; fail) sym="$r✗$o";; *) sym="$dim·$o";; esac
+      case ${STATUS[i]} in done) sym="$g$G_OK$o";; run) sym="$c${SPIN:$((tick % ${#SPIN})):1}$o";; fail) sym="$r$G_FAIL$o";; *) sym="$dim·$o";; esac
       printf '  %s %-62s %s%8s%s\e[K\n' "$sym" "${STAGES[i]}" "$dim" "${ELAPSED[i]}" "$o"
       [[ ${STATUS[i]} == run && -n $detail ]] && printf '      %s%s%s\e[K\n' "$dim" "$detail" "$o"
     done
@@ -185,7 +187,7 @@ stage() {   # $1 indeks tahap; sisanya perintah. Output ke $LOG; layar hanya spi
   STATUS[i]=fail
   if (( VERBOSE )); then die "${STAGES[i]}: failed (exit $rc), see $LOG"; fi
   draw_board; printf '\e[?25h' >"$TTY"
-  { echo; printf '%s✗ %s failed (exit %s)%s\n\n  Last errors from the log:\n' "$r" "${STAGES[i]}" "$rc" "$o"
+  { echo; printf '%s%s %s failed (exit %s)%s\n\n  Last errors from the log:\n' "$r" "$G_FAIL" "${STAGES[i]}" "$rc" "$o"
     tail -c +"$((off + 1))" "$LOG" | tr '\r' '\n' | sed 's/\x1b\[[0-9;?]*[A-Za-z]//g' | grep -iE 'error|failed|fatal|cannot|unable' | grep -vE 'libgpg-error|xcb-util-errors|perl-error|^\(' | tail -8 | cut -c1-110 | sed 's/^/    /'
     printf '\n  Full log: %s   (also: less %s)\n' "$LOG" "$LOG"
     printf '  The target stays mounted at /mnt for inspection. Fix the cause, then run  resi-iso-install  again.\n\n'; } >"$TTY"

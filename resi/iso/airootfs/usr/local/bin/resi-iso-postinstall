@@ -54,7 +54,10 @@ phase_prepare() {
     printf '[options]\nArchitecture = auto\nHoldPkg = pacman glibc\nCheckSpace\nParallelDownloads = 8\nSigLevel = Required DatabaseOptional\nLocalFileSigLevel = Optional\n\n[resi-offline]\nSigLevel = Optional TrustAll\nServer = file://%s/repo\n' "$RESI_SHARE" >"$MNT/etc/pacman.conf"
     arch-chroot "$MNT" pacman -Sy >/dev/null 2>&1 || true
   fi
-  echo "$username ALL=(ALL) NOPASSWD: ALL" >"$MNT/etc/sudoers.d/99-resi-install"; chmod 440 "$MNT/etc/sudoers.d/99-resi-install"
+  # sudo tanpa password selama instalasi. NOPASSWD saja tidak cukup: archinstall sudah menulis "<user> ALL=(ALL) ALL", dan
+  # `sudo -v` (verifypw=all) tetap meminta password bila ada satu entri tanpa NOPASSWD → prompt tersembunyi di balik papan
+  # tahapan lalu timeout. `!authenticate` mematikan autentikasi untuk user ini sampai drop-in dihapus di tahap finish.
+  printf 'Defaults:%s !authenticate\n%s ALL=(ALL) NOPASSWD: ALL\n' "$username" "$username" >"$MNT/etc/sudoers.d/99-resi-install"; chmod 440 "$MNT/etc/sudoers.d/99-resi-install"
   cp -L /etc/resolv.conf "$MNT/etc/resolv.conf" 2>/dev/null || true
 }
 
