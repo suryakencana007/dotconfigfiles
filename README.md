@@ -17,9 +17,9 @@ screen.
 It is inspired by [Omarchy](https://omarchy.org) (same key bindings, menu and window rules) and built on
 [Noctalia](https://noctalia.dev).
 
-**Website with the full guide: <https://suryakencana007.github.io/dotconfigfiles/>**
+**Website with the full guide: <https://resi-arch.kubus.work/>**
 
-[![Watch the three-minute demo](docs/public/demo-poster.jpg)](https://suryakencana007.github.io/dotconfigfiles/#demo)
+[![Watch the three-minute demo](docs/public/demo-poster.jpg)](https://resi-arch.kubus.work/#demo)
 
 *Click the picture to watch the three-minute tour.*
 

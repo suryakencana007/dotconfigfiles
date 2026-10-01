@@ -2,18 +2,20 @@ import { defineConfig } from "vitepress";
 
 // Situs resi-shell (GitHub Pages). Sumber halaman: docs/**/*.md. Jalankan lokal: cd docs && npm install && npm run dev
 const repo = "https://github.com/suryakencana007/dotconfigfiles";
-const site = "https://suryakencana007.github.io/dotconfigfiles/";
+// Domain kustom GitHub Pages (Settings > Pages > Custom domain): situs disajikan dari akar domain, jadi base "/".
+// Kalau domain kustom dilepas, situs kembali ke suryakencana007.github.io/dotconfigfiles/ dan base harus "/dotconfigfiles/".
+const site = "https://resi-arch.kubus.work/";
 
 export default defineConfig({
   title: "Resi Arch",
   description: "A complete Arch Linux desktop that installs itself: Hyprland, Noctalia, rofi and a modern terminal",
-  base: "/dotconfigfiles/",
+  base: "/",
   cleanUrls: true,
   lastUpdated: true,
   srcExclude: ["README.md"],
 
   head: [
-    ["link", { rel: "icon", href: "/dotconfigfiles/logo-mark.png", type: "image/png" }],
+    ["link", { rel: "icon", href: "/logo-mark.png", type: "image/png" }],
     ["meta", { name: "theme-color", content: "#0b0b0f" }],
     ["meta", { property: "og:title", content: "Resi Arch | Arch Linux desktop that installs itself" }],
     ["meta", { property: "og:description", content: "Hyprland + Noctalia + rofi + a modern terminal, themed from your wallpaper. Offline installer ISO or one script." }],
