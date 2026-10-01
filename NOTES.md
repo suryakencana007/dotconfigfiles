@@ -416,8 +416,11 @@ Hyprland's window borders, and the login screen.
   one-time `<file>.resi-bak`. It runs in `resi-shell install` only, never in `update`, because it touches the
   initramfs and the bootloader config. Everything is black (`000000`) with an off-white wordmark so firmware →
   Limine → UKI splash → Plymouth do not flash between colours. `/etc/os-release` is left alone: pacman, yay and
-  other tools key on it, and Omarchy keeps it too. The assets are pre-rendered and committed
-  (`resi/boot/make-assets.sh` regenerates them with rsvg-convert + ffmpeg), so installing needs no image tools and
+  other tools key on it, and Omarchy keeps it too. The logo has one source, the ASCII art in
+  `resi/boot/logo.txt` (figlet "doom"): `make-assets.sh` renders it with JetBrains Mono into the Plymouth, UKI and
+  ISO-menu images (one `<text>` per character on a 0.6 em grid, because librsvg collapses runs of spaces and ignores
+  per-glyph `x` lists), and the ISO prints the same file on the installer screens and in the live motd. The assets
+  are pre-rendered and committed (`resi/boot/make-assets.sh` regenerates them with rsvg-convert + ffmpeg), so installing needs no image tools and
   the theme does not depend on Plymouth's label plugin or a font in the initramfs (the passphrase prompt is a PNG).
   `RESI_BOOT_ROOT=/some/dir` runs the script against a fake root without root, plymouth or mkinitcpio, which is how
   the config rewriting is tested.

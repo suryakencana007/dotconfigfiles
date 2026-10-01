@@ -1,33 +1,211 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="880" height="404" viewBox="0 0 880 404"><rect x="0" y="0" width="160" height="40" fill="#e6e6ea"/>
-<rect x="280" y="0" width="200" height="40" fill="#e6e6ea"/>
-<rect x="600" y="0" width="160" height="40" fill="#e6e6ea"/>
-<rect x="840" y="0" width="40" height="40" fill="#e6e6ea"/>
-<rect x="0" y="40" width="40" height="40" fill="#e6e6ea"/>
-<rect x="160" y="40" width="40" height="40" fill="#e6e6ea"/>
-<rect x="280" y="40" width="40" height="40" fill="#e6e6ea"/>
-<rect x="560" y="40" width="40" height="40" fill="#e6e6ea"/>
-<rect x="840" y="40" width="40" height="40" fill="#e6e6ea"/>
-<rect x="0" y="80" width="40" height="40" fill="#e6e6ea"/>
-<rect x="160" y="80" width="40" height="40" fill="#e6e6ea"/>
-<rect x="280" y="80" width="40" height="40" fill="#e6e6ea"/>
-<rect x="560" y="80" width="40" height="40" fill="#e6e6ea"/>
-<rect x="840" y="80" width="40" height="40" fill="#e6e6ea"/>
-<rect x="0" y="120" width="160" height="40" fill="#e6e6ea"/>
-<rect x="280" y="120" width="160" height="40" fill="#e6e6ea"/>
-<rect x="600" y="120" width="120" height="40" fill="#e6e6ea"/>
-<rect x="840" y="120" width="40" height="40" fill="#e6e6ea"/>
-<rect x="0" y="160" width="40" height="40" fill="#e6e6ea"/>
-<rect x="80" y="160" width="40" height="40" fill="#e6e6ea"/>
-<rect x="280" y="160" width="40" height="40" fill="#e6e6ea"/>
-<rect x="720" y="160" width="40" height="40" fill="#e6e6ea"/>
-<rect x="840" y="160" width="40" height="40" fill="#e6e6ea"/>
-<rect x="0" y="200" width="40" height="40" fill="#e6e6ea"/>
-<rect x="120" y="200" width="40" height="40" fill="#e6e6ea"/>
-<rect x="280" y="200" width="40" height="40" fill="#e6e6ea"/>
-<rect x="720" y="200" width="40" height="40" fill="#e6e6ea"/>
-<rect x="840" y="200" width="40" height="40" fill="#e6e6ea"/>
-<rect x="0" y="240" width="40" height="40" fill="#e6e6ea"/>
-<rect x="160" y="240" width="40" height="40" fill="#e6e6ea"/>
-<rect x="280" y="240" width="200" height="40" fill="#e6e6ea"/>
-<rect x="560" y="240" width="160" height="40" fill="#e6e6ea"/>
-<rect x="840" y="240" width="40" height="40" fill="#e6e6ea"/><text x="467.0" y="384" text-anchor="middle" font-family="JetBrainsMono Nerd Font, JetBrains Mono, monospace" font-weight="500" font-size="60" letter-spacing="54.0" fill="#e6e6ea" opacity="0.72">arch</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1555" height="368" viewBox="0 0 1555 368"><g font-family="JetBrainsMono Nerd Font Mono, JetBrains Mono, monospace" font-weight="700" font-size="48" fill="#e6e6ea" text-anchor="middle">
+<text x="14.40" y="48.00">_</text>
+<text x="43.20" y="48.00">_</text>
+<text x="72.00" y="48.00">_</text>
+<text x="100.80" y="48.00">_</text>
+<text x="129.60" y="48.00">_</text>
+<text x="158.40" y="48.00">_</text>
+<text x="216.00" y="48.00">_</text>
+<text x="244.80" y="48.00">_</text>
+<text x="273.60" y="48.00">_</text>
+<text x="302.40" y="48.00">_</text>
+<text x="331.20" y="48.00">_</text>
+<text x="388.80" y="48.00">_</text>
+<text x="417.60" y="48.00">_</text>
+<text x="446.40" y="48.00">_</text>
+<text x="475.20" y="48.00">_</text>
+<text x="504.00" y="48.00">_</text>
+<text x="561.60" y="48.00">_</text>
+<text x="590.40" y="48.00">_</text>
+<text x="619.20" y="48.00">_</text>
+<text x="648.00" y="48.00">_</text>
+<text x="676.80" y="48.00">_</text>
+<text x="820.80" y="48.00">_</text>
+<text x="849.60" y="48.00">_</text>
+<text x="878.40" y="48.00">_</text>
+<text x="964.80" y="48.00">_</text>
+<text x="993.60" y="48.00">_</text>
+<text x="1022.40" y="48.00">_</text>
+<text x="1051.20" y="48.00">_</text>
+<text x="1080.00" y="48.00">_</text>
+<text x="1108.80" y="48.00">_</text>
+<text x="1195.20" y="48.00">_</text>
+<text x="1224.00" y="48.00">_</text>
+<text x="1252.80" y="48.00">_</text>
+<text x="1281.60" y="48.00">_</text>
+<text x="1310.40" y="48.00">_</text>
+<text x="1396.80" y="48.00">_</text>
+<text x="1512.00" y="48.00">_</text>
+<text x="14.40" y="106.56">|</text>
+<text x="72.00" y="106.56">_</text>
+<text x="100.80" y="106.56">_</text>
+<text x="129.60" y="106.56">_</text>
+<text x="187.20" y="106.56">\</text>
+<text x="273.60" y="106.56">_</text>
+<text x="302.40" y="106.56">_</text>
+<text x="331.20" y="106.56">_</text>
+<text x="360.00" y="106.56">/</text>
+<text x="446.40" y="106.56">_</text>
+<text x="475.20" y="106.56">_</text>
+<text x="504.00" y="106.56">_</text>
+<text x="532.80" y="106.56">|</text>
+<text x="561.60" y="106.56">_</text>
+<text x="676.80" y="106.56">_</text>
+<text x="705.60" y="106.56">|</text>
+<text x="792.00" y="106.56">/</text>
+<text x="849.60" y="106.56">_</text>
+<text x="907.20" y="106.56">\</text>
+<text x="964.80" y="106.56">|</text>
+<text x="1022.40" y="106.56">_</text>
+<text x="1051.20" y="106.56">_</text>
+<text x="1080.00" y="106.56">_</text>
+<text x="1137.60" y="106.56">\</text>
+<text x="1166.40" y="106.56">/</text>
+<text x="1252.80" y="106.56">_</text>
+<text x="1281.60" y="106.56">_</text>
+<text x="1339.20" y="106.56">\</text>
+<text x="1368.00" y="106.56">|</text>
+<text x="1425.60" y="106.56">|</text>
+<text x="1483.20" y="106.56">|</text>
+<text x="1540.80" y="106.56">|</text>
+<text x="14.40" y="165.12">|</text>
+<text x="72.00" y="165.12">|</text>
+<text x="100.80" y="165.12">_</text>
+<text x="129.60" y="165.12">/</text>
+<text x="187.20" y="165.12">/</text>
+<text x="244.80" y="165.12">|</text>
+<text x="273.60" y="165.12">_</text>
+<text x="302.40" y="165.12">_</text>
+<text x="360.00" y="165.12">\</text>
+<text x="417.60" y="165.12">`</text>
+<text x="446.40" y="165.12">-</text>
+<text x="475.20" y="165.12">-</text>
+<text x="504.00" y="165.12">.</text>
+<text x="590.40" y="165.12">|</text>
+<text x="648.00" y="165.12">|</text>
+<text x="763.20" y="165.12">/</text>
+<text x="820.80" y="165.12">/</text>
+<text x="849.60" y="165.12">_</text>
+<text x="878.40" y="165.12">\</text>
+<text x="936.00" y="165.12">\</text>
+<text x="964.80" y="165.12">|</text>
+<text x="1022.40" y="165.12">|</text>
+<text x="1051.20" y="165.12">_</text>
+<text x="1080.00" y="165.12">/</text>
+<text x="1137.60" y="165.12">/</text>
+<text x="1166.40" y="165.12">|</text>
+<text x="1224.00" y="165.12">/</text>
+<text x="1310.40" y="165.12">\</text>
+<text x="1339.20" y="165.12">/</text>
+<text x="1368.00" y="165.12">|</text>
+<text x="1425.60" y="165.12">|</text>
+<text x="1454.40" y="165.12">_</text>
+<text x="1483.20" y="165.12">|</text>
+<text x="1540.80" y="165.12">|</text>
+<text x="14.40" y="223.68">|</text>
+<text x="158.40" y="223.68">/</text>
+<text x="187.20" y="223.68">|</text>
+<text x="273.60" y="223.68">_</text>
+<text x="302.40" y="223.68">_</text>
+<text x="331.20" y="223.68">|</text>
+<text x="388.80" y="223.68">`</text>
+<text x="417.60" y="223.68">-</text>
+<text x="446.40" y="223.68">-</text>
+<text x="475.20" y="223.68">.</text>
+<text x="532.80" y="223.68">\</text>
+<text x="590.40" y="223.68">|</text>
+<text x="648.00" y="223.68">|</text>
+<text x="763.20" y="223.68">|</text>
+<text x="849.60" y="223.68">_</text>
+<text x="936.00" y="223.68">|</text>
+<text x="964.80" y="223.68">|</text>
+<text x="1108.80" y="223.68">/</text>
+<text x="1166.40" y="223.68">|</text>
+<text x="1224.00" y="223.68">|</text>
+<text x="1368.00" y="223.68">|</text>
+<text x="1454.40" y="223.68">_</text>
+<text x="1540.80" y="223.68">|</text>
+<text x="14.40" y="282.24">|</text>
+<text x="72.00" y="282.24">|</text>
+<text x="100.80" y="282.24">\</text>
+<text x="158.40" y="282.24">\</text>
+<text x="187.20" y="282.24">|</text>
+<text x="244.80" y="282.24">|</text>
+<text x="273.60" y="282.24">_</text>
+<text x="302.40" y="282.24">_</text>
+<text x="331.20" y="282.24">_</text>
+<text x="360.00" y="282.24">/</text>
+<text x="388.80" y="282.24">\</text>
+<text x="417.60" y="282.24">_</text>
+<text x="446.40" y="282.24">_</text>
+<text x="475.20" y="282.24">/</text>
+<text x="532.80" y="282.24">/</text>
+<text x="561.60" y="282.24">_</text>
+<text x="590.40" y="282.24">|</text>
+<text x="648.00" y="282.24">|</text>
+<text x="676.80" y="282.24">_</text>
+<text x="763.20" y="282.24">|</text>
+<text x="820.80" y="282.24">|</text>
+<text x="878.40" y="282.24">|</text>
+<text x="936.00" y="282.24">|</text>
+<text x="964.80" y="282.24">|</text>
+<text x="1022.40" y="282.24">|</text>
+<text x="1051.20" y="282.24">\</text>
+<text x="1108.80" y="282.24">\</text>
+<text x="1166.40" y="282.24">|</text>
+<text x="1224.00" y="282.24">\</text>
+<text x="1252.80" y="282.24">_</text>
+<text x="1281.60" y="282.24">_</text>
+<text x="1310.40" y="282.24">/</text>
+<text x="1339.20" y="282.24">\</text>
+<text x="1368.00" y="282.24">|</text>
+<text x="1425.60" y="282.24">|</text>
+<text x="1483.20" y="282.24">|</text>
+<text x="1540.80" y="282.24">|</text>
+<text x="14.40" y="340.80">\</text>
+<text x="43.20" y="340.80">_</text>
+<text x="72.00" y="340.80">|</text>
+<text x="129.60" y="340.80">\</text>
+<text x="158.40" y="340.80">_</text>
+<text x="187.20" y="340.80">\</text>
+<text x="216.00" y="340.80">_</text>
+<text x="244.80" y="340.80">_</text>
+<text x="273.60" y="340.80">_</text>
+<text x="302.40" y="340.80">_</text>
+<text x="331.20" y="340.80">/</text>
+<text x="360.00" y="340.80">\</text>
+<text x="388.80" y="340.80">_</text>
+<text x="417.60" y="340.80">_</text>
+<text x="446.40" y="340.80">_</text>
+<text x="475.20" y="340.80">_</text>
+<text x="504.00" y="340.80">/</text>
+<text x="561.60" y="340.80">\</text>
+<text x="590.40" y="340.80">_</text>
+<text x="619.20" y="340.80">_</text>
+<text x="648.00" y="340.80">_</text>
+<text x="676.80" y="340.80">/</text>
+<text x="763.20" y="340.80">\</text>
+<text x="792.00" y="340.80">_</text>
+<text x="820.80" y="340.80">|</text>
+<text x="878.40" y="340.80">|</text>
+<text x="907.20" y="340.80">_</text>
+<text x="936.00" y="340.80">/</text>
+<text x="964.80" y="340.80">\</text>
+<text x="993.60" y="340.80">_</text>
+<text x="1022.40" y="340.80">|</text>
+<text x="1080.00" y="340.80">\</text>
+<text x="1108.80" y="340.80">_</text>
+<text x="1137.60" y="340.80">|</text>
+<text x="1195.20" y="340.80">\</text>
+<text x="1224.00" y="340.80">_</text>
+<text x="1252.80" y="340.80">_</text>
+<text x="1281.60" y="340.80">_</text>
+<text x="1310.40" y="340.80">_</text>
+<text x="1339.20" y="340.80">/</text>
+<text x="1368.00" y="340.80">\</text>
+<text x="1396.80" y="340.80">_</text>
+<text x="1425.60" y="340.80">|</text>
+<text x="1483.20" y="340.80">|</text>
+<text x="1512.00" y="340.80">_</text>
+<text x="1540.80" y="340.80">/</text>
+</g></svg>

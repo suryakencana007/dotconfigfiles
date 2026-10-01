@@ -42,6 +42,9 @@ untracked=$(git -C "$REPO" ls-files --others --exclude-standard | grep -v "^resi
 [[ -z $untracked ]] || { echo "==> WARNING: untracked files are NOT baked into the ISO (git add them first):"; printf '    %s\n' $untracked; }
 ( cd "$REPO" && git ls-files -z | tar --null -T - -cf "$PROFILE/airootfs/usr/share/resi-shell/dotconfigfiles.tar" --transform 's|^|dotconfigfiles/|' )
 cp "$REPO/resi/packages.pacman" "$PROFILE/airootfs/usr/share/resi-shell/dotconfigfiles.packages"
+# Logo ASCII "RESI ARCH" (sama dengan boot splash): dipakai layar installer dan motd live
+cp "$REPO/resi/boot/logo.txt" "$PROFILE/airootfs/usr/share/resi-shell/logo.txt"
+{ echo; sed 's/^/  /' "$REPO/resi/boot/logo.txt"; echo; cat "$HERE/airootfs/etc/motd"; } >"$PROFILE/airootfs/etc/motd"
 printf 'version=%s\nbuilt=%s\ncommit=%s\n' "$version$dirty" "$(date -Is)" "$(git -C "$REPO" rev-parse HEAD 2>/dev/null || echo unknown)$dirty" \
   >"$PROFILE/airootfs/usr/share/resi-shell/version"
 

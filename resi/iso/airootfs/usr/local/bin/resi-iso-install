@@ -43,8 +43,11 @@ pick() { # $1 pertanyaan, $2 tombol kiri, $3 tombol kanan; dua tombol horizontal
   printf '\033[?25h\n'; (( sel == 0 ))
 }
 
-clear; box "resi-shell installer" "" "Arch Linux + Hyprland + Noctalia, Btrfs + Limine, like Omarchy." \
-  "Version: $(sed -n 's/^version=//p' $RESI_SHARE/version 2>/dev/null || echo dev)" "" \
+# Logo "RESI ARCH": seni ASCII yang sama dengan boot splash (resi/boot/logo.txt, disalin build.sh ke $RESI_SHARE)
+logo() { if [[ -r $RESI_SHARE/logo.txt ]]; then printf '\e[1m'; sed 's/^/  /' "$RESI_SHARE/logo.txt"; printf '\e[0m'; else printf '  \e[1mRESI ARCH\e[0m\n'; fi; }
+
+clear; echo; logo; echo
+box "resi-shell installer $(sed -n 's/^version=//p' $RESI_SHARE/version 2>/dev/null || echo dev)" "" "Arch Linux + Hyprland + Noctalia, Btrfs + Limine, like Omarchy." "" \
   "This ERASES the disk you choose. Ctrl+C aborts at any time before the last confirmation."
 echo
 
@@ -151,7 +154,7 @@ STAGES=("Partitioning $disk and installing the base system" "Copying the dotfile
 STATUS=(todo todo todo todo); ELAPSED=("" "" "" ""); tick=0; detail=""
 # Konsol Linux (tty1 di ISO) memakai font VGA/CP437: tanpa braille, ✓, ✗ (tampil sebagai 0/8/#/?). Di sana pakai glyph CP437.
 if [[ ${TERM:-linux} == linux ]]; then SPIN='|/-\'; G_OK='√'; G_FAIL='x'; else SPIN='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'; G_OK='✓'; G_FAIL='✗'; fi
-mapfile -t HEADER < <(box "resi-shell installer" "Installing to $disk as $username@$hostname$( (( has_offline && ! online )) && echo ' (offline mirror)')")
+mapfile -t HEADER < <(echo; logo; echo; printf '  Installing to %s as %s@%s%s\n' "$disk" "$username" "$hostname" "$( (( has_offline && ! online )) && echo ' (offline mirror)')")
 draw_board() {   # gambar ulang dari pojok atas; \e[K bersihkan sisa baris, \e[J bersihkan sisa layar (baris detail bisa hilang)
   local i sym l
   { printf '\e[H'; for l in "${HEADER[@]}"; do printf '%s\e[K\n' "$l"; done; printf '\e[K\n'
