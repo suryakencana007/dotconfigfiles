@@ -29,8 +29,8 @@ features:
     title: One wallpaper, one look
     details: Noctalia builds a palette from your wallpaper and renders it into the terminal, launcher, editor, window borders, prompt and login screen.
   - icon: ⌨️
-    title: Omarchy keys and menu
-    details: The same key bindings, window rules and hierarchical menu as Omarchy. Super+Space reaches everything; Super+K lists every binding.
+    title: One menu, one set of keys
+    details: Super+Space opens a menu that reaches everything, Super+K lists every key binding. Window rules and bindings stay the same on every machine.
   - icon: 🔋
     title: Laptop friendly
     details: Automatic battery mode, power profiles remembered per power source, battery charge limit, lid and clamshell handling, night light.
@@ -90,5 +90,6 @@ files you can read and edit.
 
 ## Credits
 
-Heavily inspired by [Omarchy](https://omarchy.org) and built on [Noctalia](https://noctalia.dev).
-Released under the [MIT License](https://github.com/suryakencana007/dotconfigfiles/blob/main/LICENSE).
+Built on [Hyprland](https://hypr.land) and [Noctalia](https://noctalia.dev). Released under the
+[MIT License](https://github.com/suryakencana007/dotconfigfiles/blob/main/LICENSE); parts were ported
+from [Omarchy](https://github.com/omacom/omarchy) (MIT).

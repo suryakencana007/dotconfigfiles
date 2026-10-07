@@ -8,6 +8,8 @@
   same 10 px spacing as the windows.
 - Folder icons follow the theme too (`hypr-folder-color` picks the closest Papirus color).
 - Thunar and other GTK apps use adw-gtk3 with Papirus icons in dark mode.
+- WhatsApp is there from the start as a web app in its own window (see
+  [Development tools](/guide/development#web-apps)).
 - One font everywhere: JetBrains Mono Nerd Font.
 
 Switch the look from the menu under **Style**, or with the [theme keys](/guide/keys#panels).
@@ -36,7 +38,7 @@ Switch the look from the menu under **Style**, or with the [theme keys](/guide/k
 - alacritty with zsh, oh-my-zsh and a one-line Powerlevel10k prompt.
 - Tools: fzf, zoxide, eza, bat, fd, ripgrep, delta, dust, duf, btop, tldr, lazygit.
 - Selecting text with the mouse copies it, also inside tmux, and shows a small "Copied" note.
-- tmux with Omarchy's keys; sessions survive a reboot.
+- tmux with `Ctrl+Space` as the prefix; sessions survive a reboot.
 - Neovim with LazyVim; its colors change live with the theme.
 
 ## Login, passwords and SSH

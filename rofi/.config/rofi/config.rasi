@@ -3,7 +3,8 @@
 configuration {
   modi: "drun,run";
   show-icons: true;
-  icon-theme: "Adwaita";
+  icon-theme: "Papirus-Dark";   /* tema ikon desktop (GTK: Papirus-Dark-Resi mewarisinya); Adwaita tidak punya ikon
+                                   aplikasi seperti "whatsapp", jadi entri yang memakai nama ikon Papirus tampil kosong */
   display-drun: "";
   display-run: "";
   drun-display-format: "{name}";

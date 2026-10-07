@@ -318,6 +318,10 @@ doctor() {
   have noctalia && { noctalia config validate >/dev/null 2>&1 && ok "noctalia config valid" || { warn "noctalia config invalid"; bad=1; }; }
   have rofi && { rofi -dump-theme >/dev/null 2>&1 && ok "rofi theme valid" || { warn "rofi theme broken"; bad=1; }; }
   [ -x "$HOME/.local/bin/hypr-menu" ] && { HYPR_MENU_CHECK=1 "$HOME/.local/bin/hypr-menu" >/dev/null 2>&1 && ok "hypr-menu: all submenu targets resolve" || { warn "hypr-menu: a submenu points to a missing function (HYPR_MENU_CHECK=1 hypr-menu)"; bad=1; }; }
+  # Ekstensi Brave: brave-flags.conf menunjuk path sistem; kalau belum disalin, Brave menampilkan error saat start
+  if grep -qs -- "--load-extension=$BRAVE_EXT_DIR" "$HOME/.config/brave-flags.conf"; then
+    [ -f "$BRAVE_EXT_DIR/whatsapp-slim/manifest.json" ] && ok "Brave extensions installed ($BRAVE_EXT_DIR)" || { warn "Brave extensions missing from $BRAVE_EXT_DIR (resi-shell install copies them)"; bad=1; }
+  fi
   # Boot splash: tema terpasang → default Plymouth dan hook initramfs harus cocok; belum dipasang = catatan saja (opsional).
   if have plymouth-set-default-theme; then
     if [ -d /usr/share/plymouth/themes/resi ]; then
@@ -473,7 +477,7 @@ update() {
   step "Upgrade AUR packages"; if run yay -Sua --noconfirm; then ok "AUR up to date"; else warn "AUR upgrade failed; continuing with the rest of the update"; fi
   update_cleanup
   if have mise; then step "Update mise tools"; if MISE_MINIMUM_RELEASE_AGE=0 run mise up; then ok "mise tools up to date"; else warn "mise up failed; continuing"; fi; fi
-  stow_all; system_extras; tmux_plugins; nvim_plugins
+  stow_all; system_extras; brave_extensions; webapps_default; tmux_plugins; nvim_plugins
   have hyprctl && run hyprctl reload >/dev/null; have noctalia && run noctalia msg config-reload >/dev/null 2>&1 || true
   noctalia_plugins      # plugin yang gagal diunduh saat first-login offline dipasang di sini begitu ada jaringan
   # Podman API: drop-in podman.service terbaru (restart saat balapan login, API persisten) untuk mesin yang sudah punya Podman.
@@ -578,6 +582,30 @@ noctalia_plugins_vendor() {
   ok "plugins from the offline vendor bundle: $(command ls "$d/plugins/materialized/official" 2>/dev/null | tr '\n' ' ')"
 }
 
+# Ekstensi Brave yang kita bawa (resi/brave-extensions, mis. whatsapp-slim dari Omarchy). brave-flags.conf memuatnya
+# lewat --load-extension dengan path sistem yang tetap, karena file flag tidak bisa memakai ~ atau $HOME.
+BRAVE_EXT_DIR=/usr/local/share/resi-shell/brave-extensions
+brave_extensions() {
+  [ -d "$REPO/resi/brave-extensions" ] || return 0
+  step "Brave extensions"
+  if run sudo install -d -m755 "$BRAVE_EXT_DIR" && run sudo cp -r --no-preserve=ownership "$REPO/resi/brave-extensions/." "$BRAVE_EXT_DIR/"; then
+    ok "installed to $BRAVE_EXT_DIR: $(command ls "$REPO/resi/brave-extensions" | tr '\n' ' ')"
+  else warn "could not install the Brave extensions (Brave will complain about --load-extension until this succeeds)"; fi
+}
+
+# Web app bawaan, seperti WhatsApp di Omarchy: dibuat sekali lewat hypr-webapp (ikon dari tema Papirus, jadi jalan
+# offline). Penanda mencegahnya dibuat lagi setelah user menghapusnya lewat Remove > Web App.
+webapps_default() {
+  local marker="$HOME/.local/state/resi/webapps-default-done"
+  [ -f "$marker" ] && return 0
+  step "Default web apps"
+  if [ -f "$HOME/.local/share/applications/WhatsApp.desktop" ]; then ok "WhatsApp already present"
+  elif (( DRY )); then run "$HOME/.local/bin/hypr-webapp" install WhatsApp https://web.whatsapp.com/ whatsapp
+  elif "$HOME/.local/bin/hypr-webapp" install WhatsApp https://web.whatsapp.com/ whatsapp >/dev/null; then ok "WhatsApp (web app, Brave window)"
+  else warn "could not create the WhatsApp web app (hypr-webapp install WhatsApp https://web.whatsapp.com/ whatsapp)"; fi
+  run mkdir -p "$(dirname "$marker")"; run touch "$marker"
+}
+
 # Boot splash "Resi Arch" ala Omarchy: tema Plymouth, hook initramfs, `quiet splash`, branding Limine (lihat skripnya).
 # Hanya di `install` (bukan update): mengubah initramfs dan konfigurasi bootloader.
 boot_splash() {
@@ -590,7 +618,7 @@ boot_splash() {
 install_all() {
   require_arch; sudo_keepalive
   pacman_packages; aur_helper; aur_packages; gpu_drivers
-  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; system_extras; gtk_theme; greeter; boot_splash
+  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; system_extras; gtk_theme; greeter; brave_extensions; webapps_default; boot_splash
   (( CHROOT )) || { lockscreen_layout; noctalia_plugins; }   # di chroot tidak ada Hyprland/Noctalia: first-login yang mengerjakannya
   if (( OFFLINE )); then noctalia_plugins_vendor; run mkdir -p "$(dirname "$OFFLINE_MARKER")"; run touch "$OFFLINE_MARKER"; fi   # plugin nvim/tmux menyusul saat online
   finish

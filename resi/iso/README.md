@@ -1,12 +1,12 @@
 # resi-shell installer ISO
 
-A bootable Arch Linux ISO that installs resi-shell the way the Omarchy ISO does: `archinstall` lays
+A bootable Arch Linux ISO that installs resi-shell in one go: `archinstall` lays
 out the disk (GPT, 1 GiB EFI on `/boot`, the rest Btrfs with `@`, `@home`, `@log`, `@pkg` subvolumes,
 `compress=zstd`, optional LUKS), installs Arch with the resi package list, Limine and zram, creates
 the user, then `resi-shell install --chroot` runs inside the new system. Snapper is configured for
 `/`. The ISO carries an **offline mirror** (the full package closure, the AUR packages pre-built,
 and the git clones the installer needs), so a fresh machine installs in a few minutes without
-internet, like the Omarchy ISO. With internet the mirror is still used first and Arch mirrors only
+internet. With internet the mirror is still used first and Arch mirrors only
 fill in anything missing. Only the nvim/tmux plugins are fetched later, by the first `resi-shell
 update` with a connection, which also links the dotfiles repo to GitHub.
 

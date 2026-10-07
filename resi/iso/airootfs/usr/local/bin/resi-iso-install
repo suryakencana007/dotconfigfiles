@@ -47,7 +47,7 @@ pick() { # $1 pertanyaan, $2 tombol kiri, $3 tombol kanan; dua tombol horizontal
 logo() { if [[ -r $RESI_SHARE/logo.txt ]]; then printf '\e[1m'; sed 's/^/  /' "$RESI_SHARE/logo.txt"; printf '\e[0m'; else printf '  \e[1mRESI ARCH\e[0m\n'; fi; }
 
 clear; echo; logo; echo
-box "resi-shell installer $(sed -n 's/^version=//p' $RESI_SHARE/version 2>/dev/null || echo dev)" "" "Arch Linux + Hyprland + Noctalia, Btrfs + Limine, like Omarchy." "" \
+box "resi-shell installer $(sed -n 's/^version=//p' $RESI_SHARE/version 2>/dev/null || echo dev)" "" "Arch Linux + Hyprland + Noctalia on Btrfs with Limine." "" \
   "This ERASES the disk you choose. Ctrl+C aborts at any time before the last confirmation."
 echo
 

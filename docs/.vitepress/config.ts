@@ -83,7 +83,7 @@ export default defineConfig({
     outline: [2, 3],
     editLink: { pattern: `${repo}/edit/main/docs/:path`, text: "Edit this page on GitHub" },
     footer: {
-      message: "Released under the MIT License. Inspired by Omarchy, built on Noctalia.",
+      message: "Released under the MIT License. Built on Hyprland and Noctalia.",
       copyright: "Copyright © Surya Kencana",
     },
   },

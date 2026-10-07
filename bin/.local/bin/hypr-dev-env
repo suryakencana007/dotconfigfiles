@@ -18,8 +18,7 @@ aur_add() { command -v yay >/dev/null || { echo "yay (AUR helper) is required" >
 ensure_mise() {
   command -v mise >/dev/null && return 0
   hypr-tui --box "mise is not installed." "" \
-    "mise (https://mise.jdx.dev) manages runtime versions (node, ruby, go, python, java, ...)." \
-    "It is the tool Omarchy uses for its development environments."; echo
+    "mise (https://mise.jdx.dev) manages runtime versions (node, ruby, go, python, java, ...)."; echo
   hypr-tui --confirm "Install mise now?" || { echo "Cancelled."; return 1; }
   pkg_add mise || return 1
   echo; echo "Note: open a new terminal afterwards so the shell picks up mise (activated in .zshrc)."; echo

@@ -48,5 +48,6 @@ import { withBase } from "vitepress";
 
 ## Credits
 
-resi-shell is heavily inspired by [Omarchy](https://omarchy.org): the key bindings, the menu, the tmux
-config and the window rules were ported from it. The ISO layout follows the Omarchy ISO too.
+Built on [Hyprland](https://hypr.land) and [Noctalia](https://noctalia.dev). Parts of the key bindings,
+the menu structure and the WhatsApp browser extension were ported from
+[Omarchy](https://github.com/omacom/omarchy) (MIT).

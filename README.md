@@ -14,8 +14,7 @@ panels, lock screen and login, **rofi** for the launcher and menu, and a modern 
 wallpaper and everything follows its colors: terminal, launcher, editor, window borders, prompt, login
 screen.
 
-It is inspired by [Omarchy](https://omarchy.org) (same key bindings, menu and window rules) and built on
-[Noctalia](https://noctalia.dev).
+It is built on [Hyprland](https://hypr.land) and [Noctalia](https://noctalia.dev).
 
 **Website with the full guide: <https://resi-arch.kubus.work/>**
 
@@ -245,13 +244,15 @@ Install > Development sets up a language with one click; installed ones show a â
   this machine, with development passwords. They run on rootless Podman; `docker` and `docker compose`
   commands keep working.
 - **Web apps**: Install > Web App turns a website into its own window with an icon in the launcher.
+  **WhatsApp** comes preinstalled this way, with a small Brave extension that collapses its chat list
+  in narrow windows and makes it follow the dark/light theme.
 
 ### Terminal
 
 - alacritty with zsh, oh-my-zsh and a one-line Powerlevel10k prompt.
 - Tools: fzf, zoxide, eza, bat, fd, ripgrep, delta, dust, duf, btop, tldr, lazygit.
 - Selecting text with the mouse copies it, also inside tmux, and shows a small "Copied" note.
-- tmux with Omarchy's keys (`Ctrl+Space` prefix, `Alt+Enter` split, `Alt+1..9` windows); sessions
+- tmux with `Ctrl+Space` as the prefix, `Alt+Enter` to split and `Alt+1..9` for windows; sessions
   survive a reboot.
 - Neovim with LazyVim; its colors change live with the theme.
 
@@ -434,5 +435,5 @@ Neovim's `lazy-lock.json` is not committed: each machine keeps its own plugin ve
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The Hyprland configuration structure and the menu design follow
-[Omarchy](https://github.com/basecamp/omarchy) (MIT); the ISO layout follows the Omarchy ISO.
+MIT, see [LICENSE](LICENSE). Parts of the Hyprland key bindings, the menu structure and the WhatsApp
+browser extension were ported from [Omarchy](https://github.com/omacom/omarchy) (MIT).

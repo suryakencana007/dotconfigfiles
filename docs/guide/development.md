@@ -34,3 +34,9 @@ at containers, images and logs.
 
 Menu > Install > Web App turns a website into an app: its own window, its own icon in the launcher.
 Remove it again under Menu > Remove > Web App.
+
+**WhatsApp** is preinstalled this way: a launcher entry that opens `web.whatsapp.com` in its own Brave
+window. A small bundled Brave extension ("WhatsApp Slim") collapses the chat
+list to an avatar rail when the window is narrower than 1100 px, so WhatsApp stays usable in a tiled
+layout, and switches WhatsApp Web to follow the desktop's dark/light theme. Removing WhatsApp under
+Menu > Remove > Web App is permanent; the installer does not bring it back.

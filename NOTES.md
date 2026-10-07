@@ -406,6 +406,21 @@ Hyprland's window borders, and the login screen.
   because it clears the history at the end. Scenes whose tool is missing (podman-tui, carousel, updates)
   are skipped instead of prompting.
 
+- **WhatsApp as a built-in web app + the "WhatsApp Slim" Brave extension (`resi/brave-extensions/`).**
+  Omarchy ships WhatsApp not as an app but as `WhatsApp.desktop` → `omarchy-launch-webapp
+  https://web.whatsapp.com/` plus a Chromium extension loaded with `--load-extension` from
+  `/usr/share/omarchy/...` (chat list collapses to an avatar rail under 1100 px, system theme forced on).
+  Ported 2026-10-07: `webapps_default()` creates the launcher once with `hypr-webapp install WhatsApp
+  https://web.whatsapp.com/ whatsapp` (Papirus icon name, so it works offline in the ISO chroot) and
+  leaves a marker in `~/.local/state/resi/webapps-default-done`, so a user who removes WhatsApp does not
+  get it back on the next run. The extension is vendored unchanged (MIT, Omarchy's pinned `key` kept so
+  the id is stable), copied by `brave_extensions()` to `/usr/local/share/resi-shell/brave-extensions/`
+  because `brave-flags.conf` cannot expand `~`. Brave 1.96 still honours `--load-extension` (verified
+  with a probe content script in headless mode); Google Chrome dropped it, so this only works with
+  Brave/Chromium-family browsers that keep the flag. If the flag is in place but the files are not
+  copied yet (fresh stow before `install`/`update`), Brave shows a "Failed to load extension" dialog at
+  start; `doctor` warns about exactly that.
+
 - **Boot splash "Resi Arch" (`resi/boot/`)**, modelled on Omarchy's Plymouth theme. One root script,
   `resi/boot/setup-boot-splash.sh`, does everything and is idempotent: installs the Plymouth `script` theme from
   `resi/boot/plymouth/resi/`, inserts the `plymouth` hook right after `systemd`/`udev` in `HOOKS` (so it is before
