@@ -162,11 +162,14 @@ Also worth doing once:
 ## The menu (`Super+Space`)
 
 One menu reaches everything. Entries that open a submenu show a `󰅂` on the right. In a submenu,
-Backspace on an empty search goes back. Pressing `Super+Space` again closes it.
+Backspace on an empty search goes back, and pressing `Super+Space` again closes the menu. **Apps** is a
+submenu with every installed application (icons, type to filter, Backspace back to the menu). Typing an
+app name at the top level and pressing Enter jumps straight into Apps with that search, so
+`Super+Space`, `etch`, Enter, Enter starts balenaEtcher.
 
 | Section | What is inside |
 |---|---|
-| **Apps** | the app launcher |
+| **Apps** | every installed application, with icons; type to filter |
 | **Learn** | key bindings, tmux keys, Hyprland wiki, Noctalia docs |
 | **Trigger** | screenshots, screen recording, color picker, clipboard history, calendar |
 | **Toggle** | night light, caffeine (no idle lock), Do Not Disturb, bar, Wi-Fi, Bluetooth |

@@ -30,7 +30,7 @@ features:
     details: Noctalia builds a palette from your wallpaper and renders it into the terminal, launcher, editor, window borders, prompt and login screen.
   - icon: ⌨️
     title: One menu, one set of keys
-    details: Super+Space opens a menu that reaches everything, Super+K lists every key binding. Window rules and bindings stay the same on every machine.
+    details: Super+Space opens a menu that reaches everything, apps included, and Super+K lists every key binding. Window rules and bindings stay the same on every machine.
   - icon: 🔋
     title: Laptop friendly
     details: Automatic battery mode, power profiles remembered per power source, battery charge limit, lid and clamshell handling, night light.

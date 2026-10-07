@@ -6,12 +6,16 @@ choose.
 - Entries that open a submenu show a chevron on the right.
 - In a submenu, <kbd>Backspace</kbd> on an empty search goes back.
 - Pressing <kbd>Super</kbd>+<kbd>Space</kbd> again closes it.
+- **Apps** is a submenu with every installed application (icons, type to filter,
+  <kbd>Backspace</kbd> on an empty search returns to the menu).
+- Typing an app name at the top level and pressing <kbd>Enter</kbd> jumps straight into Apps with that
+  search: <kbd>Super</kbd>+<kbd>Space</kbd>, `etch`, <kbd>Enter</kbd>, <kbd>Enter</kbd> starts balenaEtcher.
 
 ## Sections
 
 | Section | What is inside |
 |---|---|
-| **Apps** | the app launcher |
+| **Apps** | every installed application, with icons; type to filter |
 | **Learn** | key bindings, tmux keys, Hyprland wiki, Noctalia docs |
 | **Trigger** | screenshots, screen recording, color picker, clipboard history, calendar |
 | **Toggle** | night light, caffeine (no idle lock), Do Not Disturb, bar, Wi-Fi, Bluetooth |

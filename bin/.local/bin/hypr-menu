@@ -12,13 +12,18 @@ BACK="󰁍  Back"
 MENU_WIDTH="${HYPR_MENU_WIDTH:-400}"
 CHEVRON_TAB_STOP="$(( MENU_WIDTH - 78 ))px"
 
-menu() { # $1 judul, $2 "back" bila BackSpace boleh berarti kembali. stdin: "label\taksi". Mencetak aksi terpilih.
-  local title="$1" back="${2:-}" lines labels choice filter="" out rc
+menu() { # $1 judul, $2 "back" bila BackSpace boleh berarti kembali, $3 filter awal. stdin: "label\taksi[\tikon]".
+  # Mencetak aksi terpilih. Kolom ikon (nama ikon tema) opsional: bila ada, rofi menampilkan ikon di baris itu.
+  local title="$1" back="${2:-}" lines labels choice filter="${3:-}" out rc icons=0
   # Entri yang membuka submenu (aksi "menu:...") diberi 󰅂 yang ditambatkan di tepi kanan: label tampil
   # memakai TAB + chevron dan rofi diberi tab-stop dekat tepi kanan (element-text { tab-stops }).
   local chev; chev=$(printf '\U000F0142')
   lines=$(cat)
   labels=$(printf '%s\n' "$lines" | awk -F'\t' -v chev="$chev" '{ if ($2 ~ /^menu:/) print $1 "\t" chev; else print $1 }')
+  # Baris berikon untuk rofi: label + NUL "icon" US nama-ikon. Dibentuk langsung di pipa ke rofi (variabel bash
+  # membuang byte NUL). Pilihan yang dikembalikan rofi tetap label saja.
+  rows() { printf '%s\n' "$lines" | awk -F'\t' -v chev="$chev" '{ l = ($2 ~ /^menu:/) ? $1 "\t" chev : $1; if ($3 != "") printf "%s%c%s%c%s\n", l, 0, "icon", 31, $3; else print l }'; }
+  printf '%s\n' "$lines" | awk -F'\t' '$3 != "" { found = 1 } END { exit !found }' && icons=1
   if [[ ${HYPR_MENU_TEST:-} == 1 ]]; then
     choice=$(printf '%s\n' "$labels" | head -1); echo "[test] $title -> $choice" >&2
   else
@@ -31,12 +36,13 @@ menu() { # $1 judul, $2 "back" bila BackSpace boleh berarti kembali. stdin: "lab
       # Tanpa -no-custom: saat filter tidak cocok dengan entri mana pun, rofi tetap melaporkan tombol custom
       # (dengan -no-custom ia diam saja, BackSpace jadi mati). Enter pada filter tanpa hasil ditolak di bawah.
       # Pemisah keluaran rofi = US (0x1f), bukan TAB: label submenu sendiri mengandung TAB (sebelum 󰅂).
-      out=$(printf '%s\n' "$labels" | rofi -dmenu -i -p "$title" -filter "$filter" -format $'s\x1ff' \
-            "${keys[@]}" -theme-str 'configuration { show-icons: false; } window { width: '"$MENU_WIDTH"'px; } element-text { tab-stops: [ '"$CHEVRON_TAB_STOP"' ]; }'); rc=$?
+      out=$(rows | rofi -dmenu -i -p "$title" -filter "$filter" -format $'s\x1ff' \
+            "${keys[@]}" -theme-str 'configuration { show-icons: '"$( (( icons )) && echo true || echo false )"'; } window { width: '"$MENU_WIDTH"'px; } element-text { tab-stops: [ '"$CHEVRON_TAB_STOP"' ]; }'); rc=$?
       case $rc in
         0)  choice=${out%%$'\x1f'*}
             if printf '%s\n' "$labels" | grep -qxF -- "$choice"; then break; fi
-            filter=${out#*$'\x1f'} ;;                                   # bukan entri (teks bebas): buka lagi
+            filter=${out#*$'\x1f'}                                      # bukan entri (teks bebas)
+            [[ $back != back && -n $filter ]] && { printf 'apps:%s\n' "$filter"; return 0; } ;;   # menu utama: cari di Apps
         10) filter=${out#*$'\x1f'}
             [[ -z $filter ]] && { echo back; return 0; }
             filter=${filter%?} ;;
@@ -49,14 +55,15 @@ menu() { # $1 judul, $2 "back" bila BackSpace boleh berarti kembali. stdin: "lab
   printf '%s\n' "$lines" | awk -F'\t' -v c="$choice" '$1 == c { print $2; exit }'
 }
 
-run_menu() { # $1 judul, $2 nama fungsi yang mencetak entri, $3 fungsi menu induk (opsional)
+run_menu() { # $1 judul, $2 nama fungsi yang mencetak entri, $3 fungsi menu induk (opsional), $4 filter awal (opsional)
   local title="$1" items="$2" parent="${3:-}" action
   while true; do
     # Grup harus selalu sukses: dengan pipefail, "[[ -n $parent ]] &&" yang gagal di menu utama
     # akan membuat pipeline dianggap gagal dan menu langsung tertutup.
-    action=$( { $items; if [[ -n $parent ]]; then printf '%s\t%s\n' "$BACK" "back"; fi; true; } | menu "$title" "${parent:+back}") || return 0
+    action=$( { $items; if [[ -n $parent ]]; then printf '%s\t%s\n' "$BACK" "back"; fi; true; } | menu "$title" "${parent:+back}" "${4:-}") || return 0
     case "$action" in
       back) [[ -n $parent ]] && $parent; return 0 ;;
+      apps:*) apps "${action#apps:}"; return 0 ;;                 # teks bebas di menu utama → submenu Apps dengan filter itu
       menu:*) "${action#menu:}"; return 0 ;;
       "") return 0 ;;
       *) [[ ${HYPR_MENU_TEST:-} == 1 ]] && { echo "[test] exec: $action" >&2; return 0; }
@@ -66,7 +73,7 @@ run_menu() { # $1 judul, $2 nama fungsi yang mencetak entri, $3 fungsi menu indu
 }
 
 root_items() { cat <<'ITEMS'
-󰀻  Apps	rofi -show drun
+󰀻  Apps	menu:apps
 󰧑  Learn	menu:learn
 󱓞  Trigger	menu:trigger
 󰔎  Toggle	menu:toggle
@@ -79,6 +86,35 @@ root_items() { cat <<'ITEMS'
 󰌢  System	menu:system
 ITEMS
 }
+# Submenu Apps: semua aplikasi dari berkas .desktop (urutan XDG: ~/.local/share menimpa /usr/share; NoDisplay/Hidden
+# dilewati), diurutkan nama. Aksi lewat gtk-launch <id> supaya kode %U/%f dan Terminal=true ditangani benar.
+apps_items() {
+  python3 - <<'PY'
+import os, configparser, glob
+home = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
+dirs = [home] + os.environ.get("XDG_DATA_DIRS", "/usr/local/share:/usr/share").split(":")
+seen, rows = set(), []
+for d in dirs:
+    for f in sorted(glob.glob(os.path.join(d, "applications", "**", "*.desktop"), recursive=True)):
+        app_id = os.path.relpath(f, os.path.join(d, "applications")).replace("/", "-")[:-8]
+        if app_id in seen: continue
+        seen.add(app_id)
+        cp = configparser.RawConfigParser(strict=False, interpolation=None)
+        try: cp.read(f, encoding="utf-8")
+        except Exception: continue
+        if not cp.has_section("Desktop Entry"): continue
+        e = cp["Desktop Entry"]
+        if e.get("Type", "Application") != "Application": continue
+        if e.get("NoDisplay", "false").lower() == "true" or e.get("Hidden", "false").lower() == "true": continue
+        name = e.get("Name", app_id).strip()
+        if not name or "\t" in name: continue
+        rows.append((name.casefold(), name, app_id, e.get("Icon", "").strip()))
+for _, name, app_id, icon in sorted(rows):
+    print(f"{name}\tgtk-launch {app_id}\t{icon}")
+PY
+}
+apps() { run_menu "Apps" apps_items root "${1:-}"; }
+
 learn_items() { cat <<ITEMS
 󰌌  Keybindings	$KEYBINDINGS --toggle
 󰆍  Tmux keybindings	alacritty --class TUI.float -e sh -c 'tmux list-keys -N | less -R'
