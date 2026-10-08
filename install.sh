@@ -301,7 +301,7 @@ doctor() {
   fi
   local broken; broken=$(find "$HOME" -maxdepth 6 -xtype l -lname '*dotconfigfiles*' 2>/dev/null); [ -z "$broken" ] && ok "no broken symlinks" || { warn "broken symlinks: $broken"; bad=1; }
   # file kunci harus ada DAN berasal dari repo (stow -n diam saja kalau file sumbernya hilang dari repo)
-  for f in .zshrc .p10k.zsh .gitconfig .config/alacritty/alacritty.toml .config/tmux/tmux.conf .config/hypr/hyprland.lua \
+  for f in .zshrc .p10k.zsh .gitconfig .config/alacritty/alacritty.toml .config/tmux/tmux.conf .config/hypr/hyprland.lua .config/hypr/hyprlock.conf \
            .config/hypr/monitors.lua .config/noctalia/shell.toml .config/noctalia/theme.toml .config/noctalia/plugins.toml .config/noctalia/wallpaper.toml .config/nvim/init.lua .config/rofi/config.rasi .config/mpv/mpv.conf \
            .local/bin/resi-shell .local/bin/hypr-menu .local/bin/hypr-tui .local/share/applications/nwg-displays.desktop; do
     if [ ! -e "$HOME/$f" ]; then warn "missing: ~/$f"; bad=1
@@ -318,6 +318,15 @@ doctor() {
   have noctalia && { noctalia config validate >/dev/null 2>&1 && ok "noctalia config valid" || { warn "noctalia config invalid"; bad=1; }; }
   have rofi && { rofi -dump-theme >/dev/null 2>&1 && ok "rofi theme valid" || { warn "rofi theme broken"; bad=1; }; }
   [ -x "$HOME/.local/bin/hypr-menu" ] && { HYPR_MENU_CHECK=1 "$HOME/.local/bin/hypr-menu" >/dev/null 2>&1 && ok "hypr-menu: all submenu targets resolve" || { warn "hypr-menu: a submenu points to a missing function (HYPR_MENU_CHECK=1 hypr-menu)"; bad=1; }; }
+  # Lock screen: hyprlock harus ada (lock Noctalia dimatikan), warna terender, hypridle hidup di dalam sesi
+  if [ -f "$HOME/.config/hypr/hyprlock.conf" ]; then
+    if have hyprlock; then
+      [ -f "$HOME/.config/hypr/hyprlock-colors.conf" ] && ok "lock screen: hyprlock + Noctalia colors" || { warn "lock screen: hyprlock-colors.conf missing (resi-shell install, or: noctalia msg templates-apply)"; bad=1; }
+      if have hyprctl && hyprctl version >/dev/null 2>&1; then
+        pgrep -x hypridle >/dev/null && ok "hypridle running (lock before sleep)" || { warn "hypridle not running: suspend will not lock first (resi-shell install starts it)"; bad=1; }
+      fi
+    else warn "hyprlock not installed: no lock screen (sudo pacman -S hyprlock hypridle)"; bad=1; fi
+  fi
   # Ekstensi Brave: brave-flags.conf menunjuk path sistem; kalau belum disalin, Brave menampilkan error saat start
   if grep -qs -- "--load-extension=$BRAVE_EXT_DIR" "$HOME/.config/brave-flags.conf"; then
     [ -f "$BRAVE_EXT_DIR/whatsapp-slim/manifest.json" ] && ok "Brave extensions installed ($BRAVE_EXT_DIR)" || { warn "Brave extensions missing from $BRAVE_EXT_DIR (resi-shell install copies them)"; bad=1; }
@@ -477,7 +486,7 @@ update() {
   step "Upgrade AUR packages"; if run yay -Sua --noconfirm; then ok "AUR up to date"; else warn "AUR upgrade failed; continuing with the rest of the update"; fi
   update_cleanup
   if have mise; then step "Update mise tools"; if MISE_MINIMUM_RELEASE_AGE=0 run mise up; then ok "mise tools up to date"; else warn "mise up failed; continuing"; fi; fi
-  stow_all; system_extras; brave_extensions; webapps_default; tmux_plugins; nvim_plugins
+  stow_all; system_extras; brave_extensions; webapps_default; lock_screen; tmux_plugins; nvim_plugins
   have hyprctl && run hyprctl reload >/dev/null; have noctalia && run noctalia msg config-reload >/dev/null 2>&1 || true
   noctalia_plugins      # plugin yang gagal diunduh saat first-login offline dipasang di sini begitu ada jaringan
   # Podman API: drop-in podman.service terbaru (restart saat balapan login, API persisten) untuk mesin yang sudah punya Podman.
@@ -606,6 +615,19 @@ webapps_default() {
   run mkdir -p "$(dirname "$marker")"; run touch "$marker"
 }
 
+# Lock screen = hyprlock (hypr-lock). Warna dirender Noctalia ke ~/.config/hypr/hyprlock-colors.conf saat tema berubah;
+# sebelum render pertama file itu disalin dari hyprlock-colors.default.conf supaya `source =` di hyprlock.conf tidak gagal.
+# hypridle (kait loginctl lock-session + kunci sebelum suspend) dijalankan autostart.lua; di sesi yang hidup distart di sini.
+lock_screen() {
+  step "Lock screen (hyprlock)"
+  have hyprlock || { warn "hyprlock not installed; Super+Ctrl+L and idle lock will not work until it is (pacman -S hyprlock hypridle)"; return 0; }
+  [ -f "$HOME/.config/hypr/hyprlock-colors.conf" ] || run cp "$HOME/.config/hypr/hyprlock-colors.default.conf" "$HOME/.config/hypr/hyprlock-colors.conf"
+  if have hypridle && have hyprctl && hyprctl version >/dev/null 2>&1 && ! pgrep -x hypridle >/dev/null; then
+    run hyprctl dispatch "hl.dsp.exec_cmd(\"hypridle\")" >/dev/null 2>&1 && ok "hypridle started (lock before sleep, loginctl lock-session)"
+  fi
+  ok "hyprlock ready (colors: $([ -f "$HOME/.config/hypr/hyprlock-colors.conf" ] && echo rendered || echo default))"
+}
+
 # Boot splash "Resi Arch" ala Omarchy: tema Plymouth, hook initramfs, `quiet splash`, branding Limine (lihat skripnya).
 # Hanya di `install` (bukan update): mengubah initramfs dan konfigurasi bootloader.
 boot_splash() {
@@ -618,7 +640,7 @@ boot_splash() {
 install_all() {
   require_arch; sudo_keepalive
   pacman_packages; aur_helper; aur_packages; gpu_drivers
-  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; system_extras; gtk_theme; greeter; brave_extensions; webapps_default; boot_splash
+  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; system_extras; gtk_theme; greeter; brave_extensions; webapps_default; lock_screen; boot_splash
   (( CHROOT )) || { lockscreen_layout; noctalia_plugins; }   # di chroot tidak ada Hyprland/Noctalia: first-login yang mengerjakannya
   if (( OFFLINE )); then noctalia_plugins_vendor; run mkdir -p "$(dirname "$OFFLINE_MARKER")"; run touch "$OFFLINE_MARKER"; fi   # plugin nvim/tmux menyusul saat online
   finish

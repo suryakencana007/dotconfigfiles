@@ -26,6 +26,14 @@ Switch the look from the menu under **Style**, or with the [theme keys](/guide/k
 - The control center shows weather and a calendar.
 - The screen locks after 10 minutes without input and switches off after 11.
 
+## Lock screen
+
+<kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>L</kbd>, the session menu, the idle timer, closing the lid and
+suspending all lead to the same lock screen (hyprlock): the blurred desktop with a large clock, the
+date, your user name, the password box, the machine name and the battery level, in the colors of the
+current wallpaper. Its layout lives in `~/.config/hypr/hyprlock.conf`; the colors are rendered by
+Noctalia into `hyprlock-colors.conf` whenever the theme changes.
+
 ## Screenshots and recording
 
 - A screenshot freezes the screen, lets you select an area and annotate it, then goes to the clipboard

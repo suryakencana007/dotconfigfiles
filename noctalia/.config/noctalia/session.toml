@@ -1,0 +1,19 @@
+# Panel sesi Noctalia (Super+Esc): Lock dan Suspend diarahkan ke hyprlock lewat hypr-lock, supaya pengunci
+# layar hanya satu (lock screen bawaan Noctalia dimatikan di lockscreen.toml). Entri lain tetap bawaan.
+# Docs: https://docs.noctalia.dev/noctalia/configuration/shell/ (bagian [[shell.session.actions]]).
+[[shell.session.actions]]
+action  = "lock"
+command = "~/.local/bin/hypr-lock"
+
+[[shell.session.actions]]
+action  = "suspend"
+command = "~/.local/bin/hypr-lock --suspend"
+
+[[shell.session.actions]]
+action = "logout"
+
+[[shell.session.actions]]
+action = "reboot"
+
+[[shell.session.actions]]
+action = "shutdown"

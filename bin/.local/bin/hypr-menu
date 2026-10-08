@@ -275,8 +275,8 @@ power_profile_items() {
   done
 }
 system_items() {
-  printf '%s\t%s\n' "󰌾  Lock" "noctalia msg session lock"
-  can_power Suspend   && printf '%s\t%s\n' "󰒲  Suspend" "noctalia msg session suspend"
+  printf '%s\t%s\n' "󰌾  Lock" "~/.local/bin/hypr-lock"
+  can_power Suspend   && printf '%s\t%s\n' "󰒲  Suspend" "~/.local/bin/hypr-lock --suspend"
   can_power Hibernate && printf '%s\t%s\n' "󰤁  Hibernate" "systemctl hibernate"
   cat <<'ITEMS'
 󰍃  Logout	noctalia msg session logout

@@ -7,6 +7,11 @@ hl.on("hyprland.start", function()
   -- Shell desktop: bar, launcher, notifikasi, lock, idle, wallpaper, OSD, polkit agent.
   hl.exec_cmd("noctalia")
 
+  -- Kait lock screen: loginctl lock-session -> hyprlock, dan kunci sebelum suspend (hypridle.conf; waktu idle oleh Noctalia).
+  if o.cmd_present("hypridle") then
+    hl.exec_cmd("hypridle")
+  end
+
   -- Mode baterai otomatis: power-saver + brightness dibatasi saat charger dicabut (hypr-power).
   hl.exec_cmd(os.getenv("HOME") .. "/.local/bin/hypr-power watch")
   -- Indikator update paket di bar: cek repo + AUR tiap 6 jam (hypr-updates).

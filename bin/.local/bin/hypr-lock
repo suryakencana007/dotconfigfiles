@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Kunci sesi dengan hyprlock. Satu pintu untuk semua pemicu: Super+Ctrl+L, menu System, panel sesi Noctalia,
+# idle (idle.toml), tutup lid (hypr-lid-close), dan hypridle (loginctl lock-session / sebelum suspend).
+#   hypr-lock             kunci; tidak membuka instance kedua bila sudah terkunci
+#   hypr-lock --suspend   kunci, tunggu hyprlock memegang sesi, lalu suspend (jangan tidur dengan layar terbuka)
+#   hypr-lock --status    exit 0 bila sesi terkunci (dipakai hypr-restart-shell, hypr-demo)
+#   hypr-lock --battery   teks baterai untuk label hyprlock ("󰁹 95%"), kosong bila tidak ada baterai
+set -uo pipefail
+
+locked() { pgrep -x hyprlock >/dev/null; }
+lock() {
+  locked && return 0
+  command -v hyprlock >/dev/null || { echo "hyprlock is not installed (sudo pacman -S hyprlock hypridle)" >&2; notify-send -u critical "Lock screen" "hyprlock is not installed" 2>/dev/null; return 1; }
+  setsid -f hyprlock >/dev/null 2>&1
+  local _; for _ in 1 2 3 4 5 6 7 8 9 10; do locked && return 0; sleep 0.2; done   # tunggu sampai lock benar-benar aktif
+  return 1
+}
+battery() {
+  local b cap st icon; for b in /sys/class/power_supply/BAT*; do [[ -r $b/capacity ]] || continue
+    cap=$(<"$b/capacity"); st=$(<"$b/status")
+    if [[ $st == Charging ]]; then icon="󰂄"
+    elif (( cap >= 90 )); then icon="󰁹"; elif (( cap >= 60 )); then icon="󰂀"; elif (( cap >= 30 )); then icon="󰁾"; elif (( cap >= 10 )); then icon="󰁻"; else icon="󰁺"; fi
+    printf '%s %s%%\n' "$icon" "$cap"; return 0
+  done
+}
+
+case "${1:-}" in
+  "")        lock ;;
+  --suspend) lock; systemctl suspend ;;
+  --status)  locked ;;
+  --battery) battery ;;
+  *) echo "usage: hypr-lock [--suspend|--status|--battery]" >&2; exit 2 ;;
+esac

@@ -46,7 +46,7 @@ need() { command -v "$1" >/dev/null || { echo "$1 is required" >&2; exit 1; }; }
 for c in hyprctl noctalia jq alacritty; do need "$c"; done
 (( RECORD )) && { command -v gpu-screen-recorder >/dev/null || { echo "gpu-screen-recorder is required to record (or use --no-record)" >&2; exit 1; }; }
 hyprctl version >/dev/null 2>&1 || { echo "Hyprland is not running" >&2; exit 1; }
-[[ $(noctalia msg status 2>/dev/null | jq -r '.locked // false') == true ]] && { echo "Session is locked" >&2; exit 1; }
+{ "$HOME/.local/bin/hypr-lock" --status || [[ $(noctalia msg status 2>/dev/null | jq -r '.locked // false') == true ]]; } && { echo "Session is locked" >&2; exit 1; }
 
 TMP="$(mktemp -d)"
 MON="$(hyprctl monitors -j | jq -r '.[] | select(.focused) | .name' | head -1)"

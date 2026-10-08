@@ -406,6 +406,18 @@ Hyprland's window borders, and the login screen.
   because it clears the history at the end. Scenes whose tool is missing (podman-tui, carousel, updates)
   are skipped instead of prompting.
 
+- **Lock screen is hyprlock, not Noctalia's (2026-10-08).** Noctalia's lock screen only offers a login box and
+  a clock widget; the user wanted a clock, date, battery and more, so `hypr-lock` → hyprlock replaced it. To keep
+  exactly one locker, `[lockscreen] enabled = false` (lockscreen.toml) turns Noctalia's off, which also disables
+  its lock-before-suspend monitor ("logind session lock monitor disabled" in its log). The pieces that replace it:
+  idle.toml `action = "command"` → `hypr-lock`; session.toml `[[shell.session.actions]]` with `command` for Lock
+  and Suspend (the panel runs them with `/bin/sh -c`); `hypridle.conf` with only `lock_cmd`/`before_sleep_cmd`
+  (no listeners, Noctalia keeps the idle timers) so `loginctl lock-session` and PrepareForSleep still lock;
+  `hypr-lid-close` and the menu call `hypr-lock`. Colors come from a user template rendered to
+  `~/.config/hypr/hyprlock-colors.conf` (`rgba(r, g, b, a)` decimal form, which hyprlang accepts; `.hex` would
+  need the `#` stripped); `hyprlock.conf` sources `hyprlock-colors.default.conf` first so it loads before the
+  first render. `lockscreen-layout` and the host `lockscreen-widgets.toml` are kept for a quick way back.
+
 - **WhatsApp as a built-in web app + the "WhatsApp Slim" Brave extension (`resi/brave-extensions/`).**
   Omarchy ships WhatsApp not as an app but as `WhatsApp.desktop` → `omarchy-launch-webapp
   https://web.whatsapp.com/` plus a Chromium extension loaded with `--load-extension` from

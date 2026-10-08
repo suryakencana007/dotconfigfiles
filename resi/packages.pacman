@@ -74,6 +74,9 @@ upower
 greetd
 # boot splash "Resi Arch" (tema di resi/boot/plymouth/resi, dipasang resi/boot/setup-boot-splash.sh)
 plymouth
+# lock screen (hypr-lock -> hyprlock; hypridle hanya kait loginctl lock-session + kunci sebelum suspend)
+hyprlock
+hypridle
 # --- file manager & mount ---
 thunar
 thunar-volman

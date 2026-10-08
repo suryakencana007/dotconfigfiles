@@ -12,7 +12,7 @@ o.bind("SUPER + CTRL + ALT + SPACE", "Wallhaven browser", ipc .. "panel-toggle n
 o.bind("SUPER + SHIFT + SPACE", "Toggle bar", ipc .. "bar-toggle")
 o.bind("SUPER + SHIFT + comma", "Noctalia settings", ipc .. "settings-toggle")
 o.bind("ALT + TAB", "Window switcher", ipc .. "window-switcher")
-o.bind("SUPER + CTRL + L", "Lock screen", ipc .. "session lock")
+o.bind("SUPER + CTRL + L", "Lock screen", os.getenv("HOME") .. "/.local/bin/hypr-lock")   -- hyprlock (lock Noctalia dimatikan)
 
 -- Notifikasi
 o.bind("SUPER + comma", "Dismiss notifications", ipc .. "notification-clear-active")

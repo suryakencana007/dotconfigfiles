@@ -1,8 +1,13 @@
-# Lock screen Noctalia (Super+Ctrl+L / `noctalia msg session lock`), bagian generik untuk semua mesin.
+# Lock screen Noctalia: DIMATIKAN sejak 2026-10-08, pengunci layar = hyprlock (~/.config/hypr/hyprlock.conf lewat
+# ~/.local/bin/hypr-lock) karena punya widget (jam, tanggal, baterai, nama mesin) yang tidak ada di lock Noctalia.
+# enabled = false membuat `noctalia msg session lock`, lock idle bawaan, dan lock-before-suspend Noctalia jadi no-op;
+# penggantinya: idle.toml (action command), session.toml (panel sesi), hypridle (sebelum suspend).
+# Kembali ke lock Noctalia: enabled = true di sini, lalu arahkan pemicu-pemicu itu kembali ke `noctalia msg session lock`.
+# Nilai blur/tint di bawah tetap dipakai bila diaktifkan lagi. Layout kotak login per monitor: hosts/<hostname>/...
 # Referensi: https://docs.noctalia.dev/noctalia/configuration/shell/ (bagian [lockscreen]).
-# Layout kotak login per monitor ada di overlay host: hosts/<hostname>/.config/noctalia/lockscreen-widgets.toml
 
 [lockscreen]
+enabled = false
 blurred_desktop = true   # latar = desktop saat ini, diblur (bukan wallpaper polos)
 blur_intensity = 0.6     # 0.0-1.0, default 0.5
 tint_intensity = 0.3     # 0.0-1.0, default 0.3

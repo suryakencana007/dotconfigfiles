@@ -208,6 +208,9 @@ Yes/No, and so does the update.
 - An update button with a count appears when updates exist (left click updates, right click lists them).
 - Control center (`Super+S`) with weather and calendar, session menu (`Super+Esc`), wallpaper panel.
 - The screen locks after 10 minutes without input and switches off after 11.
+- **Lock screen** (hyprlock, `Super+Ctrl+L`): the blurred desktop with a large clock, the date, your
+  user name, the password box, the machine name and the battery level, all in the Noctalia colors of
+  the current wallpaper. Closing the lid or suspending locks first.
 
 ### Screenshots and recording
 

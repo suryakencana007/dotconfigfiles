@@ -1,0 +1,4 @@
+# Template warna hyprlock: dirender Noctalia tiap tema berubah (hyprlock membacanya saat mengunci, tanpa hook).
+[theme.templates.user.hyprlock]
+input_path  = "~/.config/noctalia/templates/hyprlock.conf"
+output_path = "~/.config/hypr/hyprlock-colors.conf"
