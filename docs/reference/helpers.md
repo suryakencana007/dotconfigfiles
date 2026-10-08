@@ -46,7 +46,7 @@ from a terminal too.
 | `hypr-updates` | the update indicator (`check`, `list`, `watch`, `clear`) |
 | `hypr-update-firmware` | firmware updates through fwupd |
 | `hypr-restart-shell` | restarts Noctalia safely (refused while the session is locked) |
-| `hypr-lock` | locks with hyprlock (`--suspend` locks then suspends, `--status`, `--battery` for the lock-screen label) |
+| `hypr-lock` | locks with hyprlock (`--suspend`, `--status`); `widgets` picks the lock-screen widgets (`--list`, `--enable`, `--disable`, `--reset`); `--battery`, `--media`, `--weather` feed the widget labels |
 
 ## Capture
 

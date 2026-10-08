@@ -29,10 +29,16 @@ Switch the look from the menu under **Style**, or with the [theme keys](/guide/k
 ## Lock screen
 
 <kbd>Super</kbd>+<kbd>Ctrl</kbd>+<kbd>L</kbd>, the session menu, the idle timer, closing the lid and
-suspending all lead to the same lock screen (hyprlock): the blurred desktop with a large clock, the
-date, your user name, the password box, the machine name and the battery level, in the colors of the
-current wallpaper. Its layout lives in `~/.config/hypr/hyprlock.conf`; the colors are rendered by
-Noctalia into `hyprlock-colors.conf` whenever the theme changes.
+suspending all lead to the same lock screen (hyprlock): the blurred desktop, the password box and the
+widgets you choose, in the colors of the current wallpaper.
+
+**Menu > Setup > Lock screen > Widgets** turns widgets on and off (Enter toggles, Esc finishes; the
+change shows at the next lock). Available: 24-hour or 12-hour clock, date, user name, avatar
+(`~/.face`), a "type your password" hint, machine name, battery, keyboard layout, now playing, and the
+weather from Noctalia's own location setting. The choice is per machine and kept in
+`~/.config/hypr/hyprlock-widgets.conf`; each widget is a small file in `~/.config/hypr/hyprlock.d/`,
+so a new one is a copy of an existing file with another position or command. Colors are rendered by
+Noctalia into `hyprlock-colors.conf` whenever the theme changes, so every widget follows the wallpaper.
 
 ## Screenshots and recording
 

@@ -174,7 +174,7 @@ app name at the top level and pressing Enter jumps straight into Apps with that 
 | **Trigger** | screenshots, screen recording, color picker, clipboard history, calendar |
 | **Toggle** | night light, caffeine (no idle lock), Do Not Disturb, bar, Wi-Fi, Bluetooth |
 | **Style** | theme carousel, palette and dark/light mode, wallpaper, random wallpaper, Noctalia settings |
-| **Setup** | audio, network, Bluetooth, display, monitors, power profile, battery limit, containers, config files |
+| **Setup** | audio, network, Bluetooth, display, monitors, lock screen widgets, power profile, battery limit, containers, config files |
 | **Install** | a package, an AUR package, a development environment, a font, a web app |
 | **Update** | resi-shell, firmware, check for updates, restart the shell |
 | **Remove** | a package, an AUR package, a development environment, a font, a web app |
@@ -208,9 +208,10 @@ Yes/No, and so does the update.
 - An update button with a count appears when updates exist (left click updates, right click lists them).
 - Control center (`Super+S`) with weather and calendar, session menu (`Super+Esc`), wallpaper panel.
 - The screen locks after 10 minutes without input and switches off after 11.
-- **Lock screen** (hyprlock, `Super+Ctrl+L`): the blurred desktop with a large clock, the date, your
-  user name, the password box, the machine name and the battery level, all in the Noctalia colors of
-  the current wallpaper. Closing the lid or suspending locks first.
+- **Lock screen** (hyprlock, `Super+Ctrl+L`): the blurred desktop, the password box and the widgets you
+  pick in Setup > Lock screen > Widgets: 24- or 12-hour clock, date, user name, avatar, machine name,
+  battery, keyboard layout, now playing, weather from Noctalia. All in the colors of the current
+  wallpaper. Closing the lid or suspending locks first.
 
 ### Screenshots and recording
 

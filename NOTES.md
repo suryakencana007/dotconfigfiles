@@ -417,6 +417,11 @@ Hyprland's window borders, and the login screen.
   `~/.config/hypr/hyprlock-colors.conf` (`rgba(r, g, b, a)` decimal form, which hyprlang accepts; `.hex` would
   need the `#` stripped); `hyprlock.conf` sources `hyprlock-colors.default.conf` first so it loads before the
   first render. `lockscreen-layout` and the host `lockscreen-widgets.toml` are kept for a quick way back.
+  Widgets are one file each in `hypr/.config/hypr/hyprlock.d/` and the per-machine selection is a list of
+  `source =` lines in `~/.config/hypr/hyprlock-widgets.conf` (written by `hypr-lock widgets`, outside the repo),
+  so the repo config stays generic and the user never edits hyprlock syntax to turn a widget on. The weather
+  widget reads Noctalia's own cache (`~/.cache/noctalia/weather.json`, WMO code → Nerd Font icon), so it follows
+  the location set in Noctalia without a second weather setup.
 
 - **WhatsApp as a built-in web app + the "WhatsApp Slim" Brave extension (`resi/brave-extensions/`).**
   Omarchy ships WhatsApp not as an app but as `WhatsApp.desktop` → `omarchy-launch-webapp

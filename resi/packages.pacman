@@ -77,6 +77,8 @@ plymouth
 # lock screen (hypr-lock -> hyprlock; hypridle hanya kait loginctl lock-session + kunci sebelum suspend)
 hyprlock
 hypridle
+# widget "now playing" di lock screen (hypr-lock --media)
+playerctl
 # --- file manager & mount ---
 thunar
 thunar-volman

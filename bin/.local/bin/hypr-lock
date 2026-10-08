@@ -1,20 +1,32 @@
 #!/usr/bin/env bash
 # Kunci sesi dengan hyprlock. Satu pintu untuk semua pemicu: Super+Ctrl+L, menu System, panel sesi Noctalia,
 # idle (idle.toml), tutup lid (hypr-lid-close), dan hypridle (loginctl lock-session / sebelum suspend).
-#   hypr-lock             kunci; tidak membuka instance kedua bila sudah terkunci
-#   hypr-lock --suspend   kunci, tunggu hyprlock memegang sesi, lalu suspend (jangan tidur dengan layar terbuka)
-#   hypr-lock --status    exit 0 bila sesi terkunci (dipakai hypr-restart-shell, hypr-demo)
-#   hypr-lock --battery   teks baterai untuk label hyprlock ("󰁹 95%"), kosong bila tidak ada baterai
+#   hypr-lock                 kunci; tidak membuka instance kedua bila sudah terkunci
+#   hypr-lock --suspend       kunci, tunggu hyprlock memegang sesi, lalu suspend
+#   hypr-lock --status        exit 0 bila sesi terkunci (dipakai hypr-restart-shell, hypr-demo)
+#   hypr-lock widgets         pilih widget lock screen (fzf: Enter = nyala/mati, Esc = selesai); Setup > Lock screen
+#   hypr-lock widgets --list|--enable NAMA..|--disable NAMA..|--init|--reset
+#   hypr-lock --battery|--media|--weather   teks untuk label widget (kosong bila tidak relevan)
+# Widget = berkas di ~/.config/hypr/hyprlock.d/<nama>.conf (repo); yang aktif per mesin dicatat sebagai baris `source =`
+# di ~/.config/hypr/hyprlock-widgets.conf (bukan repo). Warna/font widget ikut tema Noctalia lewat hyprlock-colors.conf.
 set -uo pipefail
+
+WIDGET_DIR="$HOME/.config/hypr/hyprlock.d"
+WIDGETS_CONF="$HOME/.config/hypr/hyprlock-widgets.conf"
+DEFAULT_WIDGETS="clock date user hostname battery"
+WIDGET_ORDER="clock clock-12h date user avatar hint hostname battery layout media weather"
 
 locked() { pgrep -x hyprlock >/dev/null; }
 lock() {
   locked && return 0
   command -v hyprlock >/dev/null || { echo "hyprlock is not installed (sudo pacman -S hyprlock hypridle)" >&2; notify-send -u critical "Lock screen" "hyprlock is not installed" 2>/dev/null; return 1; }
+  widgets_init
   setsid -f hyprlock >/dev/null 2>&1
   local _; for _ in 1 2 3 4 5 6 7 8 9 10; do locked && return 0; sleep 0.2; done   # tunggu sampai lock benar-benar aktif
   return 1
 }
+
+# ---------- teks label ----------
 battery() {
   local b cap st icon; for b in /sys/class/power_supply/BAT*; do [[ -r $b/capacity ]] || continue
     cap=$(<"$b/capacity"); st=$(<"$b/status")
@@ -23,11 +35,92 @@ battery() {
     printf '%s %s%%\n' "$icon" "$cap"; return 0
   done
 }
+media() { # lagu yang diputar (MPRIS lewat playerctl); kosong bila tidak ada/jeda
+  command -v playerctl >/dev/null || return 0
+  [[ $(playerctl status 2>/dev/null) == Playing ]] || return 0
+  local t; t=$(playerctl metadata --format '{{artist}} – {{title}}' 2>/dev/null | sed 's/^ – //; s/ – $//')
+  [[ -n $t ]] && printf '󰝚  %s\n' "${t:0:70}"
+}
+weather() { # dari cache Noctalia (lokasi/unit diatur di Settings Noctalia); kosong bila belum ada cache
+  local f="${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/weather.json" l="${XDG_CACHE_HOME:-$HOME/.cache}/noctalia/location.json"
+  [[ -r $f ]] && command -v jq >/dev/null || return 0
+  local t code day place icon
+  read -r t code day < <(jq -r '.snapshot.current | "\(.temperature_c // empty) \(.weather_code // 0) \(.is_day // true)"' "$f" 2>/dev/null)
+  [[ -n ${t:-} ]] || return 0
+  place=$(jq -r '.address // .name // empty' "$l" 2>/dev/null | cut -d, -f1)
+  case $code in   # kode WMO
+    0) [[ $day == true ]] && icon="󰖙" || icon="󰖔" ;;
+    1|2) icon="󰖕" ;; 3) icon="󰖐" ;; 45|48) icon="󰖑" ;;
+    51|53|55|56|57|61|63|65|66|67|80|81|82) icon="󰖗" ;; 71|73|75|77|85|86) icon="󰖘" ;; 95|96|99) icon="󰖓" ;; *) icon="󰖐" ;;
+  esac
+  printf '%s  %.0f°C%s\n' "$icon" "$t" "${place:+  ·  $place}"
+}
+
+# ---------- widget ----------
+widget_desc() {
+  case $1 in
+    clock) echo "Clock, 24-hour (large, top center)" ;; clock-12h) echo "Clock, 12-hour with AM/PM (instead of 24-hour)" ;;
+    date) echo "Date under the clock" ;; user) echo "User name above the password box" ;;
+    avatar) echo "Profile picture from ~/.face (round, above the clock)" ;; hint) echo "\"Type your password\" hint under the box" ;;
+    hostname) echo "Machine name, bottom left" ;; battery) echo "Battery with icon, bottom right (laptops)" ;;
+    layout) echo "Keyboard layout, bottom center" ;; media) echo "Now playing (playerctl), top center" ;;
+    weather) echo "Weather from Noctalia, top right" ;; *) echo "" ;;
+  esac
+}
+available() { local w; for w in $WIDGET_ORDER; do [[ -f $WIDGET_DIR/$w.conf ]] && echo "$w"; done; }
+enabled() { sed -n 's|^source = .*/hyprlock\.d/\([a-z0-9-]*\)\.conf$|\1|p' "$WIDGETS_CONF" 2>/dev/null; }
+is_enabled() { enabled | grep -qx -- "$1"; }
+write_widgets() { # $@ nama widget, urut sesuai WIDGET_ORDER
+  local w; mkdir -p "$(dirname "$WIDGETS_CONF")"
+  { echo "# Widget lock screen yang aktif di mesin ini. Ditulis hypr-lock widgets (Setup > Lock screen > Widgets); boleh diedit."
+    echo "# Satu baris per widget; berkasnya ada di ~/.config/hypr/hyprlock.d/. Kosongkan untuk lock screen polos."
+    for w in $WIDGET_ORDER; do printf '%s\n' "$@" | grep -qx -- "$w" && echo "source = ~/.config/hypr/hyprlock.d/$w.conf"; done
+  } >"$WIDGETS_CONF"
+}
+widgets_init() { [[ -f $WIDGETS_CONF ]] || write_widgets $DEFAULT_WIDGETS; }
+widgets_list() { widgets_init; local w; for w in $(available); do printf '%s %-10s %s\n' "$(is_enabled "$w" && echo "✓" || echo " ")" "$w" "$(widget_desc "$w")"; done; }
+widgets_set() { # $1 enable|disable, $2.. nama
+  local mode=$1 w cur; shift; widgets_init; cur=$(enabled)
+  for w in "$@"; do
+    [[ -f $WIDGET_DIR/$w.conf ]] || { echo "unknown widget: $w (see: hypr-lock widgets --list)" >&2; continue; }
+    if [[ $mode == enable ]]; then
+      [[ $w == avatar && ! -f $HOME/.face ]] && echo "note: ~/.face does not exist yet; put a square picture there for the avatar" >&2
+      [[ $w == media ]] && ! command -v playerctl >/dev/null && echo "note: playerctl is not installed; the media widget stays empty until it is" >&2
+      case $w in clock) cur=$(grep -vx "clock-12h" <<<"$cur") ;; clock-12h) cur=$(grep -vx "clock" <<<"$cur") ;; esac   # dua jam tidak bersamaan
+      cur=$(printf '%s\n%s\n' "$cur" "$w" | grep -v '^$' | sort -u)
+    else cur=$(grep -vx -- "$w" <<<"$cur"); fi
+  done
+  write_widgets $cur
+}
+widgets_ui() { # loop: pilih satu -> toggle; Esc = selesai. Tampilan ✓ diperbarui tiap putaran.
+  command -v fzf >/dev/null || { echo "fzf is required" >&2; return 1; }
+  widgets_init
+  local pick w
+  while true; do
+    pick=$(widgets_list | fzf --layout=reverse --info=inline --color=16 --color='pointer:green,marker:green' --no-multi \
+             --prompt='  Lock screen widgets : ' --header='enter: turn on/off, esc: done (changes apply at the next lock)') || break
+    w=$(awk '{print ($1 == "✓") ? $2 : $1}' <<<"$pick")
+    if is_enabled "$w"; then widgets_set disable "$w"; else widgets_set enable "$w"; fi
+  done
+  echo "Enabled: $(enabled | paste -sd ' ')"; echo "Written to $WIDGETS_CONF. Lock the screen (Super+Ctrl+L) to see it."
+}
 
 case "${1:-}" in
   "")        lock ;;
   --suspend) lock; systemctl suspend ;;
   --status)  locked ;;
   --battery) battery ;;
-  *) echo "usage: hypr-lock [--suspend|--status|--battery]" >&2; exit 2 ;;
+  --media)   media ;;
+  --weather) weather ;;
+  widgets)
+    case "${2:-}" in
+      "")        widgets_ui ;;
+      --list)    widgets_list ;;
+      --enable)  widgets_set enable "${@:3}" ;;
+      --disable) widgets_set disable "${@:3}" ;;
+      --init)    widgets_init ;;
+      --reset)   write_widgets $DEFAULT_WIDGETS; echo "Widgets reset to: $DEFAULT_WIDGETS" ;;
+      *) echo "usage: hypr-lock widgets [--list|--enable NAME..|--disable NAME..|--init|--reset]" >&2; exit 2 ;;
+    esac ;;
+  *) echo "usage: hypr-lock [--suspend|--status|--battery|--media|--weather] | widgets [...]" >&2; exit 2 ;;
 esac

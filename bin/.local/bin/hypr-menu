@@ -159,6 +159,7 @@ setup_items() {
 󰂯  Bluetooth	noctalia msg panel-toggle control-center bluetooth
 󰍹  Display	noctalia msg settings-open display
 󰍺  Monitors (nwg-displays)	~/.local/bin/hypr-monitors
+󰌾  Lock screen	menu:lockscreen
 󰹺  Power profile	menu:power_profile
 ITEMS
   # Battery limit hanya bila UPower mendukung batas pengisian untuk baterai ini (ala "when" di Omarchy)
@@ -176,6 +177,12 @@ install_items() { cat <<'ITEMS'
 󰵮  Development	menu:development
 󰛖  Font	menu:font
 󰖟  Web App	~/.local/bin/hypr-tui ~/.local/bin/hypr-webapp install
+ITEMS
+}
+# Lock screen (hyprlock lewat hypr-lock): pilih widget per mesin, lalu coba langsung
+lockscreen_items() { cat <<'ITEMS'
+󰕮  Widgets (clock, date, battery, ...)	~/.local/bin/hypr-tui ~/.local/bin/hypr-lock widgets
+󰌾  Lock now (preview)	~/.local/bin/hypr-lock
 ITEMS
 }
 # Font (hypr-font): Nerd Font dari GitHub, berkas/arsip sendiri, atau paket ttf-*/otf-* lewat picker paket
@@ -305,6 +312,7 @@ update()  { run_menu "Update"  update_items  root; }
 process() { run_menu "Restart" process_items update; }
 remove()  { run_menu "Remove"  remove_items  root; }
 font()    { run_menu "Font"    font_items    install; }
+lockscreen() { run_menu "Lock screen" lockscreen_items setup; }
 system()  { run_menu "System"  system_items  root; }
 root()    { run_menu "Menu"    root_items; }
 

@@ -20,7 +20,7 @@ choose.
 | **Trigger** | screenshots, screen recording, color picker, clipboard history, calendar |
 | **Toggle** | night light, caffeine (no idle lock), Do Not Disturb, bar, Wi-Fi, Bluetooth |
 | **Style** | theme carousel, palette and dark/light mode, wallpaper, random wallpaper, Noctalia settings |
-| **Setup** | audio, network, Bluetooth, display, monitors, power profile, battery limit, containers, config files |
+| **Setup** | audio, network, Bluetooth, display, monitors, lock screen widgets, power profile, battery limit, containers, config files |
 | **Install** | a package, an AUR package, a development environment, a font, a web app |
 | **Update** | resi-shell, firmware, check for updates, restart the shell |
 | **Remove** | a package, an AUR package, a development environment, a font, a web app |

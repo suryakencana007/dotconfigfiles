@@ -622,6 +622,7 @@ lock_screen() {
   step "Lock screen (hyprlock)"
   have hyprlock || { warn "hyprlock not installed; Super+Ctrl+L and idle lock will not work until it is (pacman -S hyprlock hypridle)"; return 0; }
   [ -f "$HOME/.config/hypr/hyprlock-colors.conf" ] || run cp "$HOME/.config/hypr/hyprlock-colors.default.conf" "$HOME/.config/hypr/hyprlock-colors.conf"
+  run "$HOME/.local/bin/hypr-lock" widgets --init      # daftar widget per mesin (clock, date, user, hostname, battery) bila belum ada
   if have hypridle && have hyprctl && hyprctl version >/dev/null 2>&1 && ! pgrep -x hypridle >/dev/null; then
     run hyprctl dispatch "hl.dsp.exec_cmd(\"hypridle\")" >/dev/null 2>&1 && ok "hypridle started (lock before sleep, loginctl lock-session)"
   fi
