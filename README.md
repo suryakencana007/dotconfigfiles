@@ -175,9 +175,9 @@ app name at the top level and pressing Enter jumps straight into Apps with that 
 | **Toggle** | night light, caffeine (no idle lock), Do Not Disturb, bar, Wi-Fi, Bluetooth |
 | **Style** | theme carousel, palette and dark/light mode, wallpaper, random wallpaper, Noctalia settings |
 | **Setup** | audio, network, Bluetooth, display, monitors, power profile, battery limit, containers, config files |
-| **Install** | a package, an AUR package, a development environment, a web app |
+| **Install** | a package, an AUR package, a development environment, a font, a web app |
 | **Update** | resi-shell, firmware, check for updates, restart the shell |
-| **Remove** | a package, an AUR package, a development environment, a web app |
+| **Remove** | a package, an AUR package, a development environment, a font, a web app |
 | **About** | system information |
 | **System** | lock, suspend, hibernate, logout, reboot, shutdown |
 
@@ -246,6 +246,9 @@ Install > Development sets up a language with one click; installed ones show a â
 - **Databases in containers**: MySQL, PostgreSQL, Redis, MongoDB, MariaDB or MSSQL, reachable only from
   this machine, with development passwords. They run on rootless Podman; `docker` and `docker compose`
   commands keep working.
+- **Fonts**: Install > Font installs a Nerd Font straight from its GitHub release, a font file or archive
+  you downloaded, or a `ttf-*`/`otf-*` package, into your user font folder; Remove > Font takes them out
+  again. No root needed, and every app sees the font right away.
 - **Web apps**: Install > Web App turns a website into its own window with an icon in the launcher.
   **WhatsApp** comes preinstalled this way, with a small Brave extension that collapses its chat list
   in narrow windows and makes it follow the dark/light theme.

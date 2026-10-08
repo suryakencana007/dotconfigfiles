@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+# Pasang/hapus font untuk user ini (tanpa root) ke ~/.local/share/fonts/resi, lalu segarkan cache fontconfig.
+# Dipanggil dari hypr-menu > Install > Font dan > Remove > Font (di dalam hypr-tui).
+#   hypr-font nerd [Name...]     Nerd Font dari rilis GitHub ryanoasis/nerd-fonts; tanpa nama = picker fzf
+#   hypr-font file [path...]     .ttf/.otf/.ttc atau arsip (.zip, .tar.*) berisi font; tanpa argumen = picker dari
+#                                ~/Downloads, ~/Desktop, ~/Documents (fzf, tab = pilih banyak)
+#   hypr-font remove [name...]   hapus set font yang dipasang skrip ini; tanpa nama = picker fzf
+#   hypr-font list               set font terpasang: nama, jumlah berkas, keluarga font
+# Tiap set = satu folder: resi/NerdFonts/<Name> atau resi/custom/<name>, jadi Remove hanya menyentuh font buatan kita.
+set -uo pipefail
+
+FONT_DIR="$HOME/.local/share/fonts/resi"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/resi"; NERD_LIST="$CACHE/nerd-fonts.txt"
+NERD_DL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
+# Cadangan bila API GitHub tidak terjangkau (batas 60 permintaan/jam tanpa token) dan belum ada cache
+NERD_FALLBACK="0xProto AdwaitaMono CascadiaCode CascadiaMono CommitMono DejaVuSansMono FiraCode FiraMono GeistMono Hack Hasklig IBMPlexMono Inconsolata IntelOneMono Iosevka IosevkaTerm JetBrainsMono Lilex Meslo Monaspace Mononoki Noto RobotoMono SourceCodePro SpaceMono Terminus UbuntuMono VictorMono ZedMono"
+
+c_ok=$'\e[1;32m'; c_warn=$'\e[1;33m'; c_off=$'\e[0m'
+ok()   { printf '%s  ✓ %s%s\n' "$c_ok" "$*" "$c_off"; }
+warn() { printf '%s  ! %s%s\n' "$c_warn" "$*" "$c_off"; }
+need() { local d; for d in "$@"; do command -v "$d" >/dev/null || { echo "$d is required" >&2; exit 1; }; done; }
+
+refresh_cache() { fc-cache -f >/dev/null 2>&1 || fc-cache -f "$FONT_DIR" >/dev/null 2>&1 || true; }
+families_in() { # keluarga font di satu folder set (fontconfig membaca langsung dari berkasnya)
+  fc-list : family file 2>/dev/null | grep -F "$1/" | sed 's/^.*: //' | tr ',' '\n' | sed 's/^ *//' | sort -u | paste -sd ',' | sed 's/,/, /g'
+}
+font_files_in() { find "$1" -type f \( -iname '*.ttf' -o -iname '*.otf' -o -iname '*.ttc' \) 2>/dev/null; }
+sets() { # baris: kind<TAB>name<TAB>path
+  local d; for d in "$FONT_DIR"/NerdFonts/*/ "$FONT_DIR"/custom/*/; do
+    [[ -d $d ]] || continue; d=${d%/}; printf '%s\t%s\t%s\n' "$(basename "$(dirname "$d")")" "$(basename "$d")" "$d"
+  done
+}
+report_set() { # $1 path set: hitung berkas + tampilkan keluarga
+  local n; n=$(font_files_in "$1" | wc -l)
+  (( n > 0 )) || { warn "no font files found in $1"; return 1; }
+  ok "$n font file(s): $(families_in "$1")"
+}
+
+# ---------- Nerd Fonts ----------
+nerd_names() { # daftar nama rilis terbaru: API GitHub -> cache -> cadangan
+  local json
+  if json=$(curl -fsSL --max-time 10 https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest 2>/dev/null) \
+     && names=$(jq -r '.assets[] | select(.name|endswith(".tar.xz")) | "\(.name|sub("\\.tar\\.xz$";""))\t\(.size)"' <<<"$json" 2>/dev/null) \
+     && [[ -n $names ]]; then
+    mkdir -p "$CACHE"; printf '%s\n' "$names" >"$NERD_LIST"; printf '%s\n' "$names"
+  elif [[ -s $NERD_LIST ]]; then cat "$NERD_LIST"
+  else printf '%s\n' $NERD_FALLBACK | sed 's/$/\t0/'; fi
+}
+nerd_install() {
+  need curl bsdtar fc-cache
+  local -a names=("$@")
+  if (( ${#names[@]} == 0 )); then
+    need fzf
+    mapfile -t names < <(nerd_names | awk -F'\t' '{ s = ($2 > 0) ? sprintf("%6.1f MB", $2/1048576) : "        "; printf "%-28s %s\n", $1, s }' \
+      | fzf --multi --layout=reverse --info=inline --color=16 --color='pointer:green,marker:green' \
+            --prompt='  Nerd Font : ' --header='tab: multi-select, enter: download and install' | awk '{print $1}')
+    (( ${#names[@]} )) || { echo "No font selected."; exit 0; }
+  fi
+  local n tmp dest rc=0
+  for n in "${names[@]}"; do
+    dest="$FONT_DIR/NerdFonts/$n"
+    if [[ -d $dest ]] && [[ -n $(font_files_in "$dest" | head -1) ]]; then ok "$n already installed ($dest)"; continue; fi
+    tmp=$(mktemp -d); echo "Downloading $n from nerd-fonts (latest release)..."
+    if curl -fL --progress-bar --max-time 600 -o "$tmp/font.tar.xz" "$NERD_DL/$n.tar.xz"; then
+      mkdir -p "$dest" && bsdtar -xf "$tmp/font.tar.xz" -C "$dest" && report_set "$dest" || { warn "$n: extraction failed"; rm -rf "$dest"; rc=1; }
+    else warn "$n: download failed (no network, or no such font: $NERD_DL/$n.tar.xz)"; rc=1; fi
+    rm -rf "$tmp"
+  done
+  refresh_cache; (( rc == 0 )) && ok "font cache refreshed; the new fonts are available in every app"
+  exit $rc
+}
+
+# ---------- berkas / arsip ----------
+file_install() {
+  need bsdtar fc-cache
+  local -a files=("$@")
+  if (( ${#files[@]} == 0 )); then
+    need fzf
+    local -a dirs=(); local d; for d in "$HOME/Downloads" "$HOME/Desktop" "$HOME/Documents"; do [[ -d $d ]] && dirs+=("$d"); done
+    mapfile -t files < <(find "${dirs[@]}" -maxdepth 3 -type f \( -iname '*.ttf' -o -iname '*.otf' -o -iname '*.ttc' -o -iname '*.zip' -o -iname '*.tar.*' -o -iname '*.tgz' \) 2>/dev/null \
+      | sort | fzf --multi --layout=reverse --info=inline --color=16 --color='pointer:green,marker:green' \
+            --prompt='  Font file : ' --header='fonts and archives under ~/Downloads, ~/Desktop, ~/Documents; tab: multi-select')
+    (( ${#files[@]} )) || { echo "No file selected."; exit 0; }
+  fi
+  local f name dest tmp rc=0
+  for f in "${files[@]}"; do
+    [[ -f $f ]] || { warn "not a file: $f"; rc=1; continue; }
+    name=$(basename "$f"); name=${name%.*}; [[ $name == *.tar ]] && name=${name%.tar}
+    name=$(printf '%s' "$name" | sed 's/[^[:alnum:]._-]\+/-/g'); dest="$FONT_DIR/custom/$name"
+    case "${f,,}" in
+      *.ttf|*.otf|*.ttc) mkdir -p "$dest" && cp -f "$f" "$dest/" && report_set "$dest" || rc=1 ;;
+      *.zip|*.tar.*|*.tgz)
+        tmp=$(mktemp -d)
+        if bsdtar -xf "$f" -C "$tmp" 2>/dev/null; then
+          mkdir -p "$dest"
+          # hanya berkas fontnya yang disalin (arsip sering membawa README/LICENSE/web fonts); nama berkas dijaga unik
+          if [[ -n $(font_files_in "$tmp" | head -1) ]]; then font_files_in "$tmp" | while read -r ff; do cp -f "$ff" "$dest/"; done; report_set "$dest" || rc=1
+          else warn "$name: the archive contains no .ttf/.otf/.ttc files"; rmdir "$dest" 2>/dev/null; rc=1; fi
+        else warn "$name: could not extract $f"; rc=1; fi
+        rm -rf "$tmp" ;;
+      *) warn "unsupported file type: $f"; rc=1 ;;
+    esac
+  done
+  refresh_cache; (( rc == 0 )) && ok "font cache refreshed; the new fonts are available in every app"
+  exit $rc
+}
+
+# ---------- hapus / daftar ----------
+list_sets() {
+  local kind name path n
+  while IFS=$'\t' read -r kind name path; do
+    n=$(font_files_in "$path" | wc -l); printf '%s/%s  (%s file%s: %s)\n' "$kind" "$name" "$n" "$([[ $n == 1 ]] || echo s)" "$(families_in "$path")"
+  done < <(sets)
+}
+remove_sets() {
+  local -a names=("$@")
+  if (( ${#names[@]} == 0 )); then
+    need fzf
+    [[ -n $(sets) ]] || { echo "No fonts were installed with hypr-font."; exit 0; }
+    mapfile -t names < <(list_sets | fzf --multi --layout=reverse --info=inline --color=16 --color='pointer:red,marker:red' \
+      --prompt='  Remove font : ' --header='tab: multi-select, enter: remove' | awk '{print $1}')
+    (( ${#names[@]} )) || { echo "No fonts selected."; exit 0; }
+  fi
+  hypr-tui --confirm "Remove ${names[*]}?" || { echo "Cancelled."; exit 1; }
+  local n path
+  for n in "${names[@]}"; do
+    path="$FONT_DIR/$n"; [[ $n == */* && -d $path ]] || { warn "unknown font set: $n (see: hypr-font list)"; continue; }
+    rm -rf "$path"; rmdir "$(dirname "$path")" 2>/dev/null; echo "Removed $n"
+  done
+  refresh_cache
+}
+
+case "${1:-}" in
+  nerd)   shift; nerd_install "$@" ;;
+  file)   shift; file_install "$@" ;;
+  remove) shift; remove_sets "$@" ;;
+  list)   list_sets ;;
+  *) echo "usage: hypr-font nerd [Name...] | file [path...] | remove [name...] | list" >&2; exit 2 ;;
+esac

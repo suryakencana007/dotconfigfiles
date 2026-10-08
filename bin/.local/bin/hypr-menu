@@ -174,7 +174,15 @@ install_items() { cat <<'ITEMS'
 󰏖  Package	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install repo
 󰣇  AUR	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install aur
 󰵮  Development	menu:development
+󰛖  Font	menu:font
 󰖟  Web App	~/.local/bin/hypr-tui ~/.local/bin/hypr-webapp install
+ITEMS
+}
+# Font (hypr-font): Nerd Font dari GitHub, berkas/arsip sendiri, atau paket ttf-*/otf-* lewat picker paket
+font_items() { cat <<'ITEMS'
+󰊄  Nerd Font	~/.local/bin/hypr-tui ~/.local/bin/hypr-font nerd
+󰈔  From file	~/.local/bin/hypr-tui ~/.local/bin/hypr-font file
+󰏖  Package (ttf-*, otf-*)	HYPR_PKG_QUERY=ttf- ~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install repo
 ITEMS
 }
 # Lingkungan pengembangan (hypr-dev-env, berbasis mise seperti Omarchy). Daftar yang sama dipakai Install dan Remove;
@@ -238,6 +246,8 @@ remove_items() { cat <<'ITEMS'
 󰣇  AUR	~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-pkg-install remove-aur
 󰵮  Development	menu:remove_development
 ITEMS
+  # Font hanya bila ada set font yang dipasang hypr-font
+  [[ -n $(~/.local/bin/hypr-font list 2>/dev/null) ]] && printf '%s\t%s\n' "󰛖  Font" "~/.local/bin/hypr-tui ~/.local/bin/hypr-font remove"
   # Web App hanya bila ada launcher web app (ala "when" di Omarchy)
   [[ -n $(~/.local/bin/hypr-webapp list 2>/dev/null) ]] && printf '%s\t%s\n' "󰖟  Web App" "~/.local/bin/hypr-tui --class hypr-pkg-install ~/.local/bin/hypr-webapp remove"
   true
@@ -294,6 +304,7 @@ rmdev_elixir()       { run_menu "Remove Elixir"      remove_elixir_items remove_
 update()  { run_menu "Update"  update_items  root; }
 process() { run_menu "Restart" process_items update; }
 remove()  { run_menu "Remove"  remove_items  root; }
+font()    { run_menu "Font"    font_items    install; }
 system()  { run_menu "System"  system_items  root; }
 root()    { run_menu "Menu"    root_items; }
 

@@ -29,6 +29,7 @@ from a terminal too.
 | `hypr-docker-db` | development databases in Podman (`install`, `remove`, `list`) |
 | `hypr-containers` | podman-tui, installed on first use |
 | `hypr-webapp` | web apps as launcher entries (`install`, `remove`, `launch`, `list`) |
+| `hypr-font` | user fonts in `~/.local/share/fonts/resi` (`nerd [Name]`, `file [path]`, `remove`, `list`) |
 
 ## Power and hardware
 

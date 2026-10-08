@@ -31,6 +31,7 @@ fzf_args=(
   --bind 'alt-d:preview-half-page-down,alt-u:preview-half-page-up'
   --bind 'alt-k:preview-up,alt-j:preview-down'
 )
+[[ -n ${HYPR_PKG_QUERY:-} ]] && fzf_args+=( --query "$HYPR_PKG_QUERY" )   # pencarian awal (mis. "ttf-" dari Install > Font > Package)
 
 case "$mode" in
   repo)

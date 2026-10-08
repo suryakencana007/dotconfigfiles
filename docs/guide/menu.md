@@ -21,9 +21,9 @@ choose.
 | **Toggle** | night light, caffeine (no idle lock), Do Not Disturb, bar, Wi-Fi, Bluetooth |
 | **Style** | theme carousel, palette and dark/light mode, wallpaper, random wallpaper, Noctalia settings |
 | **Setup** | audio, network, Bluetooth, display, monitors, power profile, battery limit, containers, config files |
-| **Install** | a package, an AUR package, a development environment, a web app |
+| **Install** | a package, an AUR package, a development environment, a font, a web app |
 | **Update** | resi-shell, firmware, check for updates, restart the shell |
-| **Remove** | a package, an AUR package, a development environment, a web app |
+| **Remove** | a package, an AUR package, a development environment, a font, a web app |
 | **About** | system information |
 | **System** | lock, suspend, hibernate, logout, reboot, shutdown |
 
@@ -37,6 +37,12 @@ Mark several with <kbd>Tab</kbd>, press Enter to install.
 
 **Remove > Package** lists what you installed yourself, shows everything that would be removed with it
 (including dependencies nothing else needs) and asks Yes or No before doing anything.
+
+**Install > Font** installs fonts for your user, no root needed: **Nerd Font** picks one from the
+latest Nerd Fonts release and downloads it; **From file** takes a `.ttf`/`.otf`/`.ttc` or an archive
+from `~/Downloads`, `~/Desktop` or `~/Documents`; **Package** opens the package picker with `ttf-`
+already typed. The font cache is refreshed, so every app sees the new font right away. **Remove > Font**
+lists what was installed this way and removes it.
 
 **Install > Web App** turns a website into its own window with an icon in the launcher.
 
