@@ -34,6 +34,8 @@ tealdeer
 lazygit
 jq
 fastfetch
+chafa        # fastfetch: logo PNG sebagai blok unicode (alacritty tanpa protokol gambar)
+imagemagick  # fastfetch: decoder PNG untuk logo chafa
 mpv
 yt-dlp
 7zip

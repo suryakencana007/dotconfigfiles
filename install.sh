@@ -21,7 +21,7 @@ OFFLINE_MARKER="$HOME/.local/state/resi/offline-install-pending"     # plugin nv
 RESI_VENDOR="${RESI_VENDOR:-/usr/share/resi-shell/vendor}"           # tarball vendor dari ISO offline (bind-mount saat chroot)
 for a in "$@"; do case "$a" in install|update|doctor|packages|first-login|lockscreen-layout|iso-relink) CMD="$a" ;; --force) FORCE=1 ;; --dry-run|-n) DRY=1 ;; -y|--yes) YES=1 ;; --chroot) CHROOT=1; YES=1 ;; --offline) OFFLINE=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "unknown argument: $a" >&2; exit 2 ;; esac; done
 
-PKGS_FOLD=(zsh git alacritty tmux nvim rofi mpv brave)            # stow biasa (folder boleh dilipat)
+PKGS_FOLD=(zsh git alacritty tmux nvim rofi mpv brave fastfetch)            # stow biasa (folder boleh dilipat)
 PKGS_NOFOLD=(hypr noctalia claude bin gtk)                 # --no-folding: folder tetap nyata (overlay host & file render bisa masuk)
 HOST="$(cat /etc/hostname 2>/dev/null || hostname)"
 
