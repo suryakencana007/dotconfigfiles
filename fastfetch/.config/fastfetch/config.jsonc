@@ -15,23 +15,35 @@
   },
   "display": { "separator": " : " },
   "modules": [
-    "title",
-    "separator",
-    "os",
-    "kernel",
-    "uptime",
-    "packages",
-    "shell",
-    "display",
-    "wm",
-    "terminal",
-    "terminalfont",
-    "cpu",
-    "gpu",
-    "memory",
-    "disk",
-    "battery",
     "break",
-    "colors"
+    { "type": "title", "format": "\u001b[38;2;226;52;42m\u2500\u2500\u001b[0m \u001b[1;38;2;243;237;225m\u001b[1;38;2;243;237;225m{user-name}\u001b[0m\u001b[38;2;143;135;112m @ \u001b[0m\u001b[1;38;2;243;237;225m{host-name}\u001b[0m" },
+    { "type": "custom", "format": "\u001b[38;2;226;52;42m\u25a0\u001b[0m \u001b[38;2;143;135;112mRESI ARCH \u00b7 a hand-built Arch desktop\u001b[0m" },
+    "break",
+
+    { "type": "custom", "format": "\u001b[38;2;226;52;42m\u2500\u2500\u001b[0m \u001b[1;38;2;243;237;225mMACHINES\u001b[0m \u001b[38;2;58;46;36m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[0m" },
+    { "type": "cpu",    "key": "CPU" , "format": "{name}" },
+    { "type": "cpu", "key": "CPU Temp", "format": "{temperature}", "temp": { "green": 40, "yellow": 70 } },
+    { "type": "gpu",    "key": "GPU", "detectionMethod": "pci" },
+    { "type": "memory", "key": "MEMORY" },
+    { "type": "disk",   "key": "DISK" },
+    "break",
+
+    { "type": "custom", "format": "\u001b[38;2;226;52;42m\u2500\u2500\u001b[0m \u001b[1;38;2;243;237;225mSYSTEM\u001b[0m \u001b[38;2;58;46;36m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[0m" },
+    { "type": "command", "key": "OS",     "text": "echo \"Resi Arch\"" },
+    { "type": "command", "key": "BRANCH", "text": "echo main" },
+    { "type": "kernel",  "key": "KERNEL" },
+    { "type": "command", "key": "WM",     "text": "echo \"${XDG_CURRENT_DESKTOP:-Hyprland}\"" },
+    { "type": "command", "key": "SHELL",  "text": "basename \"${SHELL:-unknown}\"" },
+    { "type": "packages","key": "PKGS" },
+    "break",
+
+    { "type": "custom", "format": "\u001b[38;2;226;52;42m\u2500\u2500\u001b[0m \u001b[1;38;2;243;237;225mSESSION\u001b[0m \u001b[38;2;58;46;36m\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u001b[0m" },
+    { "type": "uptime",  "key": "UPTIME" },
+    { "type": "command", "key": "AGE", "text": "echo $(( ($(date +%s) - $(stat -c %W /)) / 86400 )) days" },
+    { "type": "terminal","key": "TERM" },
+    "break",
+
+    { "type": "colors", "symbol": "square", "paddingLeft": 2 },
+    "break"
   ]
 }
