@@ -16,6 +16,7 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 | tmux | `.config/tmux/tmux.conf` | sama seperti alacritty: per file (folder sudah ada) atau symlink folder dengan `plugins/` TPM di dalam folder repo, di-gitignore (dynarch) |
 | nvim | seluruh `.config/nvim` | folder (symlink folder utuh) |
 | mpv | `.config/mpv/{mpv.conf,input.conf}` | folder |
+| fastfetch | `.config/fastfetch/{config.jsonc,logo.txt}` (logo teks RESI/ARCH dua tingkat dari resi/boot/logo.txt; opsi PNG via chafa+imagemagick dicatat di config) | folder |
 | hypr, noctalia | `.config/hypr/*`, `.config/noctalia/*` | `--no-folding` (folder nyata, supaya overlay host dan file render Noctalia bisa masuk tanpa ke repo) |
 | hosts/<hostname> | overlay khas mesin (lockscreen-widgets.toml, hypr/local.lua) | `--no-folding`, dari dir `hosts/`, otomatis oleh installer |
 | claude | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` (per file, karena `~/.claude` punya isi lain) |
