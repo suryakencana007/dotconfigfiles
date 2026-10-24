@@ -13,8 +13,9 @@ Alur:
    meng-commit ke repo ini secara paralel, jadi selalu mulai dari HEAD terbaru dan jangan anggap isi file sama dengan
    yang pernah dibaca.
 2. Daftar paket dan mode stow: sumber kebenarannya `PKGS_FOLD` dan `PKGS_NOFOLD` di `install.sh`, bukan ingatan.
-   Saat ini `PKGS_FOLD` = zsh git alacritty tmux nvim rofi mpv (stow biasa, folder boleh dilipat) dan
-   `PKGS_NOFOLD` = hypr noctalia claude bin gtk (`--no-folding`, symlink per file di folder nyata). Overlay mesin:
+   Selalu baca kedua array langsung dari `install.sh`; jangan mengandalkan daftar statis di instruksi ini. Paket
+   `pi` memakai `--no-folding`, agar resource Pi dapat berdampingan dengan auth, settings, session, dan resource
+   pribadi lain di `~/.pi/agent`. Overlay mesin:
    `cd hosts && stow --no-folding -t ~ "$(cat /etc/hostname)"`.
 3. File yang di-gitignore (`git status --short --ignored | grep '^!!'`) harus hanya render/plugin/lock:
    `alacritty/.../themes/`, `nvim/.../lazy-lock.json`, `nvim/.../lua/noctalia.lua`, `rofi/.../noctalia.rasi`,

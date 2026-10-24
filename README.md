@@ -389,6 +389,7 @@ directory. Configs in `~/.config/...` are links into this repo, so editing eithe
 | `gtk`, `mpv`, `brave` | app settings |
 | `bin` | helper scripts in `~/.local/bin` and a few launcher entries |
 | `claude` | Claude Code skills and agents that know this setup |
+| `pi` | Pi skills, specialized subagents and the subagent extension |
 | `hosts/<hostname>` | per-machine overlay |
 | `resi/` | installer data: package lists, login-screen templates, boot splash (`resi/boot`), ISO builder (`resi/iso`) |
 | `docs/` | the website (VitePress), deployed to GitHub Pages by `.github/workflows/docs.yml` |
@@ -428,7 +429,7 @@ The others are stowed normally.
 ```sh
 cd ~/dotconfigfiles
 stow -t ~ zsh git alacritty tmux nvim rofi mpv brave
-stow --no-folding -t ~ hypr noctalia claude bin gtk
+stow --no-folding -t ~ hypr noctalia claude pi bin gtk
 (cd hosts && stow --no-folding -t ~ "$(cat /etc/hostname)")
 ```
 

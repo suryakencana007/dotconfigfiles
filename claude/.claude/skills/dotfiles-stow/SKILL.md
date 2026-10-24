@@ -20,6 +20,7 @@ identitas git diset lokal di repo). Tiap folder tingkat pertama = satu paket sto
 | hypr, noctalia | `.config/hypr/*`, `.config/noctalia/*` | `--no-folding` (folder nyata, supaya overlay host dan file render Noctalia bisa masuk tanpa ke repo) |
 | hosts/<hostname> | overlay khas mesin (lockscreen-widgets.toml, hypr/local.lua) | `--no-folding`, dari dir `hosts/`, otomatis oleh installer |
 | claude | `.claude/skills/*`, `.claude/agents/*` | `--no-folding` (per file, karena `~/.claude` punya isi lain) |
+| pi | `.pi/agent/skills/*`, `.pi/agent/agents/*`, `.pi/agent/extensions/subagent/*` | `--no-folding` (resource Pi per file; tidak menimpa settings, auth, atau session) |
 | rofi | `.config/rofi/config.rasi`, `layout.rasi` (noctalia.rasi = render, ignored) | folder |
 | gtk | `.config/gtk-3.0/settings.ini`, `.config/gtk-4.0/settings.ini` (render noctalia.css/gtk.css tinggal di ~/.config, di luar repo) | `--no-folding` |
 | brave | `.config/brave-flags.conf` (`--password-store=gnome-libsecret`) | file (masuk PKGS_FOLD) |

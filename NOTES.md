@@ -457,6 +457,20 @@ Hyprland's window borders, and the login screen.
   `RESI_BOOT_ROOT=/some/dir` runs the script against a fake root without root, plymouth or mkinitcpio, which is how
   the config rewriting is tested.
 
+## Pi skills and specialized agents
+
+- **Pi resources live in the `pi` Stow package** and are installed with `--no-folding`. This creates per-file links
+  under `~/.pi/agent` without replacing Pi's machine-local `settings.json`, credentials, sessions, installed
+  releases, or package cache. The four Claude skills have Pi-adapted copies under `pi/.pi/agent/skills`; keep both
+  copies aligned when shared setup knowledge changes.
+- **The three specialized agents use Pi's subagent extension** and run in isolated Pi subprocesses. Their tool lists
+  use Pi's lowercase `read`, `bash`, `edit`, and `write` names. The extension is vendored from Pi 1.4.0's checked
+  `examples/extensions/subagent` implementation rather than linked into Pi's versioned install tree, because a
+  release cleanup would break such a link. Re-check the vendored extension against the installed example after a
+  major Pi upgrade.
+- Pi discovers skills and extensions automatically after Stow. Run `/reload` after editing them in an active
+  session. The agent definitions live in `~/.pi/agent/agents`, which is the extension's user-level agent location.
+
 ## Noctalia's two config layers (read this before debugging "my change didn't work")
 
 Noctalia merges two layers, and the second always wins for any key it defines:

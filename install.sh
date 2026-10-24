@@ -22,7 +22,7 @@ RESI_VENDOR="${RESI_VENDOR:-/usr/share/resi-shell/vendor}"           # tarball v
 for a in "$@"; do case "$a" in install|update|doctor|packages|first-login|lockscreen-layout|iso-relink) CMD="$a" ;; --force) FORCE=1 ;; --dry-run|-n) DRY=1 ;; -y|--yes) YES=1 ;; --chroot) CHROOT=1; YES=1 ;; --offline) OFFLINE=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "unknown argument: $a" >&2; exit 2 ;; esac; done
 
 PKGS_FOLD=(zsh git alacritty tmux nvim rofi mpv brave fastfetch)            # stow biasa (folder boleh dilipat)
-PKGS_NOFOLD=(hypr noctalia claude bin gtk)                 # --no-folding: folder tetap nyata (overlay host & file render bisa masuk)
+PKGS_NOFOLD=(hypr noctalia claude pi bin gtk)              # --no-folding: folder tetap nyata (overlay host, resource agent & file render bisa masuk)
 HOST="$(cat /etc/hostname 2>/dev/null || hostname)"
 
 c_step=$'\e[1;34m'; c_ok=$'\e[1;32m'; c_warn=$'\e[1;33m'; c_btn=$'\e[1;7m'; c_off=$'\e[0m'
