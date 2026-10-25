@@ -364,7 +364,12 @@ doctor() {
     esac
   done
   if have luac5.4; then for f in "$REPO"/hypr/.config/hypr/*.lua "$REPO"/hypr/.config/hypr/bindings/*.lua; do luac5.4 -p "$f" 2>/dev/null || lint_bad+=" $(basename "$f")(lua)"; done; fi
-  [ -z "$lint_bad" ] && ok "scripts lint clean (bash -n$(have shellcheck && echo ', shellcheck'), python, lua)" || { warn "lint:$lint_bad"; bad=1; }
+  # Plugin Noctalia lokal: `plugins lint` offline, mencocokkan setting manifest dengan kode Luau.
+  if have noctalia; then for f in "$REPO"/noctalia/.local/share/resi-plugins/*/plugin.toml; do
+    [ -f "$f" ] || continue
+    noctalia plugins lint "$(dirname "$f")" >/dev/null 2>&1 || lint_bad+=" $(basename "$(dirname "$f")")(plugin)"
+  done; fi
+  [ -z "$lint_bad" ] && ok "scripts lint clean (bash -n$(have shellcheck && echo ', shellcheck'), python, lua$(have noctalia && echo ', noctalia plugins'))" || { warn "lint:$lint_bad"; bad=1; }
   have shellcheck || warn "shellcheck not installed (resi-shell update installs it)"
   if [ -f /usr/lib/security/pam_gnome_keyring.so ]; then
     grep -q pam_gnome_keyring /etc/pam.d/greetd 2>/dev/null && ok "keyring unlocks at login (PAM greetd)" || { warn "keyring not in /etc/pam.d/greetd (run: resi-shell update)"; bad=1; }
@@ -559,9 +564,26 @@ lockscreen_layout() {
 }
 
 # Plugin Noctalia dari noctalia/plugins.toml: pastikan terpasang+aktif (butuh Noctalia jalan + internet). Idempotent.
+# Sumber kind="path" (plugin lokal dari repo ini, mis. resi/island) didaftarkan dulu: tanpa itu
+# `plugins enable` tidak menemukan plugin-nya. Sumber git bawaan tidak perlu didaftar ulang.
 noctalia_plugins() {
   have noctalia && noctalia msg status >/dev/null 2>&1 || return 0
-  local p; for p in $(sed -n 's/^enabled *= *\[\(.*\)\]/\1/p' "$REPO/noctalia/.config/noctalia/plugins.toml" | tr -d '", '); do
+  local conf="$REPO/noctalia/.config/noctalia/plugins.toml"
+  local name kind loc
+  while read -r name kind loc; do
+    [ -n "$name" ] || continue
+    run noctalia msg plugins source add "$name" "$kind" "$loc" >/dev/null 2>&1 \
+      && ok "plugin source $name ($loc)" || warn "could not register plugin source $name"
+  done < <(awk '
+    /^\[\[plugins\.source\]\]/ { n=""; k=""; l=""; next }
+    /^\[/ { next }
+    /^[[:space:]]*name[[:space:]]*=/     { n=$0 }
+    /^[[:space:]]*kind[[:space:]]*=/     { k=$0 }
+    /^[[:space:]]*location[[:space:]]*=/ { l=$0
+      gsub(/^[^"]*"|"[^"]*$/, "", n); gsub(/^[^"]*"|"[^"]*$/, "", k); gsub(/^[^"]*"|"[^"]*$/, "", l)
+      if (k == "path") print n, k, l }
+  ' "$conf")
+  local p; for p in $(sed -n 's/^enabled *= *\[\(.*\)\]/\1/p' "$conf" | tr -d '", '); do
     if noctalia msg plugins list 2>/dev/null | grep -q "^$p .*enabled"; then ok "plugin $p enabled"
     else run noctalia msg plugins enable "$p" >/dev/null 2>&1 && ok "plugin $p installed and enabled" || warn "could not enable plugin $p (offline?)"; fi
   done

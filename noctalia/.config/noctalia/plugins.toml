@@ -1,7 +1,26 @@
 # Plugin Noctalia yang harus aktif di semua mesin. Wallhaven = bagian dari alur tema/wallpaper
-# (widget "wallhaven" di bar.toml, panel browser Super+Ctrl+Alt+Space). Plugin diunduh Noctalia dari sumber
-# resminya saat diaktifkan; resi-shell first-login/install juga menjalankan `noctalia msg plugins enable`
-# supaya pasti terpasang. API key Wallhaven (opsional) tetap di state GUI, bukan di sini.
+# (panel browser Super+Ctrl+Alt+Space). Island = widget bar "dynamic island" buatan sendiri, sumbernya
+# folder lokal di repo ini (paket stow noctalia -> ~/.local/share/resi-plugins).
+# Plugin diunduh/di-resolve Noctalia saat diaktifkan; resi-shell first-login/install juga menjalankan
+# `noctalia msg plugins source add` + `plugins enable` supaya pasti terpasang.
+# API key Wallhaven (opsional) tetap di state GUI, bukan di sini.
 [plugins]
-enabled = [ "noctalia/wallhaven" ]
+enabled = [ "noctalia/wallhaven", "resi/island" ]
 auto_update = "official"
+
+# Array tabel DIGANTI UTUH oleh file/lapisan yang dimuat belakangan, bukan digabung per nama:
+# begitu satu [[plugins.source]] ditulis di sini, official dan community wajib ikut didaftar ulang.
+[[plugins.source]]
+name     = "official"
+kind     = "git"
+location = "https://github.com/noctalia-dev/official-plugins"
+
+[[plugins.source]]
+name     = "community"
+kind     = "git"
+location = "https://github.com/noctalia-dev/community-plugins"
+
+[[plugins.source]]
+name     = "resi"
+kind     = "path"
+location = "~/.local/share/resi-plugins"

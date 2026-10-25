@@ -1,0 +1,166 @@
+# Dynamic island untuk bar Noctalia.
+#
+# Satu service headless mengawasi MPRIS dan PipeWire lewat runStream, lalu mendorong event ke
+# noctalia.state. Widget bar mengambilnya, melebar dengan easing buatan sendiri, menahan sebentar,
+# lalu menciut lagi.
+#
+# Dua wajah, satu mesin: [[widget]] di dalam bar dan [[layer]] yang melayang di bawah bar.
+# Keduanya memakai render.luau dan anim.luau yang sama; setelan `float_island` memilih mana yang
+# bereaksi terhadap event. plugin_api = 36 karena [[layer]] diperkenalkan di situ.
+
+id = "resi/island"
+name = "Island"
+version = "0.4.0"
+plugin_api = 36
+author = "resi"
+license = "MIT"
+dependencies = []
+tags = ["bar", "media"]
+icon = "disc"
+description = "A dynamic island for Noctalia: a floating capsule that expands on media, volume, microphone and brightness changes, then opens into a media card with real transport controls when hovered."
+
+# Lebar maksimum saat melebar, dalam piksel logis.
+[[setting]]
+key = "expanded_width"
+type = "int"
+label_key = "settings.expanded_width.label"
+description_key = "settings.expanded_width.description"
+default = 220
+min = 80
+max = 480
+
+# Lama animasi melebar dan menciut.
+[[setting]]
+key = "expand_ms"
+type = "int"
+label_key = "settings.expand_ms.label"
+description_key = "settings.expand_ms.description"
+default = 260
+min = 0
+max = 2000
+
+# Berapa lama island tetap lebar setelah event sebelum menciut sendiri.
+[[setting]]
+key = "hold_ms"
+type = "int"
+label_key = "settings.hold_ms.label"
+description_key = "settings.hold_ms.description"
+default = 3000
+min = 500
+max = 20000
+
+# Sumber event. Mematikan salah satu membuat service mengabaikan stream-nya.
+[[setting]]
+key = "watch_media"
+type = "bool"
+label_key = "settings.watch_media.label"
+description_key = "settings.watch_media.description"
+default = true
+
+[[setting]]
+key = "watch_volume"
+type = "bool"
+label_key = "settings.watch_volume.label"
+description_key = "settings.watch_volume.description"
+default = true
+
+# Album art dari MPRIS; hanya artUrl file:// yang dipakai, URL http diabaikan.
+[[setting]]
+key = "watch_brightness"
+type = "bool"
+label_key = "settings.watch_brightness.label"
+description_key = "settings.watch_brightness.description"
+default = true
+
+[[setting]]
+key = "watch_mic"
+type = "bool"
+label_key = "settings.watch_mic.label"
+description_key = "settings.watch_mic.description"
+default = true
+
+[[setting]]
+key = "show_album_art"
+type = "bool"
+label_key = "settings.show_album_art.label"
+description_key = "settings.show_album_art.description"
+default = true
+
+# Pakai island melayang, bukan melebarkan kapsul di dalam bar. Saat menyala, widget bar tinggal
+# jadi titik penanda: ikonnya tetap ikut berganti warna dan tooltipnya tetap terisi.
+[[setting]]
+key = "float_island"
+type = "bool"
+label_key = "settings.float_island.label"
+description_key = "settings.float_island.description"
+default = true
+
+# Lebar maksimum island melayang. Dipisah dari expanded_width karena ia punya ruang jauh lebih luas.
+[[setting]]
+key = "float_width"
+type = "int"
+label_key = "settings.float_width.label"
+description_key = "settings.float_width.description"
+default = 340
+min = 160
+max = 900
+
+# Buka kartu media saat pointer menyentuh island melayang, dan saat widget bar diklik. Mematikannya
+# mengembalikan island jadi pemberitahuan yang tidak bisa disentuh.
+[[setting]]
+key = "media_controls"
+type = "bool"
+label_key = "settings.media_controls.label"
+description_key = "settings.media_controls.description"
+default = true
+
+# Lebar kartu media. Terpisah dari float_width karena kartu memuat album art, dua baris teks, dan
+# sebaris tombol -- kapsul toast tidak.
+[[setting]]
+key = "open_width"
+type = "int"
+label_key = "settings.open_width.label"
+description_key = "settings.open_width.description"
+default = 420
+min = 280
+max = 900
+
+[[widget]]
+id = "island"
+entry = "island.luau"
+
+  # Tetap lebar selama pointer di atas island.
+  [[widget.setting]]
+  key = "expand_on_hover"
+  type = "bool"
+  label_key = "settings.expand_on_hover.label"
+  description_key = "settings.expand_on_hover.description"
+  default = true
+
+[[service]]
+id = "watch"
+entry = "watch.luau"
+
+# Surface layer-shell milik plugin. Malas: tidak ada sampai watch.luau memanggil layer.show.
+#   anchors ke "top" saja  -> melayang di tengah secara horizontal, selebar isinya
+#   margins.top = 10       -> margin dihitung dari area pakai (zona eksklusif bar sudah dipotong),
+#                             jadi 10 px ini celah di bawah bar -- sama dengan offset_y OSD/toast
+#   exclusive_zone = 0     -> tidak menggeser jendela, hanya menumpang di atasnya
+[[layer]]
+id = "float"
+entry = "float.luau"
+layer = "overlay"
+anchors = ["top"]
+# Surface TIDAK ikut beranimasi -- ia dipaku dan panelnya yang bergerak di dalamnya. Sebabnya:
+# dengan anchor "top" saja, lebar surface yang menentukan x-nya, dan mengubah lebar tiap frame
+# membuat x tertinggal satu frame dari ukuran barunya. Area yang ditinggalkan tidak dicat ulang,
+# jadi tampak kotak basi menempel di sisi kanan panel sepanjang animasi menciut.
+#
+# Ukuran di sini adalah ukuran toast. Kartu media memperbesarnya lewat noctalia.layer.configure --
+# MEMBESAR aman, karena tidak ada area yang ditinggalkan.
+width = 340
+height = 50
+margins = { top = 10, right = 0, bottom = 0, left = 0 }
+exclusive_zone = 0
+keyboard = "none"
+output = "focused"

@@ -1,0 +1,56 @@
+{
+  "settings": {
+    "expanded_width": {
+      "label": "Expanded width",
+      "description": "How wide the island grows when an event arrives, in pixels."
+    },
+    "expand_ms": {
+      "label": "Animation duration",
+      "description": "Length of the expand and collapse animation in milliseconds."
+    },
+    "hold_ms": {
+      "label": "Hold time",
+      "description": "How long the island stays expanded after an event before it collapses again."
+    },
+    "watch_media": {
+      "label": "React to media",
+      "description": "Expand when the track or playback status changes. Requires playerctl."
+    },
+    "watch_volume": {
+      "label": "React to volume",
+      "description": "Expand and show a bar when the output volume changes. Requires pactl and wpctl."
+    },
+    "show_album_art": {
+      "label": "Show album art",
+      "description": "Use the track's cover image instead of the playback icon. Only local artwork is used."
+    },
+    "expand_on_hover": {
+      "label": "Expand on hover",
+      "description": "Keep the island expanded while the pointer rests on it."
+    },
+    "float_island": {
+      "label": "Floating island",
+      "description": "Show events on a floating capsule below the bar instead of widening the bar widget."
+    },
+    "float_width": {
+      "label": "Floating island width",
+      "description": "How wide the floating island grows when an event arrives, in pixels."
+    },
+    "watch_brightness": {
+      "label": "React to brightness",
+      "description": "Expand and show a bar when the screen brightness changes. Requires udevadm."
+    },
+    "watch_mic": {
+      "label": "React to microphone",
+      "description": "Expand when the microphone is muted or its level changes. Requires pactl and wpctl."
+    },
+    "media_controls": {
+      "label": "Media card on hover",
+      "description": "Open a media card with album art, progress and transport buttons when the pointer rests on the floating island, or when the bar widget is clicked."
+    },
+    "open_width": {
+      "label": "Media card width",
+      "description": "How wide the media card is when the island opens, in pixels."
+    }
+  }
+}

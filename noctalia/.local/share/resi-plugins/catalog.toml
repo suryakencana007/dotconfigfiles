@@ -1,0 +1,14 @@
+# Catalog for the local "resi" plugin source (kind = "path").
+# Every Noctalia plugin source needs one; the per-plugin plugin.toml stays authoritative.
+# Keep one [[plugin]] row per plugin subdirectory and bump `version` together with it.
+
+[[plugin]]
+id = "resi/island"
+name = "Island"
+version = "0.4.0"
+author = "resi"
+license = "MIT"
+icon = "disc"
+description = "A dynamic island for Noctalia: a floating capsule that expands on media, volume, microphone and brightness changes, then opens into a media card with real transport controls when hovered."
+plugin_api = 36
+tags = ["bar", "media"]

@@ -25,3 +25,17 @@ save_history = false
 # OSD volume/kecerahan/dll di tengah atas: kaca dan 10 px di bawah bar, sama dengan toast.
 background_opacity = 0.78
 offset_y           = 10
+
+# Kind di bawah ini ditangani plugin resi/island (island melayang di posisi yang sama), jadi OSD
+# bawaannya dimatikan supaya tidak ada dua kapsul bertumpuk.
+#
+# volume_input = mikrofon, volume_output = speaker; `volume` yang lama menutupi keduanya di jalur
+# OSD tapi tetap ditulis eksplisit supaya tidak bergantung pada alias itu.
+# Sisanya (bluetooth, caffeine, dnd, nightlight, power_profile, keyboard_*) TIDAK dimatikan: tidak
+# ada cara mengamatinya dari plugin -- `noctalia msg status` cuma mengekspos bar/panel/locked.
+[osd.kinds]
+volume        = false
+volume_output = false
+volume_input  = false
+media         = false
+brightness    = false

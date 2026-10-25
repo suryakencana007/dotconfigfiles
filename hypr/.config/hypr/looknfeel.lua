@@ -89,5 +89,18 @@ hl.layer_rule({
   blur_popups = true,
 })
 
+-- Surface milik plugin Noctalia (plugin_api 36) memakai namespace sendiri:
+-- "noctalia-plugin:<author>/<plugin>:<entry>", mis. noctalia-plugin:resi/island:float. Namespace itu
+-- tidak tertangkap rule di atas, jadi perlu rule sendiri. no_anim sama seperti surface Noctalia
+-- lainnya: island punya animasi masuk/keluarnya sendiri, dan fade layer Hyprland hanya menumpuk.
+hl.layer_rule({
+  name = "noctalia-plugin",
+  match = { namespace = "^noctalia-plugin:" },
+  no_anim = true,
+  ignore_alpha = 0.5,
+  blur = true,
+  blur_popups = true,
+})
+
 -- rofi 2.0 tampil sebagai layer-shell "rofi": beri blur seperti panel Noctalia.
 hl.layer_rule({ name = "rofi", match = { namespace = "^rofi$" }, blur = true, ignore_alpha = 0.5 })

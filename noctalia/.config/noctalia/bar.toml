@@ -40,7 +40,11 @@ border  = "outline"
 padding = 8.0
 radius  = 4.0
 
-# Pulau info: media (hilang saat tidak ada pemutar), tray, notifikasi, clipboard, caffeine, night light, mode tema.
+# Pulau info: island (widget plugin resi/island), tray, notifikasi, clipboard, caffeine, night light, mode tema.
+# island menggantikan widget "media" bawaan: ia tinggal satu ikon di bar, sementara kapsul melayang di
+# bawah bar yang melebar sendiri saat lagu, volume, mikrofon, atau kecerahan berubah lalu menciut lagi.
+# Arahkan pointer ke kapsul itu (atau klik ikon ini) dan ia membuka jadi kartu media dengan album art
+# dan tombol prev/play-pause/next.
 # caffeine = widget bawaan (ikon gelas kopi): klik menahan idle lewat protokol Wayland idle-inhibit, jadi lock
 # 10 menit dan layar mati 11 menit (idle.toml) tidak terpicu. Sama dengan `noctalia msg caffeine-toggle`,
 # menu Toggle > Caffeine, dan pintasan Caffeine di control center.
@@ -49,7 +53,7 @@ radius  = 4.0
 # theme_mode = bulan (gelap) / matahari (terang); klik = ganti mode tema seluruh desktop (theme-mode-toggle).
 [[bar.default.capsule_group]]
 id      = "island_info"
-members = [ "media", "tray", "notifications", "clipboard", "caffeine", "nightlight", "theme_mode" ]
+members = [ "island", "tray", "notifications", "clipboard", "caffeine", "nightlight", "theme_mode" ]
 opacity = 0.78
 border  = "outline"
 padding = 8.0
@@ -74,8 +78,10 @@ padding = 8.0
 radius  = 4.0
 
 # Widget: ikon saja untuk nilai yang sudah terlihat di OSD saat diubah; persentase baterai tetap tampil.
-[widget.media]
-hide_when_no_media = true    # tanpa teks "Nothing Playing" saat idle
+# Widget plugin "resi/island" (sumber plugin lokal "resi" di ~/.local/share/resi-plugins, didaftarkan
+# install.sh). Setelannya (lebar, durasi, lama tahan, sumber event) ada di Settings > Plugins > Island.
+[widget.island]
+type = "resi/island:island"
 
 [widget.network]
 show_label = false           # tanpa nama SSID/interface (mis. "eno2"); detail ada di tooltip dan control center
