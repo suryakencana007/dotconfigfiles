@@ -204,7 +204,15 @@ end
 Render.CARD_ART = 56
 Render.CARD_GAP = 10
 Render.CARD_BTN = 30
-Render.CARD_META = 18 -- tinggi baris progress (label + bar)
+-- Tinggi yang diukur sendiri oleh ui.slider untuk controlSize = "sm" (Style::controlHeightSm).
+-- Dipatok di sini karena tinggi kartu dihitung sebelum isinya pernah diukur.
+Render.CARD_SEEK = 32
+-- Bantalan tegak baris seek. Bukan hiasan: slider MENCURI hover dari kartu (ia punya InputArea
+-- sendiri dan `onHover` bukan prop yang dikenalnya), jadi baris yang memuatnya harus memagarinya
+-- di keempat sisi supaya pointer yang menuju slider selalu melapor lewat baris ini lebih dulu.
+-- Sisi kiri-kanan dipagari angka waktu, yang bukan InputArea dan karena itu melapor ke barisnya.
+Render.CARD_SEEK_PAD = 5
+Render.CARD_META = Render.CARD_SEEK + Render.CARD_SEEK_PAD * 2 -- tinggi baris seek
 
 -- Tinggi kartu dihitung, bukan diukur: layer menganimasikan tingginya sendiri, jadi ia harus tahu
 -- target angkanya sebelum isinya pernah digambar.
@@ -223,7 +231,7 @@ local function clockText(seconds: number?): string
 end
 
 -- snap: { title, subtitle, art, status, positionSec, lengthSec, width, height,
---         contentOpacity, onHover, onPrev, onPlayPause, onNext }
+--         contentOpacity, onHover, onPrev, onPlayPause, onNext, onSeek, onSeekEnd }
 --
 -- Isinya diturunkan dari `width`/`height` yang SEDANG dianimasikan, bukan dari ukuran mati. Itu
 -- syaratnya supaya isi dan panel bergerak sebagai satu benda: tidak ada prop clip di ui.*, jadi
@@ -317,13 +325,20 @@ function Render.buildFloatOpen(snap): any
           color = "on_surface_variant",
         })
       end
-      meta[#meta + 1] = ui.progress({
-        progress = position / length,
+      -- Slider, bukan ui.progress: bar yang hanya bisa dilihat tidak ada gunanya di permukaan yang
+      -- menerima pointer penuh. Nilainya didorong tiap render (kontrol value-driven), dan host
+      -- menahan diri menerapkannya selagi gagangnya diseret, jadi polling 1 Hz tidak merebut
+      -- gagang dari tangan pengguna.
+      meta[#meta + 1] = ui.slider({
+        key = "seekbar",
+        min = 0,
+        max = length,
+        step = 1,
+        value = position,
+        controlSize = "sm",
         flexGrow = 1,
-        height = 4,
-        radius = 2,
-        fill = "primary",
-        track = "outline",
+        onChange = snap.onSeek,
+        onDragEnd = snap.onSeekEnd,
       })
       if showClocks then
         meta[#meta + 1] = ui.label({
@@ -335,7 +350,17 @@ function Render.buildFloatOpen(snap): any
           color = "on_surface_variant",
         })
       end
-      children[#children + 1] = ui.row({ height = Render.CARD_META, gap = 8, align = "center" }, meta)
+      -- Barisnya membawa onHover sendiri dan bantalan tegak: lihat CARD_SEEK_PAD. Tanpa itu pointer
+      -- yang menyentuh slider membuat kartu melapor "keluar" tanpa ada yang melapor "masuk", dan
+      -- kartunya menutup tepat saat pengguna hendak menggeser.
+      children[#children + 1] = ui.row({
+        key = "seek",
+        height = Render.CARD_META,
+        paddingV = Render.CARD_SEEK_PAD,
+        gap = 8,
+        align = "center",
+        onHover = snap.onHover,
+      }, meta)
     end
 
     -- Tiap tombol membawa onHover sendiri: hanya elemen terdalam yang melaporkan hover, jadi tanpa

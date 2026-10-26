@@ -5,8 +5,9 @@ changes, a capsule appears just below the bar, expands with an overshoot, holds 
 collapses and removes itself.
 
 Rest the pointer on it and it opens into a media card: album art, title and artist, elapsed and
-remaining time over a progress bar, and working previous / play-pause / next buttons. Move away and
-it collapses again. Clicking the bar widget opens the same card without waiting for an event.
+remaining time around a draggable seek bar, and working previous / play-pause / next buttons. Move
+away and it collapses again. Clicking the bar widget opens the same card without waiting for an
+event.
 
 ## The card
 
@@ -18,10 +19,10 @@ Three things make it behave:
 - **Hover is counted, not flagged.** Only the innermost hovered element reports, so moving the
   pointer onto a transport button makes the card itself report *leave*. Every interactive node
   therefore carries the same `onHover` handler with its own `key`, and the island is "hovered" while
-  that set is non-empty.
-- **A grace period of 280 ms.** The surface sizes to its content, so it grows and shrinks under the
-  pointer; without the delay a pointer resting near the edge toggles enter/leave and the island
-  blinks. The same delay covers the one frame where the capsule node is replaced by the card node.
+  that set is non-empty. The seek slider is the exception — see below.
+- **A grace period of 280 ms.** The panel grows and shrinks under the pointer, so without the delay
+  a pointer resting near its edge toggles enter/leave and the island blinks. The same delay covers
+  the one frame where the capsule node is replaced by the card node.
 - **The content is derived from the animating size.** Every child reads the width and height the
   tracks are currently at, so the album art shrinks, the clocks drop out below 240 px and whole rows
   are released from the bottom as the height runs out. There is no clip prop in `ui.*`, so a child
@@ -41,6 +42,44 @@ card costs ~17.5 % of a core with the tick left on and ~4.3 % with it off, again
 Every function that starts an animation turns the tick back on itself. Waiting for the next
 `update()` to notice would run the first 100 ms of the motion at 10 fps, which is visible as a stall
 exactly where the eye is looking.
+
+## The seek slider steals hover, and cannot give it back
+
+`ui.slider` has no `onHover` prop — the host rejects unknown props loudly — but it does carry its
+own `InputArea`, and exactly one input area is hovered at a time. So the moment the pointer touches
+the handle, the card reports *leave* and nothing reports *enter*: hovering the slider looks exactly
+like having walked away, and the card would collapse under the pointer that came to drag it.
+
+There is no pointer-position API for a layer, so the position is inferred from the geometry instead.
+The slider is the **only** region of the card that does not report hover, and the row that holds it
+is padded on all four sides (`CARD_SEEK_PAD`, plus the two clock labels, which are not input areas
+and therefore report to their row). That makes the row a fence: a pointer can only reach the handle
+through it. So a hover that is lost *immediately after the seek row* means the pointer probably
+moved onto the slider, and that case gets 2.5 s instead of the usual 280 ms grace.
+
+Measured, by entering the surface at a point rather than moving across it — a cursor warp inside one
+surface produces no motion events at all, so nothing in here can be tested by warping around inside
+the card:
+
+| Pointer enters the card on… | reports |
+|---|---|
+| album art or title | `true` key `island-card` |
+| a transport button | `true` key `playpause` |
+| the seek handle | **nothing at all** |
+| a clock label, or the band above or below the handle | `true` key `seek` |
+
+The fence cannot tell "moved onto the handle" from "flicked out of the card sideways through the
+seek row". The second ought to cross the card's own 16 px padding and report *enter* again, but a
+fast enough flick can outrun the sampling, and then the card hangs around for the full 2.5 s. That
+is the cost of the deadline, and why it is 2.5 s rather than longer: it only has to cover arriving
+at the handle and pressing it, because pressing fires `onChange`, and every step of a drag pushes
+the deadline out again — which is what keeps the card alive while the pointer is dragged outside it.
+
+Only the final value is sent: `onChange` fires per pixel and merely updates the displayed value,
+`onDragEnd` runs `playerctl position <seconds>`. The value is pushed on every render, and the host
+refuses to apply it while the handle is held, so the 1 Hz poll cannot snatch the handle away
+mid-drag. Nothing reports `CanSeek` through `playerctl --follow`, so a player that cannot seek
+simply ignores the command and the next poll puts the handle back.
 
 ## The surface never animates — the panel inside it does
 
@@ -84,8 +123,8 @@ The island exists twice, and both halves share `render.luau` and `anim.luau`:
 A layer is lazy: nothing exists until `watch.luau` calls `noctalia.layer.show("float")`, and the
 layer script hides itself once the collapse finishes, so no surface lingers between events.
 
-The floating version is anchored to `top` only, which centres it horizontally and lets it size to
-its own content — that is what makes the width animation move the window itself. `margins.top = 10`
+The floating version is anchored to `top` only, which centres it horizontally — that is what makes
+its own width decide its x, and why the surface is pinned instead. `margins.top = 10`
 is measured from the usable area, with the bar's exclusive zone already subtracted, so it lands in
 exactly the spot the built-in OSD used.
 
@@ -167,20 +206,7 @@ Needs **plugin API 36** for the `[[layer]]` entry, which means Noctalia built fr
 Plugin surfaces use their own namespace, `noctalia-plugin:<author>/<plugin>:<entry>` — here
 `noctalia-plugin:resi/island:float`. It is not matched by the `^noctalia-(bar-.+|…)$` rule, so
 `looknfeel.lua` carries a separate `hl.layer_rule` for blur, with the same `no_anim = true`: the
-island animates its own width every frame and Hyprland's layer fade only smears it.
+panel inside the surface animates every frame, and Hyprland's own layer fade only smears it.
 
 While the screen is locked the island still animates behind the lock screen, but it cannot be seen —
 a session-lock surface sits above every layer-shell layer, overlay included.
-
-## Known upstream quirk: leaked watcher processes
-
-`noctalia.runStream` children are **not** reaped when the service VM is torn down. Every
-`plugins disable`/`enable` cycle, and every shell restart, orphans one `playerctl`, one `pactl` and
-one `udevadm` to PID 1. There is no plugin-side hook to clean up, so after a lot of reload cycles:
-
-```
-ps -eo pid,ppid,cmd | grep -E 'udevadm monitor|pactl subscribe|playerctl --follow'
-```
-
-and kill the ones whose PPID is 1. Normal use starts the service once per login, so this only bites
-while developing the plugin.

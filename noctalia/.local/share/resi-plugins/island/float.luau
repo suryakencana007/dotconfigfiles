@@ -21,6 +21,20 @@ local Render = require("./render.luau")
 -- pohon berganti dari kapsul ke kartu: node lamanya melaporkan "keluar" sebelum node baru
 -- melaporkan "masuk".
 local HOVER_GRACE_MS = 280
+-- Slider seek tidak punya onHover -- bukan prop yang dikenal host -- dan ia MENCURI hover dari
+-- kartu, karena hanya satu InputArea yang di-hover pada satu saat. Jadi pointer yang berdiam di
+-- atas gagangnya terlihat sama persis seperti pointer yang sudah pergi dari surface.
+--
+-- Yang membedakan keduanya: baris seek memagari slider di keempat sisi (lihat CARD_SEEK_PAD), jadi
+-- hover yang hilang TEPAT SETELAH baris itu berarti pointer masuk ke slider, bukan keluar dari
+-- kartu. Kasus itu diberi tenggat lebih panjang, dan tiap gerakan gagang memperbaruinya.
+--
+-- Panjangnya adalah kompromi dua arah. Pagar itu tidak bisa membedakan "pointer masuk ke slider"
+-- dari "pointer menyambar keluar kartu lewat baris seek" -- yang kedua seharusnya melintasi
+-- bantalan 16 px kartu lebih dulu dan melapor "masuk" lagi, tapi sambaran cepat bisa melewatkan
+-- sampel itu. Jadi: cukup lama untuk sampai di gagang lalu menekannya (menekan memanggil onChange,
+-- yang memperbarui tenggat), tidak selama itu sampai kartu menggantung lama setelah pointer pergi.
+local SEEK_GRACE_MS = 2500
 local CARD_FADE_MS = 140
 local POSITION_POLL_MS = 1000
 -- Selagi geometri bergerak, tiap frame harus digambar. Setelah diam, satu-satunya yang masih
@@ -41,6 +55,15 @@ local snapshot = { glyph = "music", accent = "on_surface", text = "", art = nil,
 local media = nil
 local positionSec = 0
 local positionAtMs = 0
+-- Nilai yang sedang diseret pengguna; nil berarti tidak ada seret yang berjalan. Selama tidak nil
+-- ia yang ditampilkan, dan hasil polling diabaikan -- kalau tidak, angka waktu dan gagang akan
+-- saling tarik satu detik sekali.
+local seekSec = nil
+-- Nilai TERAKHIR yang kita dorong sendiri ke slider, sudah dibulatkan seperti host membulatkannya.
+-- Host memanggil Slider::setValue untuk menerapkan prop `value`, dan setValue memanggil
+-- onValueChanged -- jadi tiap detik pemutaran yang maju kembali ke sini sebagai onChange yang
+-- tidak bisa dibedakan dari seretan sungguhan kecuali lewat nilainya.
+local pushedSeek = -1
 
 local mode = "toast"
 -- Pohon yang digambar. Dipisah dari `mode` karena saat menutup dari kartu, yang menyusut harus
@@ -100,6 +123,9 @@ end
 -- polling nilainya dimajukan dari jam dinding, supaya barnya bergerak mulus, bukan melompat 1x/detik.
 
 local function displayedPosition(nowMs: number): number
+  if seekSec ~= nil then
+    return seekSec
+  end
   if media == nil then
     return 0
   end
@@ -129,7 +155,7 @@ local function requestPosition()
   end
   lastPositionMs = noctalia.nowMs()
   noctalia.runAsync(playerctl("position"), function(result)
-    if not result or result.exitCode ~= 0 then
+    if not result or result.exitCode ~= 0 or seekSec ~= nil then
       return
     end
     local value = tonumber(noctalia.string.trim(result.stdout or ""))
@@ -145,6 +171,9 @@ end
 local function draw(nowMs: number)
   lastDrawMs = nowMs
   if view == "card" then
+    -- Dicatat sebelum pohonnya diserahkan: begitu host menerapkannya, onChange-nya sudah menyala.
+    local length = media and media.lengthSec or 0
+    pushedSeek = math.floor(math.max(0, math.min(displayedPosition(nowMs), length)) + 0.5)
     layer.render(Render.floatStage(Render.buildFloatOpen({
       title = media and media.title or nil,
       subtitle = media and media.subtitle or nil,
@@ -159,6 +188,8 @@ local function draw(nowMs: number)
       onPrev = "onIslandPrev",
       onPlayPause = "onIslandPlayPause",
       onNext = "onIslandNext",
+      onSeek = "onIslandSeek",
+      onSeekEnd = "onIslandSeekEnd",
     })))
     return
   end
@@ -242,7 +273,10 @@ function onIslandHover(state, key)
       openCard(nowMs)
     end
   elseif mode == "open" then
-    hoverGraceUntilMs = nowMs + HOVER_GRACE_MS
+    -- Satu-satunya daerah kartu yang tidak melapor hover adalah gagang slider, dan satu-satunya
+    -- jalan ke sana melewati baris seek. Karena itu id yang baru saja ditinggalkan cukup untuk
+    -- membedakan "pointer pindah ke slider" dari "pointer pergi".
+    hoverGraceUntilMs = nowMs + (id == "seek" and SEEK_GRACE_MS or HOVER_GRACE_MS)
   end
 end
 
@@ -270,6 +304,43 @@ end
 
 function onIslandNext()
   noctalia.runAsync(playerctl("next"))
+end
+
+-- ── Seek ────────────────────────────────────────────────────────────────────
+-- onChange menyala tiap piksel seretan; yang dikirim ke playerctl hanya nilai akhir di onDragEnd,
+-- supaya tidak ada badai perintah sepanjang seretan. Selagi diseret pointer dipegang oleh slider
+-- dan tidak ada laporan hover sama sekali, jadi tiap langkah seretan ikut memperpanjang tenggat --
+-- tanpa itu kartu menutup di tengah seretan, bahkan saat pointer keluar kartu sambil menyeret.
+
+function onIslandSeek(value)
+  local seconds = tonumber(value)
+  if seconds == nil then
+    return
+  end
+  -- Gema dari nilai yang baru saja kita dorong sendiri, bukan tangan pengguna. Tanpa saringan ini
+  -- posisi yang maju tiap detik memperpanjang tenggat terus-menerus dan kartu tidak pernah
+  -- menutup, serta seekSec tidak pernah kembali nil sehingga polling posisi mati total.
+  if math.abs(seconds - pushedSeek) < 0.5 then
+    return
+  end
+  seekSec = seconds
+  hoverGraceUntilMs = noctalia.nowMs() + SEEK_GRACE_MS
+end
+
+function onIslandSeekEnd()
+  local target = seekSec
+  seekSec = nil
+  hoverGraceUntilMs = noctalia.nowMs() + SEEK_GRACE_MS
+  if target == nil or media == nil then
+    return
+  end
+  -- Pemutar yang tidak bisa di-seek (CanSeek false) tidak pernah dilaporkan playerctl --follow,
+  -- jadi perintahnya tetap dikirim dan polling berikutnya yang mengembalikan gagangnya kalau
+  -- ternyata ditolak.
+  noctalia.runAsync(playerctl("position", string.format("%d", math.floor(target))))
+  positionSec = target
+  positionAtMs = noctalia.nowMs()
+  lastPositionMs = noctalia.nowMs()
 end
 
 -- ── Event masuk ─────────────────────────────────────────────────────────────

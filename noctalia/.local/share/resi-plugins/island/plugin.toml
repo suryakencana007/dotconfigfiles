@@ -10,14 +10,14 @@
 
 id = "resi/island"
 name = "Island"
-version = "0.4.0"
+version = "0.4.1"
 plugin_api = 36
 author = "resi"
 license = "MIT"
 dependencies = []
 tags = ["bar", "media"]
 icon = "disc"
-description = "A dynamic island for Noctalia: a floating capsule that expands on media, volume, microphone and brightness changes, then opens into a media card with real transport controls when hovered."
+description = "A dynamic island for Noctalia: a floating capsule that expands on media, volume, microphone and brightness changes, then opens into a media card with album art, a draggable seek bar and real transport controls when hovered."
 
 # Lebar maksimum saat melebar, dalam piksel logis.
 [[setting]]
