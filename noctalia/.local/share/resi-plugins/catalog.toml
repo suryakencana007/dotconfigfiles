@@ -5,7 +5,7 @@
 [[plugin]]
 id = "resi/island"
 name = "Island"
-version = "0.4.1"
+version = "0.4.2"
 author = "resi"
 license = "MIT"
 icon = "disc"

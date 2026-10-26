@@ -10,7 +10,7 @@
 
 id = "resi/island"
 name = "Island"
-version = "0.4.1"
+version = "0.4.2"
 plugin_api = 36
 author = "resi"
 license = "MIT"

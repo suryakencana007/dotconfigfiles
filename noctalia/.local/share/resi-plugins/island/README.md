@@ -160,6 +160,20 @@ Every stream is started with `exec` in front of it. `runStream` runs its command
 and kills the process it spawned; without `exec` that process is the shell, and `playerctl` survives
 as an orphan on PID 1 after each reload.
 
+That covers the plugin's own lifecycle — disabling the plugin, or disable/enable to restart the
+service, does reap all three. It does **not** cover the shell dying. Measured on v5.4.0: a plain
+`SIGTERM` to Noctalia (what `hypr-restart-shell` sends; it never had to escalate) left all three
+watchers reparented to PID 1 and still running, and a second restart left three more. Nothing in the
+plugin can prevent that: the teardown that would kill them belongs to the process that is being
+killed. So after every shell restart:
+
+```sh
+ps -eo pid,ppid,cmd | awk '$2==1 && /playerctl --follow|pactl subscribe|udevadm monitor/'
+```
+
+and kill what it lists. They are idle — `playerctl --follow` only wakes on a D-Bus signal — so the
+cost is three process table entries per restart, not CPU.
+
 The media event carries the player's own name, and every transport command passes it with `-p`.
 `playerctl` without `-p` acts on the first player on the bus, while `--follow` reports the *active*
 one - on a machine with both a browser and Spotify open those are not the same player, and the card

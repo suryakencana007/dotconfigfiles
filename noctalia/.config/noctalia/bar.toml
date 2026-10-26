@@ -21,7 +21,7 @@ padding            = 10      # tepi kapsul pertama/terakhir sejajar tepi jendela
 # Kapsul: widget tunggal (jam) juga berkapsul; nilai ini untuk kapsul widget, capsule_group punya kunci sendiri.
 capsule            = true
 capsule_opacity    = 0.78    # harus > ignore_alpha 0.5 di layer rule Hyprland (looknfeel.lua) supaya blur muncul
-capsule_border     = "outline"
+capsule_border     = "outline_variant"
 capsule_radius     = 4.0     # sudut kotak; hapus baris ini (dan radius di grup) untuk pil bulat
 
 # Isi tiap lajur. Token "group:<id>" merujuk ke capsule_group di bawah.
@@ -36,7 +36,7 @@ end    = [ "group:island_info", "group:island_system", "group:island_power" ]
 id      = "island_left"
 members = [ "launcher", "workspaces" ]
 opacity = 0.78
-border  = "outline"
+border  = "outline_variant"
 padding = 8.0
 radius  = 4.0
 
@@ -55,7 +55,7 @@ radius  = 4.0
 id      = "island_info"
 members = [ "island", "tray", "notifications", "clipboard", "caffeine", "nightlight", "theme_mode" ]
 opacity = 0.78
-border  = "outline"
+border  = "outline_variant"
 padding = 8.0
 radius  = 4.0
 
@@ -64,7 +64,7 @@ radius  = 4.0
 id      = "island_system"
 members = [ "network", "bluetooth", "volume", "brightness", "battery" ]
 opacity = 0.78
-border  = "outline"
+border  = "outline_variant"
 padding = 8.0
 radius  = 4.0
 
@@ -73,7 +73,7 @@ radius  = 4.0
 id      = "island_power"
 members = [ "control-center", "session" ]
 opacity = 0.78
-border  = "outline"
+border  = "outline_variant"
 padding = 8.0
 radius  = 4.0
 

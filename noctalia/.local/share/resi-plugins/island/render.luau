@@ -74,7 +74,7 @@ function Render.build(snap): any
         height = 4,
         radius = 2,
         fill = accent,
-        track = "outline",
+        track = "outline_variant",
         opacity = opacity,
       })
     elseif snap.text and snap.text ~= "" then
@@ -128,7 +128,7 @@ function Render.buildFloat(snap): any
         height = 6,
         radius = 3,
         fill = accent,
-        track = "outline",
+        track = "outline_variant",
         opacity = opacity,
       })
       if snap.text and snap.text ~= "" then
@@ -193,7 +193,7 @@ function Render.buildFloat(snap): any
     paddingV = Render.FLOAT_PAD_V,
     radius = Render.FLOAT_RADIUS,
     fill = "surface/0.78",
-    border = "outline",
+    border = "outline_variant",
     borderWidth = 1,
     onHover = snap.onHover,
   }, children)
@@ -413,7 +413,7 @@ function Render.buildFloatOpen(snap): any
     paddingV = Render.FLOAT_PAD_V,
     radius = Render.FLOAT_RADIUS,
     fill = "surface/0.78",
-    border = "outline",
+    border = "outline_variant",
     borderWidth = 1,
     onHover = snap.onHover,
   }, {

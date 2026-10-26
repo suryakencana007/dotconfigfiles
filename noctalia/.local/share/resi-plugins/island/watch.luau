@@ -248,7 +248,7 @@ local function onVolumeValue(result)
   emit({
     kind = "volume",
     glyph = glyph,
-    accent = muted and "outline" or "primary",
+    accent = muted and "outline_variant" or "primary",
     text = muted and "Muted" or `{math.floor(value * 100 + 0.5)}%`,
     progress = muted and 0 or math.min(1, value),
   })
@@ -278,7 +278,7 @@ local function onMicValue(result)
   emit({
     kind = "mic",
     glyph = muted and "microphone-off" or "microphone",
-    accent = muted and "outline" or "primary",
+    accent = muted and "outline_variant" or "primary",
     text = muted and "Mic muted" or `{math.floor(value * 100 + 0.5)}%`,
     progress = not muted and math.min(1, value) or nil,
   })

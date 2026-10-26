@@ -26,7 +26,7 @@ widget_order = [ "lockscreen-login-box@eDP-2" ]
     type = "login_box"
 
         [lockscreen_widgets.widget."lockscreen-login-box@eDP-2".settings]
-        background_color = "surface_variant"
+        background_color = "surface_container"
         background_opacity = 0.6   # bawaan 0.88; lebih tembus supaya blur terlihat
         background_radius = 12.0
         center_password_text = false
