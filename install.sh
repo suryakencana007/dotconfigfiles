@@ -334,7 +334,7 @@ doctor() {
   # Boot splash: tema terpasang → default Plymouth dan hook initramfs harus cocok; belum dipasang = catatan saja (opsional).
   if have plymouth-set-default-theme; then
     if [ -d /usr/share/plymouth/themes/resi ]; then
-      if grep -qs '^Theme=resi' /etc/plymouth/plymouthd.conf && grep -hsE '^HOOKS=' /etc/mkinitcpio.conf /etc/mkinitcpio.conf.d/*.conf | tail -1 | grep -qw plymouth; then
+      if grep -qs '^Theme=resi' /etc/plymouth/plymouthd.conf && { grep -hsE '^HOOKS=' /etc/mkinitcpio.conf /etc/mkinitcpio.conf.d/*.conf || true; } | tail -1 | grep -qw plymouth; then
         ok "boot splash: Resi Arch (plymouth theme + initramfs hook)$(grep -qw splash /proc/cmdline || echo '; shows after the next reboot')"
       else warn "boot splash: theme installed but not the default or the plymouth hook is missing (sudo $REPO/resi/boot/setup-boot-splash.sh)"; bad=1; fi
     else printf '  - boot splash not set up on this machine (optional: sudo %s/resi/boot/setup-boot-splash.sh)\n' "$REPO"; fi
