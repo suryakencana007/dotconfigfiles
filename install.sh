@@ -583,7 +583,7 @@ noctalia_plugins() {
       gsub(/^[^"]*"|"[^"]*$/, "", n); gsub(/^[^"]*"|"[^"]*$/, "", k); gsub(/^[^"]*"|"[^"]*$/, "", l)
       if (k == "path") print n, k, l }
   ' "$conf")
-  local p; for p in $(sed -n 's/^enabled *= *\[\(.*\)\]/\1/p' "$conf" | tr -d '", '); do
+  local p; for p in $(sed -n 's/^enabled *= *\[\(.*\)\]/\1/p' "$conf" | tr -s '", ' '\n'); do
     if noctalia msg plugins list 2>/dev/null | grep -q "^$p .*enabled"; then ok "plugin $p enabled"
     else run noctalia msg plugins enable "$p" >/dev/null 2>&1 && ok "plugin $p installed and enabled" || warn "could not enable plugin $p (offline?)"; fi
   done
