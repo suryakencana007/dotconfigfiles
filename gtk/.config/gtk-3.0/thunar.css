@@ -1,0 +1,50 @@
+/*
+ * Thunar: pemolesan kecil di atas adw-gtk3, bukan tema sendiri.
+ *
+ * Diadaptasi dari seksi Thunar pada tema GTK3 HyDE
+ * (Configs/.local/share/wallbash/theme/gtk/gtk3.dcol). Tiga bagiannya tidak ikut:
+ *   - `#location-toolbar` -- nama widget itu tidak ada lagi di Thunar 4.20; yang menggigit
+ *     sekarang `toolbar` biasa.
+ *   - `scrolledwindow.frame.sidebar.shortcuts-pane` -- rantai itu juga tidak cocok lagi;
+ *     `.sidebar` sudah cukup dan lebih tahan versi.
+ *   - `border-bottom-left-radius: 12px` pada sidebar sengaja dibuang: jendela di mesin ini
+ *     bersudut siku (`decoration:rounding = 0` di looknfeel.lua), jadi sudut membulat di dalam
+ *     jendela kotak hanya menyisakan celah.
+ * Ketiganya dibuktikan, bukan diterka: selektor kandidat diberi border 4 px berwarna mencolok di
+ * sebuah XDG_CONFIG_HOME sementara, Thunar dijalankan dari sana, lalu jendelanya ditangkap grim.
+ * Yang tidak mewarnai apa pun berarti tidak cocok. Uji dengan background-color menyesatkan di sini:
+ * treeview di dalamnya menggambar di atasnya, jadi selektor yang cocok pun terlihat mati.
+ *
+ * Warnanya memakai token yang dirender template GTK3 Noctalia (noctalia.css), jadi garis-garis
+ * ini ikut berganti saat wallpaper berganti, bukan warna mati.
+ */
+
+/* Toolbar menempel langsung ke area file: adw-gtk3 tidak menggambar pemisah apa pun di sana. */
+.thunar toolbar {
+  border-bottom: 1px solid alpha(@window_fg_color, 0.12);
+}
+
+/* Bingkai area file dobel dengan garis toolbar di atas dan garis sidebar di kiri. */
+.thunar .standard-view.frame {
+  border-style: none;
+}
+
+/* Thunar memasang `.sidebar { border-top-style: solid; }` lewat CSS bawaan di dalam binary-nya,
+ * yang menghasilkan garis kedua tepat di bawah garis toolbar. */
+.thunar .sidebar {
+  border-top-style: none;
+}
+
+/* Baris sidebar mewarisi latar view (#111418, persis sama dengan area file), bukan latar sidebar
+ * (#1d2024), sehingga panel kiri tidak terbaca sebagai panel sama sekali. Transparan melepaskannya
+ * ke latar sidebar: terukur srgb(18,21,25) -> srgb(30,33,37). */
+.thunar .sidebar .view:not(:selected) {
+  background-color: transparent;
+}
+
+/* Statusbar dipisahkan garis, bukan bingkai -- garis ini yang menggantikan bingkai area file yang
+ * dibuang di atas. `margin: 0 -10px; padding: 0 4px` milik HyDE tidak ikut: di adw-gtk3 efeknya
+ * hanya menggeser teks 6 px ke kiri, karena bantalan statusbar di tema ini memang sudah berbeda. */
+.thunar statusbar {
+  border-top: 1px solid alpha(@window_fg_color, 0.12);
+}

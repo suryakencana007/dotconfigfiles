@@ -1,0 +1,11 @@
+/*
+ * Titik masuk CSS GTK3. Dulu file ini dibuat sendiri oleh apply.sh Noctalia di luar repo; sekarang
+ * repo yang memilikinya supaya import thunar.css ikut ke mesin baru. Aman: apply.sh hanya
+ * MENAMBAHKAN import noctalia.css kalau belum ada, dan isi lama selalu dipertahankan
+ * (assets/templates/gtk/apply.sh, ensure_gtk_css_import) -- karena barisnya sudah ada di sini,
+ * skrip itu berhenti tanpa menulis apa pun.
+ *
+ * noctalia.css dulu: ia yang mendefinisikan token warna yang dipakai thunar.css.
+ */
+@import url("noctalia.css");
+@import url("thunar.css");

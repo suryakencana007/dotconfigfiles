@@ -13,8 +13,9 @@ hypr/.config/hypr/noctalia.lua
 # file render template rofi milik Noctalia
 rofi/.config/rofi/noctalia.rasi
 
-# file render template gtk milik Noctalia (gtk di-stow --no-folding, jadi ada di ~/.config/gtk-*/, bukan repo)
-gtk/.config/gtk-3.0/gtk.css
+# file render template gtk milik Noctalia (gtk di-stow --no-folding, jadi ada di ~/.config/gtk-*/, bukan repo).
+# gtk-3.0/gtk.css TIDAK ikut diabaikan: repo yang memilikinya sejak 2026-10-26, supaya import thunar.css
+# ikut ke mesin baru. apply.sh Noctalia append-only, jadi ia tidak menimpanya.
 gtk/.config/gtk-3.0/noctalia.css
 gtk/.config/gtk-4.0/gtk.css
 gtk/.config/gtk-4.0/noctalia.css

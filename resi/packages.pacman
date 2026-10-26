@@ -85,6 +85,13 @@ playerctl
 thunar
 thunar-volman
 gvfs
+# thumbnail di Thunar: tanpa tumbler ia diam-diam tidak punya pratinjau sama sekali
+# (log Thunar: "ThunarThumbnailer: Failed to retrieve supported types"). tumbler sendirian hanya
+# mencakup gambar (lewat gdk-pixbuf) dan font; dua baris berikutnya optdepend-nya, bukan dependensi,
+# jadi pacman TIDAK menariknya sendiri dan harus disebut di sini.
+tumbler
+poppler-glib        # pratinjau PDF
+ffmpegthumbnailer   # pratinjau video dan audio
 udiskie
 exfatprogs
 # --- audio & jaringan ---
