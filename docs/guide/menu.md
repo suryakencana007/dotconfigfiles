@@ -6,10 +6,12 @@ choose.
 - Entries that open a submenu show a chevron on the right.
 - In a submenu, <kbd>Backspace</kbd> on an empty search goes back.
 - Pressing <kbd>Super</kbd>+<kbd>Space</kbd> again closes it.
-- **Apps** is a submenu with every installed application (icons, type to filter,
+- Every installed application is part of the same list, right below the sections, so typing an app
+  name finds it at the top level and <kbd>Enter</kbd> starts it: <kbd>Super</kbd>+<kbd>Space</kbd>,
+  `etch`, <kbd>Enter</kbd> starts balenaEtcher. With an empty search the menu looks unchanged:
+  sections first, in order.
+- **Apps** is still there as a submenu with the same applications plus their icons (type to filter,
   <kbd>Backspace</kbd> on an empty search returns to the menu).
-- Typing an app name at the top level and pressing <kbd>Enter</kbd> jumps straight into Apps with that
-  search: <kbd>Super</kbd>+<kbd>Space</kbd>, `etch`, <kbd>Enter</kbd>, <kbd>Enter</kbd> starts balenaEtcher.
 
 ## Sections
 

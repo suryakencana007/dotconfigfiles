@@ -392,6 +392,17 @@ Hyprland's window borders, and the login screen.
   Backspace dead after a typo. Free-text Enter is rejected by the script instead (it reopens the
   same level with the filter kept). Verified with `wtype` key injection on 2026-09-24.
 
+- **The top level of `hypr-menu` lists every application too (2026-10-27).** Typing an app name there
+  used to filter only the 11 sections; the app itself was one keystroke deeper (Enter reopened the
+  **Apps** submenu with that search). Now `root_items` appends `apps_items | cut -f1,2`, so the app is
+  in the same list and Enter launches it directly. Two details make this free of visual change: the
+  icon column is dropped (`cut -f1,2`), which keeps `menu()`'s icon detection off, so the sections
+  keep their glyphs and the `󰅂` tab-stop stays correct; and rofi's dmenu keeps the input order while the
+  filter is empty, so the 11 sections still come first when the menu opens (verified with screenshots,
+  not assumed). The **Apps** submenu stays for the icons, and the old free-text Enter fallback still
+  exists for when nothing matches. Cost: one extra `python3` scan of the `.desktop` files per menu open
+  (19 apps here, not measurable).
+
 - **Demo video** (`bin/hypr-demo`, 2026-09-28). Records a ~3 minute tour with gpu-screen-recorder on the
   focused monitor while it drives every feature through IPC only (`noctalia msg`, `hyprctl dispatch`, the
   bin scripts): there is no key injection on these machines (no wtype/ydotool), so anything that needs a

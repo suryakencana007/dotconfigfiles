@@ -76,7 +76,7 @@ Terminal=false
 StartupNotify=true
 Categories=Network;
 DESKTOP
-  echo; echo "Created $desktop"; echo "Find \"$name\" in the app launcher (Super+Alt+Space)."
+  echo; echo "Created $desktop"; echo "Find \"$name\" in the menu (Super+Space) or the app launcher (Super+Alt+Space)."
 }
 
 remove_webapp() {
