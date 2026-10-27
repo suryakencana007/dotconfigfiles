@@ -519,6 +519,20 @@ through the GUI instead, or removed from `settings.toml` by hand. `resi-shell do
   ("target not found: #, font, utama:..."); pacman aborted the whole transaction, so the system upgrade did
   not happen and `set -e` stopped `resi-shell update` before AUR, restow and reloads. `pkglist` now strips
   anything after `#` and surrounding whitespace, so both comment styles are safe in `resi/packages.*`.
+- **`resi-shell update` replaces the noctalia binary, but the running Noctalia keeps the old code in
+  memory** — so `noctalia.log` and `noctalia msg` keep reporting the *old* version's behaviour until
+  Noctalia actually restarts, while `noctalia --version` and `noctalia config validate` already use the
+  new one on disk. On 2026-10-27 this produced a confidently wrong diagnosis. After the move from
+  `noctalia-git` to released 5.4.0 (commit `06de2d5` renamed the palette roles `outline` ->
+  `outline_variant`), the still-running old process logged `capsule_group.border: invalid color value
+  "outline_variant"` — it only knew `outline`, so every bar capsule silently lost its border — and
+  `ignoring plugin 'resi/island': targets plugin API 36; supported range is 3-34`, so the island widget
+  disappeared and the bar fell back to the stock media widget's "Nothing Playing". Both were read as
+  limits of 5.4.0 itself; island was removed from the bar (`e8895b6`) and reverted (`eaa7ea5`) once the
+  restarted process proved it accepts plugin API 36 and had already pulled wallhaven 1.3.2. `[app]
+  noctalia vX.Y.Z` is logged exactly once per start: compare its timestamp against the warnings before
+  trusting them. The two tools disagreeing — `noctalia config validate` clean while the daemon warns
+  about the same key — is itself the signal that the process is stale.
 - **A machine without `linux-headers` installed *before* `nvidia-open-dkms`** will have DKMS fail
   to build the kernel module, and the system silently falls back to `simpledrm`/software rendering
   — Hyprland still starts, just fully unaccelerated, with no error dialog pointing at the cause.
