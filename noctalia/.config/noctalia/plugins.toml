@@ -1,11 +1,11 @@
 # Plugin Noctalia yang harus aktif di semua mesin. Wallhaven = bagian dari alur tema/wallpaper
-# (panel browser Super+Ctrl+Alt+Space). Island = widget bar "dynamic island" buatan sendiri, sumbernya
-# folder lokal di repo ini (paket stow noctalia -> ~/.local/share/resi-plugins).
+# (panel browser Super+Ctrl+Alt+Space). Island (resi/island, folder lokal di repo ini) sengaja tidak
+# diaktifkan: ia butuh plugin API 36, rilis noctalia 5.4.0 hanya mendukung 3-34.
 # Plugin diunduh/di-resolve Noctalia saat diaktifkan; resi-shell first-login/install juga menjalankan
 # `noctalia msg plugins source add` + `plugins enable` supaya pasti terpasang.
 # API key Wallhaven (opsional) tetap di state GUI, bukan di sini.
 [plugins]
-enabled = [ "noctalia/wallhaven", "resi/island" ]
+enabled = [ "noctalia/wallhaven" ]
 auto_update = "official"
 
 # Array tabel DIGANTI UTUH oleh file/lapisan yang dimuat belakangan, bukan digabung per nama:
