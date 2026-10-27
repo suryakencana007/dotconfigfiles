@@ -162,10 +162,12 @@ Also worth doing once:
 ## The menu (`Super+Space`)
 
 One menu reaches everything. Entries that open a submenu show a `󰅂` on the right. In a submenu,
-Backspace on an empty search goes back, and pressing `Super+Space` again closes the menu. **Apps** is a
-submenu with every installed application (icons, type to filter, Backspace back to the menu). Typing an
-app name at the top level and pressing Enter jumps straight into Apps with that search, so
-`Super+Space`, `etch`, Enter, Enter starts balenaEtcher.
+Backspace on an empty search goes back, and pressing `Super+Space` again closes the menu.
+
+Every installed application is also part of the top-level list (below the menu sections), so typing an
+app name finds it right there and Enter launches it — no detour through the **Apps** submenu, which is
+kept for people who want the icons (type to filter, Backspace back to the menu). With an empty search
+the menu still looks the same: sections first, in order.
 
 | Section | What is inside |
 |---|---|

@@ -1,5 +1,5 @@
 /* ~/.config/rofi/config.rasi — rofi 2.0 (Wayland). Warna dari noctalia.rasi (dirender Noctalia, jangan edit).
-   Super+Space: rofi -show drun   |   Super+Alt+Space: hypr-menu (mode dmenu) */
+   Super+Space: hypr-menu (rofi dmenu, semua menu + semua aplikasi)   |   Super+Alt+Space: rofi -show drun (pencarian aplikasi langsung) */
 configuration {
   modi: "drun,run";
   show-icons: true;

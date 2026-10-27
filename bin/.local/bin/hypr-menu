@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Menu bertingkat ala omarchy-menu, ditampilkan lewat rofi (dmenu). Super+Alt+Space.
+# Menu bertingkat ala omarchy-menu, ditampilkan lewat rofi (dmenu). Super+Space.
 # Tiap entri: "glyph  Label"; entri submenu diberi 󰅂 di kanan. Esc menutup; "Back" atau BackSpace (saat filter kosong) kembali ke menu induk.
+# Menu utama juga memuat semua aplikasi di bawah entri menu, jadi mengetik nama aplikasi langsung menemukannya
+# dan Enter meluncurkannya — tidak perlu masuk submenu Apps dulu (submenu Apps tetap ada bila ingin ikon).
 # Uji tanpa GUI:  HYPR_MENU_TEST=1 hypr-menu   (memilih entri pertama tiap level dan mencetak aksinya)
 set -uo pipefail
 
@@ -85,6 +87,10 @@ root_items() { cat <<'ITEMS'
 󰋽  About	~/.local/bin/hypr-tui fastfetch
 󰌢  System	menu:system
 ITEMS
+  # Aplikasi ikut di daftar menu utama: ketik nama app -> langsung muncul, Enter meluncurkan (tanpa submenu Apps).
+  # Kolom ikon dibuang (cut -f1,2) supaya menu utama tetap tampil seperti biasa: ikon hanya di submenu Apps.
+  # Urutan input dipertahankan saat filter kosong, jadi 11 entri menu tetap di atas saat menu dibuka.
+  apps_items | cut -f1,2
 }
 # Submenu Apps: semua aplikasi dari berkas .desktop (urutan XDG: ~/.local/share menimpa /usr/share; NoDisplay/Hidden
 # dilewati), diurutkan nama. Aksi lewat gtk-launch <id> supaya kode %U/%f dan Terminal=true ditangani benar.
