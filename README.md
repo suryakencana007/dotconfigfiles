@@ -268,6 +268,8 @@ Install > Development sets up a language with one click; installed ones show a â
 
 - alacritty with zsh, oh-my-zsh and a one-line Powerlevel10k prompt.
 - Tools: fzf, zoxide, eza, bat, fd, ripgrep, delta, dust, duf, btop, tldr, lazygit.
+- `fastfetch` prints the system info splash (its own config and logo live in the `fastfetch` package);
+  the menu has it under **About**.
 - Selecting text with the mouse copies it, also inside tmux, and shows a small "Copied" note.
 - tmux with `Ctrl+Space` as the prefix, `Alt+Enter` to split and `Alt+1..9` for windows; sessions
   survive a reboot.
@@ -393,6 +395,7 @@ directory. Configs in `~/.config/...` are links into this repo, so editing eithe
 | `noctalia` | Noctalia config (`*.toml`) and color templates |
 | `rofi` | launcher and menu layout |
 | `alacritty`, `tmux`, `zsh`, `nvim`, `git` | terminal stack |
+| `fastfetch` | system info splash: config and a custom RESI/ARCH logo |
 | `gtk`, `mpv`, `brave` | app settings |
 | `containers` | Arcane, the containers web UI, as a rootless Podman Quadlet |
 | `bin` | helper scripts in `~/.local/bin` and a few launcher entries |
