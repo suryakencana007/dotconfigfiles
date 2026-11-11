@@ -252,6 +252,11 @@ Install > Development sets up a language with one click; installed ones show a â
 - **Databases in containers**: MySQL, PostgreSQL, Redis, MongoDB, MariaDB or MSSQL, reachable only from
   this machine, with development passwords. They run on rootless Podman; `docker` and `docker compose`
   commands keep working.
+- **Containers web UI**: [Arcane](https://getarcane.app) runs as a rootless Podman Quadlet from the
+  `containers` package and manages the same engine the CLI and podman-tui use, at http://localhost:3552
+  (`arcane` / `arcane-admin` until you change it). One-time setup (encryption key, project folder, why the
+  port is local-only) is in `NOTES.md`; `resi-shell install`/`update` do it for you and create the key on a
+  new machine.
 - **Fonts**: Install > Font installs a Nerd Font straight from its GitHub release, a font file or archive
   you downloaded, or a `ttf-*`/`otf-*` package, into your user font folder; Remove > Font takes them out
   again. No root needed, and every app sees the font right away.
@@ -389,6 +394,7 @@ directory. Configs in `~/.config/...` are links into this repo, so editing eithe
 | `rofi` | launcher and menu layout |
 | `alacritty`, `tmux`, `zsh`, `nvim`, `git` | terminal stack |
 | `gtk`, `mpv`, `brave` | app settings |
+| `containers` | Arcane, the containers web UI, as a rootless Podman Quadlet |
 | `bin` | helper scripts in `~/.local/bin` and a few launcher entries |
 | `claude` | Claude Code skills and agents that know this setup |
 | `pi` | Pi skills, specialized subagents and the subagent extension |
@@ -424,14 +430,14 @@ Files that Noctalia renders from templates are in `.gitignore` and never committ
 <details>
 <summary>Stow details and manual stow</summary>
 
-`hypr`, `noctalia`, `gtk`, `bin`, `claude` and the host overlays are stowed with `--no-folding` (real
-folders with one link per file), so machine overlays and rendered files can sit next to the repo files.
-The others are stowed normally.
+`hypr`, `noctalia`, `gtk`, `bin`, `claude`, `containers` and the host overlays are stowed with
+`--no-folding` (real folders with one link per file), so machine overlays, rendered files and extra
+Quadlets can sit next to the repo files. The others are stowed normally.
 
 ```sh
 cd ~/dotconfigfiles
-stow -t ~ zsh git alacritty tmux nvim rofi mpv brave
-stow --no-folding -t ~ hypr noctalia claude pi bin gtk
+stow -t ~ zsh git alacritty tmux nvim rofi mpv brave fastfetch
+stow --no-folding -t ~ hypr noctalia claude pi bin gtk containers
 (cd hosts && stow --no-folding -t ~ "$(cat /etc/hostname)")
 ```
 

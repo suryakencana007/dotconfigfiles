@@ -308,6 +308,30 @@ Hyprland's window borders, and the login screen.
   and `resi-shell doctor` warns when podman.service is failed. Window class `TUI.large` (1100x760) is a generic rule for
   big terminal UIs. `resi-shell doctor` now checks that the hypr-power and hypr-updates watchers
   are alive when run inside a Hyprland session.
+- **Arcane as the containers web UI** (2026-11-12, user asked for it). `containers/.config/containers/systemd/arcane.container`
+is a rootless Podman **Quadlet**, not Compose: systemd starts it at boot, restarts it if it exits, and
+`podman-auto-update.timer` + `AutoUpdate=registry` keep the image current. That is also why Arcane's own
+update action is left off for itself — it would recreate its own container outside systemd's control, and
+the docs' updater skips Quadlet-managed containers for the same reason. It reaches Podman through
+`%t/podman/podman.sock` bind-mounted at `/var/run/docker.sock`, so everything Arcane manages stays inside
+this user's rootless namespace. Two non-obvious details from the docs: `SecurityLabelDisable=true` (the
+socket is not relabelled; SELinux is off on Arch anyway) and `--cgroupns=host` so Arcane can find its own
+container. The D-Bus lines (`User=0:0`, `UserNS=keep-id`, `Volume=%t/bus:%t/bus`,
+`DBUS_SESSION_BUS_ADDRESS`) are the docs' rootless-Quadlet recipe: with plain subuid mapping the session bus
+refuses the container user, and only with the bus mounted can Arcane start/stop Quadlets and run
+`podman-auto-update` on Podman before 6.2 (we are on 6.2, where the timer needs no D-Bus). The encryption
+key lives **only** in `podman secret arcane-encryption-key` (mounted at `/run/secrets/arcane-key`), never in
+this repo; losing it makes the Arcane database unreadable. `install.sh`'s `arcane_setup` therefore creates
+it on a new machine and prints it once, refuses to create a replacement when the `arcane-data` volume
+already exists, and `resi-shell doctor` warns when the secret is missing — a Quadlet with
+`[Install] WantedBy=default.target` is started by systemd at every login, so a missing secret means a
+failing unit with `Restart=always`. Paths use systemd specifiers (`%t`, `%h`, `%U`, `%G`) instead of
+hardcoded ones, so the same file fits both machines whatever the username; the projects folder `%h/podman`
+is mounted at the same path with `PROJECTS_DIRECTORY` set (`arcane_setup` creates it), so relative mounts in
+a Compose project resolve the same for Arcane and Podman. The port is published on `127.0.0.1:3552`: Arcane controls every container of this user, so it must
+not be on the LAN before the default `arcane`/`arcane-admin` password is changed. Stowed `--no-folding`
+because `~/.config/containers` also holds `podman-connections.json` (written by podman-tui) and future
+Quadlets should be able to sit next to the repo file.
 - **Noctalia drift** (2026-09-30). Settings changed in Noctalia's GUI land in
   `~/.local/state/noctalia/settings.toml`, which always wins over the repo TOML and is not synced,
   so the two laptops drifted three times (clock capsule, control-center position, bar shape).

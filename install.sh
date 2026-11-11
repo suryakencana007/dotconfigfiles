@@ -22,7 +22,7 @@ RESI_VENDOR="${RESI_VENDOR:-/usr/share/resi-shell/vendor}"           # tarball v
 for a in "$@"; do case "$a" in install|update|doctor|packages|first-login|lockscreen-layout|iso-relink) CMD="$a" ;; --force) FORCE=1 ;; --dry-run|-n) DRY=1 ;; -y|--yes) YES=1 ;; --chroot) CHROOT=1; YES=1 ;; --offline) OFFLINE=1 ;; -h|--help) sed -n '2,9p' "$0"; exit 0 ;; *) echo "unknown argument: $a" >&2; exit 2 ;; esac; done
 
 PKGS_FOLD=(zsh git alacritty tmux nvim rofi mpv brave fastfetch)            # stow biasa (folder boleh dilipat)
-PKGS_NOFOLD=(hypr noctalia claude pi bin gtk)              # --no-folding: folder tetap nyata (overlay host, resource agent & file render bisa masuk)
+PKGS_NOFOLD=(hypr noctalia claude pi bin gtk containers)              # --no-folding: folder tetap nyata (overlay host, resource agent & file render bisa masuk)
 HOST="$(cat /etc/hostname 2>/dev/null || hostname)"
 
 c_step=$'\e[1;34m'; c_ok=$'\e[1;32m'; c_warn=$'\e[1;33m'; c_btn=$'\e[1;7m'; c_off=$'\e[0m'
@@ -229,6 +229,34 @@ system_extras() {
   fi
 }
 
+# Arcane (paket stow `containers`): Quadlet rootless Podman. Secret harus ada SEBELUM unit digenerate:
+# [Install] WantedBy=default.target membuat systemd menyalakannya di setiap login, jadi tanpa secret
+# service-nya gagal dan Restart=always membuatnya restart terus.
+arcane_setup() {
+  step "Arcane (rootless Podman Quadlet)"
+  have podman || { warn "podman not installed; Arcane skipped"; return; }
+  [ -f "$HOME/.config/containers/systemd/arcane.container" ] || { warn "arcane.container missing in ~/.config/containers/systemd (stow containers)"; return; }
+  run mkdir -p "$HOME/podman"   # PROJECTS_DIRECTORY: bind-mount source for compose projects
+  if podman secret inspect arcane-encryption-key >/dev/null 2>&1; then
+    ok "podman secret arcane-encryption-key already present"
+  elif podman volume inspect arcane-data >/dev/null 2>&1; then
+    warn "arcane-encryption-key is missing but the arcane-data volume exists: restore the key from your password manager (NOTES.md); not creating a new one"
+    return
+  elif have openssl; then
+    run sh -c 'openssl rand -hex 32 | podman secret create arcane-encryption-key -' >/dev/null && ok "created podman secret arcane-encryption-key"
+    printf '\n  Save this key in your password manager; without it Arcane cannot decrypt its database:\n\n'
+    podman secret inspect --showsecret --format '    {{.SecretData}}' arcane-encryption-key
+    printf '\n'
+  else
+    warn "openssl not found; create the secret yourself: openssl rand -hex 32 | podman secret create arcane-encryption-key -"
+    return
+  fi
+  if (( CHROOT )); then warn "Arcane start deferred to first login (no user systemd in the chroot)"; return; fi
+  run systemctl --user daemon-reload
+  run systemctl --user enable --now podman-auto-update.timer >/dev/null 2>&1 && ok "podman-auto-update.timer enabled" || warn "could not enable podman-auto-update.timer"
+  run systemctl --user restart arcane.service && ok "Arcane on http://localhost:3552 (arcane / arcane-admin)" || warn "could not start arcane.service (podman logs arcane)"
+}
+
 gtk_theme() {
   step "GTK theme (adw-gtk3 + Papirus, dark mode)"
   if (( CHROOT )); then run mkdir -p "$(dirname "$FIRST_LOGIN_MARKER")"; run touch "$FIRST_LOGIN_MARKER"; warn "deferred to first login (needs a session D-Bus for gsettings)"; return; fi
@@ -302,12 +330,15 @@ doctor() {
   local broken; broken=$(find "$HOME" -maxdepth 6 -xtype l -lname '*dotconfigfiles*' 2>/dev/null); [ -z "$broken" ] && ok "no broken symlinks" || { warn "broken symlinks: $broken"; bad=1; }
   # file kunci harus ada DAN berasal dari repo (stow -n diam saja kalau file sumbernya hilang dari repo)
   for f in .zshrc .p10k.zsh .gitconfig .config/alacritty/alacritty.toml .config/tmux/tmux.conf .config/hypr/hyprland.lua .config/hypr/hyprlock.conf \
-           .config/hypr/monitors.lua .config/noctalia/shell.toml .config/noctalia/theme.toml .config/noctalia/plugins.toml .config/noctalia/wallpaper.toml .config/nvim/init.lua .config/rofi/config.rasi .config/mpv/mpv.conf .config/gtk-3.0/gtk.css \
+           .config/hypr/monitors.lua .config/noctalia/shell.toml .config/noctalia/theme.toml .config/noctalia/plugins.toml .config/noctalia/wallpaper.toml .config/nvim/init.lua .config/rofi/config.rasi .config/mpv/mpv.conf .config/gtk-3.0/gtk.css .config/containers/systemd/arcane.container \
            .local/bin/resi-shell .local/bin/hypr-menu .local/bin/hypr-tui .local/share/applications/nwg-displays.desktop; do
     if [ ! -e "$HOME/$f" ]; then warn "missing: ~/$f"; bad=1
     elif ! in_repo "$HOME/$f"; then warn "not from the repo (plain file replaced the symlink): ~/$f"; bad=1; fi
   done
   ok "key files present and pointing into the repo"
+  if [ -f "$HOME/.config/containers/systemd/arcane.container" ] && have podman; then
+    podman secret inspect arcane-encryption-key >/dev/null 2>&1 && ok "arcane secret present" || { warn "podman secret arcane-encryption-key missing: arcane.service fails until it exists (create it, then systemctl --user restart arcane.service)"; bad=1; }
+  fi
   grep -qF 'require("noctalia")' "$HOME/.config/hypr/hyprland.lua" 2>/dev/null && ok "hyprland.lua loads the Noctalia theme" || { warn "hyprland.lua has no require(\"noctalia\"): borders won't follow the theme"; bad=1; }
   for f in tmux/.config/tmux/tmux.conf alacritty/.config/alacritty/alacritty.toml; do
     [ -e "$REPO/$f.pre-resi" ] && { warn "leftover $f.pre-resi in the repo (old installer bug; compare, then delete)"; bad=1; }
@@ -498,6 +529,7 @@ update() {
   if have podman && [ -x "$HOME/.local/bin/hypr-docker-db" ]; then
     run "$HOME/.local/bin/hypr-docker-db" api-setup && ok "podman API service configured" || warn "podman API setup failed"
   fi
+  arcane_setup
   # autostart.lua only runs at Hyprland start: (re)launch the battery watcher now. hypr-power is single-instance
   # (flock), so this is a no-op when it is already running. Spawned through Hyprland like autostart does.
   if have hyprctl && hyprctl version >/dev/null 2>&1 && [ -x "$HOME/.local/bin/hypr-power" ]; then
@@ -594,6 +626,7 @@ first_login() {
   [ -f "$FIRST_LOGIN_MARKER" ] || exit 0
   CHROOT=0
   gtk_theme
+  arcane_setup
   if have noctalia; then for _ in $(seq 1 30); do noctalia msg status >/dev/null 2>&1 && break; sleep 1; done; fi
   greeter_sync                                  # bukan greeter(): itu butuh sudo (greeter.toml sudah dipasang saat --chroot)
   lockscreen_layout
@@ -663,7 +696,7 @@ boot_splash() {
 install_all() {
   require_arch; sudo_keepalive
   pacman_packages; aur_helper; aur_packages; gpu_drivers
-  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; system_extras; gtk_theme; greeter; brave_extensions; webapps_default; lock_screen; boot_splash
+  shell_setup; stow_all; tmux_plugins; nvim_plugins; dirs_and_git; services; system_extras; arcane_setup; gtk_theme; greeter; brave_extensions; webapps_default; lock_screen; boot_splash
   (( CHROOT )) || { lockscreen_layout; noctalia_plugins; }   # di chroot tidak ada Hyprland/Noctalia: first-login yang mengerjakannya
   if (( OFFLINE )); then noctalia_plugins_vendor; run mkdir -p "$(dirname "$OFFLINE_MARKER")"; run touch "$OFFLINE_MARKER"; fi   # plugin nvim/tmux menyusul saat online
   finish
