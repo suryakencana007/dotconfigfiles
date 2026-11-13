@@ -492,6 +492,20 @@ Quadlets should be able to sit next to the repo file.
   `RESI_BOOT_ROOT=/some/dir` runs the script against a fake root without root, plymouth or mkinitcpio, which is how
   the config rewriting is tested.
 
+- **Behringer UMC202HD 192k needs a forced `pro-audio` profile** (2026-11-13). WirePlumber's auto
+  selection (`scripts/device/find-best-profile.lua`) deliberately skips `pro-audio` profiles, and this card
+  only offers `off` and `pro-audio`; after a replug it landed on `off`, so PipeWire exposed no sink/source and
+  apps reported "no device" (kernel and ALSA were fine: USB `1397:0507`, card 1, `pcmC1D0p`/`pcmC1D0c`).
+  `wireplumber/.config/wireplumber/wireplumber.conf.d/51-umc202hd.conf` matches `device.name`
+  `~alsa_card.usb-BEHRINGER_UMC202HD.*` (plus vendor/product `1397:0507`) and sets `device.profile =
+  "pro-audio"` via `monitor.alsa.rules` + `update-props`. Verified by deleting
+  `~/.local/state/wireplumber/default-profile` and restarting WirePlumber: the profile then comes from the rule
+  alone. The interface has a higher session priority, so WirePlumber can pick it as the default sink; pin the
+  internal devices back with `wpctl set-default <id>` if that is not wanted. The card also floods dmesg with
+  ~120× `clock source 41 is not valid, cannot use` and `config 1 has an invalid interface number` per
+  enumeration, and ACP logs `Path UMC202HD 192k Output is not a volume or mute control`; all three are
+  firmware/driver quirks of this interface and harmless (levels are hardware knobs).
+
 ## Pi skills and specialized agents
 
 - **Pi resources live in the `pi` Stow package** and are installed with `--no-folding`. This creates per-file links

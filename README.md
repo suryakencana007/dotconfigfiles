@@ -398,6 +398,7 @@ directory. Configs in `~/.config/...` are links into this repo, so editing eithe
 | `fastfetch` | system info splash: config and a custom RESI/ARCH logo |
 | `gtk`, `mpv`, `brave` | app settings |
 | `containers` | Arcane, the containers web UI, as a rootless Podman Quadlet |
+| `wireplumber` | ALSA rule keeping the Behringer UMC202HD on its "pro-audio" profile |
 | `bin` | helper scripts in `~/.local/bin` and a few launcher entries |
 | `claude` | Claude Code skills and agents that know this setup |
 | `pi` | Pi skills, specialized subagents and the subagent extension |
@@ -433,14 +434,14 @@ Files that Noctalia renders from templates are in `.gitignore` and never committ
 <details>
 <summary>Stow details and manual stow</summary>
 
-`hypr`, `noctalia`, `gtk`, `bin`, `claude`, `containers` and the host overlays are stowed with
+`hypr`, `noctalia`, `gtk`, `bin`, `claude`, `containers`, `wireplumber` and the host overlays are stowed with
 `--no-folding` (real folders with one link per file), so machine overlays, rendered files and extra
 Quadlets can sit next to the repo files. The others are stowed normally.
 
 ```sh
 cd ~/dotconfigfiles
 stow -t ~ zsh git alacritty tmux nvim rofi mpv brave fastfetch
-stow --no-folding -t ~ hypr noctalia claude pi bin gtk containers
+stow --no-folding -t ~ hypr noctalia claude pi bin gtk containers wireplumber
 (cd hosts && stow --no-folding -t ~ "$(cat /etc/hostname)")
 ```
 
