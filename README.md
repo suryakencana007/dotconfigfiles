@@ -418,6 +418,7 @@ Files that Noctalia renders from templates are in `.gitignore` and never committ
 | `hypr-keybindings` | searchable key binding list (`Super+K`) |
 | `hypr-theme`, `hypr-theme-carousel`, `hypr-folder-color` | palettes, dark/light, wallpaper carousel, folder icon color |
 | `hypr-record` | screen recording toggle |
+| `hypr-webcam` | webcam photo (`hypr-webcam`) and live preview (`hypr-webcam preview`, `ir` for the IR camera) |
 | `hypr-pkg-install` | package picker for install and removal (official repos and AUR) |
 | `hypr-dev-env`, `hypr-docker-db`, `hypr-containers`, `hypr-webapp` | development environments, databases, podman-tui, web apps |
 | `hypr-power` | battery mode, power profile, battery limit |

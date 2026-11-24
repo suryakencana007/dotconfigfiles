@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Foto / pratinjau kamera laptop (UVC, mis. "Web Camera - HD" 04f2:b6f0).
+# Kamera RGB ada di /dev/video0, kamera IR "Face Authentication" (greyscale) di /dev/video2.
+#   hypr-webcam                    ambil foto (warm-up auto-exposure) ke ~/Pictures
+#   hypr-webcam preview            pratinjau live via mpv (q/Esc untuk keluar)
+#   hypr-webcam ir                 pakai kamera IR
+#   hypr-webcam preview ir         pratinjau kamera IR
+#   hypr-webcam list               daftar kamera V4L2
+#   hypr-webcam /dev/videoN        pakai device lain
+#   hypr-webcam -o DIR             ubah folder tujuan   (env: HYPR_WEBCAM_DIR)
+#
+# Catatan: kalau hasilnya hitam, cek penutup privasi (privacy shutter) di bezel layar
+# dan pastikan tidak ada aplikasi lain yang sedang memakai kamera.
+set -uo pipefail
+
+OUT_DIR="${HYPR_WEBCAM_DIR:-$HOME/Pictures}"
+RGB_DEV=/dev/video0
+IR_DEV=/dev/video2
+WARMUP="${HYPR_WEBCAM_WARMUP:-1.5}"   # detik auto-exposure sebelum frame diambil
+SIZE=1280x720
+
+notify() { noctalia msg notification-show "$1" "${2:-}" >/dev/null 2>&1 || notify-send "$1" "${2:-}" 2>/dev/null || true; }
+
+dev="$RGB_DEV"
+action=photo
+while (( $# )); do
+  case "$1" in
+    photo|preview|list) action="$1" ;;
+    ir)   dev="$IR_DEV" ;;
+    -o)   shift; OUT_DIR="${1:?-o butuh argumen}" ;;
+    /dev/video*) dev="$1" ;;
+    -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
+    *) echo "argumen tidak dikenal: $1 (coba --help)" >&2; exit 2 ;;
+  esac
+  shift
+done
+
+if [[ $action == list ]]; then
+  command -v v4l2-ctl >/dev/null || { echo "v4l2-ctl tidak ada (paket v4l-utils)"; exit 1; }
+  v4l2-ctl --list-devices
+  exit 0
+fi
+
+command -v ffmpeg >/dev/null || { notify "hypr-webcam: ffmpeg tidak ada" "sudo pacman -S ffmpeg"; exit 1; }
+[[ -e $dev ]] || { notify "Kamera tidak ditemukan" "$dev"; exit 1; }
+
+if [[ $action == preview ]]; then
+  command -v mpv >/dev/null || { notify "hypr-webcam: mpv tidak ada" "sudo pacman -S mpv"; exit 1; }
+  exec mpv --no-audio --really-quiet --force-window=yes --title="Kamera $dev" \
+    --input-conf=/dev/null --profile=low-latency "av://v4l2:$dev"
+fi
+
+mkdir -p "$OUT_DIR"
+out="$OUT_DIR/webcam-$(date +%F-%H%M%S).jpg"
+# warm-up: rekam WARMUP detik, simpan frame terakhir saja (-update 1 = overwrite file yang sama)
+if ffmpeg -hide_banner -loglevel error -f v4l2 -input_format mjpeg -video_size "$SIZE" \
+     -i "$dev" -t "$WARMUP" -q:v 2 -update 1 "$out"; then
+  notify "Foto tersimpan" "$(basename "$out")   ·   $OUT_DIR"
+  printf '%s\n' "$out"
+else
+  rm -f "$out"
+  notify "Gagal mengambil foto" "$dev — cek privacy shutter / kamera dipakai aplikasi lain"
+  exit 1
+fi

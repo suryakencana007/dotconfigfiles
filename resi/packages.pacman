@@ -84,6 +84,12 @@ playerctl
 # --- file manager & mount ---
 thunar
 thunar-volman
+# operasi arsip di klik-kanan Thunar (Extract Here / Extract To / Create Archive).
+# thunar-archive-plugin memilih backend dari file .tap di /usr/lib/xfce4/thunar-archive-plugin/
+# yang cocok dengan handler MIME arsip. file-roller dipakai karena berbasis libarchive:
+# baca 7z dan RAR5 tanpa perlu unrar. (PeaZip juga punya .tap sendiri, tapi tidak dipakai di sini.)
+thunar-archive-plugin
+file-roller
 gvfs
 # thumbnail di Thunar: tanpa tumbler ia diam-diam tidak punya pratinjau sama sekali
 # (log Thunar: "ThunarThumbnailer: Failed to retrieve supported types"). tumbler sendirian hanya

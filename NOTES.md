@@ -506,6 +506,35 @@ Quadlets should be able to sit next to the repo file.
   enumeration, and ACP logs `Path UMC202HD 192k Output is not a volume or mute control`; all three are
   firmware/driver quirks of this interface and harmless (levels are hardware knobs).
 
+- **Thunar archive operations use file-roller, not PeaZip** (2026-11-24). `thunar-archive-plugin` adds
+  *Extract Here / Extract To… / Create Archive…* to the context menu and picks its backend from the
+  `/usr/lib/xfce4/thunar-archive-plugin/<app>.tap` wrappers that match the archive MIME handlers (one
+  supported backend is used automatically, several show a chooser). The plugin ships `ark`, `engrampa`
+  and `file-roller` taps, and `peazip` ships its own `peazip.tap` — so PeaZip *was* already supported;
+  file-roller was chosen anyway because it is libarchive-based and reads 7z and RAR5 with no `unrar`, and
+  PeaZip was removed. `thunar-archive-plugin` and `file-roller` are listed in `resi/packages.pacman`
+  next to `thunar`. Installing file-roller also moved the default archive MIME handler from PeaZip to
+  `org.gnome.FileRoller.desktop`.
+
+- **Noctalia's polkit agent is what draws the password dialogs** (2026-11-24). polkit is the
+  authorization framework behind `pkexec`, GParted, format/mount tools, etc.; the *agent* is the process
+  that renders the prompt. Noctalia has a built-in one (`[shell] polkit_agent = true`), registered as
+  `org.noctalia.PolkitAuthenticationAgent`. `sudo`/`pkexec` from a non-interactive shell can fail with
+  *"Error creating textual authentication agent … /dev/tty"* — that is pkexec falling back to its own
+  **textual** agent because `check_authorization` came back as `challenge` and there is no controlling
+  TTY, not by itself proof that the Noctalia agent is broken. The reliable check is a blocking one: a
+  `polkit_authority_check_authorization_sync(..., ALLOW_USER_INTERACTION)` call (or `pkexec true`) that
+  *blocks* together with `panel manager: opened "polkit"` in `~/.cache/noctalia/noctalia.log` means the
+  agent is alive. If dialogs stop appearing, `hypr-restart-shell` re-registers it. `pkexec` and the
+  agent's own password dialog are the intended way to get root in a GUI session here (this is why
+  `resi-shell update` from a panel works but `sudo` inside a non-interactive shell does not).
+
+- **`hypr-webcam`** (2026-11-24) takes a webcam photo (`hypr-webcam`, saved to `~/Pictures`) or shows a
+  live preview (`hypr-webcam preview`); `ir` uses the greyscale IR camera (`/dev/video2`) instead of the
+  RGB one (`/dev/video0`). It lives in the `bin` package next to `hypr-record`. On this dynabook a black
+  photo means the privacy shutter is closed, not a driver problem — verified by fixing the shutter and
+  re-running (brightness went from 0.07 to 0.47).
+
 ## Pi skills and specialized agents
 
 - **Pi resources live in the `pi` Stow package** and are installed with `--no-folding`. This creates per-file links
