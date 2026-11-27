@@ -23,7 +23,24 @@ local SCRATCHPAD = "special:scratchpad"
 -- Omarchy ships without a default agent, and omarchy-agent exits without
 -- opening anything when none is set, so until one is picked this just opens an
 -- empty console.
-local seed = "[workspace special:scratchpad silent] alacritty"
+--
+-- Hyprland 0.57 deprecated the on_created_empty workspace rule (it warned on every
+-- refit), so the seed now runs from a workspace.created handler instead. The
+-- subscription is kept in a global and dropped on reload so it never stacks.
+local function seed()
+  hl.exec_cmd("alacritty", { workspace = SCRATCHPAD .. " silent" })
+end
+
+if _G.__resi_qconsole_subs then
+  for _, sub in ipairs(_G.__resi_qconsole_subs) do pcall(function() sub:remove() end) end
+end
+_G.__resi_qconsole_subs = {
+  hl.on("workspace.created", function(ws)
+    if ws and ws.name == SCRATCHPAD and ws.is_empty then
+      seed()
+    end
+  end),
+}
 
 -- Dimming only applies while a special workspace is open, so the console gets
 -- its separation from the workspace underneath without costing anything the
@@ -58,8 +75,6 @@ local function cover(side, bottom)
     -- open, and the active border reads as a stray frame around a panel that
     -- is already set apart by the dimming behind it.
     no_border = true,
-
-    on_created_empty = seed,
   })
 
   return true

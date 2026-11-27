@@ -68,5 +68,13 @@ o.window("^(Spotify|spotify)$", { workspace = "5" })
 -- Cegah idle/lock saat window bertag noidle terbuka.
 o.window({ tag = "noidle" }, { idle_inhibit = "always" })
 
+-- Waydroid (full UI) sebagai HP: jendela portrait 720x1280 di monitor HDMI, sama dengan
+-- persist.waydroid.width/height; density 320 di Android -> sw360dp (bukan tablet).
+o.window("^Waydroid$", { float = true })
+o.window("^Waydroid$", { monitor = "HDMI-A-1" })
+o.window("^Waydroid$", { size = { 720, 1280 } })
+o.window("^Waydroid$", { center = true })
+o.window("^Waydroid$", { tag = "-default-opacity" })
+
 -- Opacity default, diterapkan terakhir setelah app sempat opt-out.
 o.window({ tag = "default-opacity" }, { opacity = "0.985 0.96" })
