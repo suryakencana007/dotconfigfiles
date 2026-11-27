@@ -394,7 +394,8 @@ doctor() {
       *python*) python3 -c "import ast,sys; ast.parse(open(sys.argv[1]).read())" "$f" 2>/dev/null || lint_bad+=" $(basename "$f")(python)" ;;
     esac
   done
-  if have luac5.4; then for f in "$REPO"/hypr/.config/hypr/*.lua "$REPO"/hypr/.config/hypr/bindings/*.lua; do luac5.4 -p "$f" 2>/dev/null || lint_bad+=" $(basename "$f")(lua)"; done; fi
+  local luac_bin=""; if have luac5.4; then luac_bin=luac5.4; elif have luac; then luac_bin=luac; fi
+  if [[ -n $luac_bin ]]; then for f in "$REPO"/hypr/.config/hypr/*.lua "$REPO"/hypr/.config/hypr/bindings/*.lua; do "$luac_bin" -p "$f" 2>/dev/null || lint_bad+=" $(basename "$f")(lua)"; done; fi
   # Plugin Noctalia lokal: `plugins lint` offline, mencocokkan setting manifest dengan kode Luau.
   if have noctalia; then for f in "$REPO"/noctalia/.local/share/resi-plugins/*/plugin.toml; do
     [ -f "$f" ] || continue

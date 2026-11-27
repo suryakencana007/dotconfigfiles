@@ -40,7 +40,7 @@ Hyprland 0.56+ membaca `~/.config/hypr/hyprland.lua` (Lua native, bukan hyprland
    atau contoh di `windows.lua`.
 5. Setelah SETIAP perubahan wajib validasi:
    ```
-   luac5.4 -p <file>            # sintaks
+   luac -p <file>               # sintaks (lua 5.5; luac5.4 sudah tidak ada)
    hyprctl reload && hyprctl configerrors   # harus kosong
    ```
    Kalau configerrors berisi error, perbaiki sampai bersih. Hyprland juga auto-reload saat file disimpan.
