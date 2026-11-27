@@ -13,10 +13,20 @@ CONF_DIR="$HOME/.config/noctalia"
 
 # "section<TAB>key<TAB>value" untuk kunci skalar di tabel biasa [x.y] (array table [[...]] dilewati), komentar dibuang.
 # Header tabel dan kunci boleh diindentasi (Noctalia menulis state dengan indentasi bertingkat), jadi spasi awal dibuang dulu.
-entries() { awk '{ sub(/^[ \t]+/, "") } /^\[\[/{sec=""; next} /^\[/{sec=$0; next}
+# Array boleh beberapa baris (Noctalia menulis widget_order begitu): baris lanjutan dikumpulkan sampai kurung
+# seimbang, lalu array dinormalkan (spasi dan koma penutup dibuang) supaya `[ "a" ]` dan versi multiline sama.
+# AWK_DEPTH dipakai juga oleh --fix.
+AWK_DEPTH='function depth(s,  t) { t = s; gsub(/"([^"\\]|\\.)*"/, "", t); sub(/[ \t]*#.*/, "", t); return gsub(/\[/, "", t) - gsub(/\]/, "", t) }'
+entries() { awk "$AWK_DEPTH"'
+  function emit(v) { if (v ~ /^\[/) { sub(/\][ \t]*#.*$/, "]", v); gsub(/[ \t]+/, "", v); gsub(/,\]/, "]", v) } else sub(/[ \t]*#.*/, "", v)
+    sub(/[ \t]+$/, "", v); print sec "\t" k "\t" v }
+  { sub(/^[ \t]+/, "") }
+  pend { v = v " " $0; d += depth($0); if (d <= 0) { pend = 0; emit(v) } next }
+  /^\[\[/{sec=""; next} /^\[/{sec=$0; next}
   sec!="" && /^[A-Za-z0-9_]+[ \t]*=/ { k=$0; sub(/[ \t]*=.*/,"",k); v=$0; sub(/^[^=]*=[ \t]*/,"",v)
-    if (v ~ /^"/) { match(v, /^"([^"\\]|\\.)*"/); v = substr(v, RSTART, RLENGTH) } else sub(/[ \t]*#.*/,"",v)
-    sub(/[ \t]+$/,"",v); print sec "\t" k "\t" v }' "$@"; }
+    if (v ~ /^"/) { match(v, /^"([^"\\]|\\.)*"/); v = substr(v, RSTART, RLENGTH); print sec "\t" k "\t" v; next }
+    if (v ~ /^\[/ && (d = depth(v)) > 0) { pend = 1; next }
+    emit(v) }' "$@"; }
 
 # Drift = kunci ada di keduanya DAN nilainya berbeda (angka dibandingkan dengan toleransi 1e-4: GUI menyimpan
 # 0.99999998 untuk 1.0). Kunci bernilai sama hanya duplikat, tidak membuat mesin berbeda.
@@ -38,13 +48,23 @@ fi
 (( ${#drift[@]} )) || { echo "no drift to fix"; exit 0; }
 backup="$STATE.bak-$(date +%Y%m%d-%H%M%S)"; cp "$STATE" "$backup"
 tmp=$(mktemp)
-awk -v list="$(printf '%s\n' "${drift[@]}")" '
+# Kunci yang dibuang ikut membuang baris lanjutan array multiline-nya (dulu hanya baris pertama yang dibuang,
+# sisa array tertinggal tanpa kunci dan settings.toml jadi tidak valid: 2026-11-27, widget_order).
+awk -v list="$(printf '%s\n' "${drift[@]}")" "$AWK_DEPTH"'
   BEGIN { n = split(list, L, "\n"); for (i = 1; i <= n; i++) if (L[i] != "") { split(L[i], f, "\t"); drop[f[1] "\t" f[2]] = 1 } }
   { line = $0; t = $0; sub(/^[ \t]+/, "", t) }
+  skip { d += depth(t); if (d <= 0) skip = 0; next }
   t ~ /^\[\[/ { sec = ""; print line; next }
   t ~ /^\[/   { sec = t; print line; next }
-  sec != "" && t ~ /^[A-Za-z0-9_]+[ \t]*=/ { k = t; sub(/[ \t]*=.*/, "", k); if ((sec "\t" k) in drop) next }
+  sec != "" && t ~ /^[A-Za-z0-9_]+[ \t]*=/ { k = t; sub(/[ \t]*=.*/, "", k)
+    if ((sec "\t" k) in drop) { v = t; sub(/^[^=]*=[ \t]*/, "", v); if (v ~ /^\[/ && (d = depth(v)) > 0) skip = 1; next } }
   { print line }' "$STATE" >"$tmp" && mv "$tmp" "$STATE"
+# Jangan pernah meninggalkan state yang tidak bisa dibaca Noctalia: validasi, kembalikan backup bila gagal.
+if command -v noctalia >/dev/null && ! noctalia config validate >/dev/null 2>&1; then
+  cp "$backup" "$STATE"
+  echo "Aborted: the edited state failed 'noctalia config validate'; restored $backup unchanged." >&2
+  exit 2
+fi
 printf '%s\n' "${drift[@]}" | awk -F'\t' '{ printf "Removed from GUI state: %s %s (was %s, repo %s)\n", $1, $2, $3, $4 }'
 echo "Backup: $backup"
 command -v noctalia >/dev/null && noctalia msg config-reload >/dev/null 2>&1 && echo "Noctalia config reloaded."
