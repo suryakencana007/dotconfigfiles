@@ -26,12 +26,13 @@ Volume=arcane-data:/app/data
 
 Secret=arcane-encryption-key,type=mount,target=/run/secrets/arcane-key,mode=0444
 
-Environment=APP_URL=http://localhost:3552
+# Arcane v3: config variables carry the ARCANE_ prefix (PUID/PGID stay unprefixed)
+Environment=ARCANE_APP_URL=http://localhost:3552
 Environment=PUID=%U
 Environment=PGID=%G
-Environment=ENCRYPTION_KEY_FILE=/run/secrets/arcane-key
+Environment=ARCANE_ENCRYPTION_KEY_FILE=/run/secrets/arcane-key
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus
-Environment=PROJECTS_DIRECTORY=%h/podman
+Environment=ARCANE_PROJECTS_DIRECTORY=%h/podman
 
 HealthCmd=["./arcane","health","--timeout","2s"]
 HealthInterval=10s
