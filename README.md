@@ -397,7 +397,7 @@ directory. Configs in `~/.config/...` are links into this repo, so editing eithe
 | `alacritty`, `tmux`, `zsh`, `nvim`, `git` | terminal stack |
 | `fastfetch` | system info splash: config and a custom RESI/ARCH logo |
 | `gtk`, `mpv`, `brave` | app settings |
-| `containers` | Arcane, the containers web UI, as a rootless Podman Quadlet |
+| `containers` | Arcane, the containers web UI, as a rootless Podman Quadlet; `registries.conf` so short image names (`postgres:17`) resolve to Docker Hub |
 | `wireplumber` | ALSA rule keeping the Behringer UMC202HD on its "pro-audio" profile |
 | `bin` | helper scripts in `~/.local/bin` and a few launcher entries |
 | `claude` | Claude Code skills and agents that know this setup |
